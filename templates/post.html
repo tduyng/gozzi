@@ -1,0 +1,9 @@
+{{ define "content" }}
+<article class="post">
+    <h1>{{ .Page.FrontMatter.Title }}</h1>
+    <div class="meta">
+        <time>{{ .Page.FrontMatter.Date }}</time>
+    </div>
+    <div class="content">{{ .Page.Content | safeHTML }}</div>
+</article>
+{{ end }}

@@ -64,7 +64,8 @@ func NewLiveReloadServer(cfg *config.GlobalConfig) (*LiveReloadServer, error) {
 
 func (lrs *LiveReloadServer) Start(port int) error {
 	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.Dir(lrs.cfg.OutputDir)))
+	fileServer := NewFileServer(lrs.cfg.OutputDir)
+	mux.Handle("/", fileServer)
 	mux.HandleFunc("/livereload", lrs.handleWebSocket)
 
 	lrs.server = &http.Server{

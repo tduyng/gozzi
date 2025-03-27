@@ -21,6 +21,11 @@ type SiteGenerator struct {
 	tmpl *template.Template
 }
 
+type TemplateData struct {
+	Config *config.MergedConfig
+	Page   *parser.Page
+}
+
 func NewSiteGenerator(cfg *config.GlobalConfig) (*SiteGenerator, error) {
 	sg := &SiteGenerator{
 		cfg: cfg,
@@ -120,10 +125,7 @@ func (sg *SiteGenerator) renderPage(outputPath string, page *parser.Page, cfg *c
 
 	// Execute template with context
 	var buf bytes.Buffer
-	data := struct {
-		Config *config.MergedConfig
-		Page   *parser.Page
-	}{
+	data := TemplateData{
 		Config: cfg,
 		Page:   page,
 	}

@@ -32,13 +32,18 @@ func main() {
 
 	switch os.Args[1] {
 	case "build":
-		buildCmd.Parse(os.Args[2:])
+		if err := buildCmd.Parse(os.Args[2:]); err != nil {
+			log.Fatalf("Build command parse error: %v", err)
+		}
+
 		if err := generator.BuildSite(cfg); err != nil {
 			log.Fatal(err)
 		}
 
 	case "serve":
-		serveCmd.Parse(os.Args[2:])
+		if err := serveCmd.Parse(os.Args[2:]); err != nil {
+			log.Fatalf("Serve command parse error: %v", err)
+		}
 		startDevServer(cfg, *servePort)
 
 	default:
@@ -48,18 +53,15 @@ func main() {
 }
 
 func startDevServer(cfg *config.GlobalConfig, port int) {
-	// Initial build
 	if err := generator.BuildSite(cfg); err != nil {
 		log.Fatal(err)
 	}
 
-	// Setup live reload server
 	lrs, err := server.NewLiveReloadServer(cfg)
 	if err != nil {
 		log.Fatalf("Failed to create live reload server: %v", err)
 	}
 
-	// Graceful shutdown handling
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -71,14 +73,14 @@ func startDevServer(cfg *config.GlobalConfig, port int) {
 		log.Println("Shutting down server...")
 
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer shutdownCancel() // Always clean up the shutdown context
-
-		lrs.Shutdown(shutdownCtx)
+		defer shutdownCancel()
+		if err := lrs.Shutdown(shutdownCtx); err != nil {
+			log.Printf("Server shutdown error: %v", err)
+		}
 
 		cancel()
 	}()
 
-	// Start server
 	if err := lrs.Start(port); err != nil {
 		log.Fatal(err)
 	}

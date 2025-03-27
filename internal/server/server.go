@@ -105,7 +105,7 @@ func (lrs *LiveReloadServer) watchChanges() {
 	}
 }
 
-func (lrs *LiveReloadServer) handleChange(event fsnotify.Event) {
+func (lrs *LiveReloadServer) handleChange(_ fsnotify.Event) {
 	lrs.mu.Lock()
 	defer lrs.mu.Unlock()
 

@@ -17,8 +17,6 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 )
 
-var frontMatterDelim = []byte("+++")
-
 type Page struct {
 	FrontMatter config.PageConfig
 	Content     template.HTML
@@ -103,7 +101,6 @@ func extractBaseName(path string) string {
 	dir, file := filepath.Split(path)
 	base := strings.TrimSuffix(file, filepath.Ext(file))
 
-	// Handle directory-based content (index.md)
 	if base == "index" {
 		parentDir := strings.TrimRight(dir, string(filepath.Separator))
 		if parentDir != "" {

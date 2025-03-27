@@ -29,7 +29,7 @@ func NewSiteGenerator(cfg *config.GlobalConfig) (*SiteGenerator, error) {
 	tmpl, err := template.New("base").Funcs(template.FuncMap{
 		"urlize":   URLize,
 		"safeHTML": SafeHTML,
-	}).ParseGlob(filepath.Join("templates", "*.html"))
+	}).ParseGlob("templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("template parsing failed: %w", err)
 	}
@@ -184,6 +184,9 @@ func copyFile(src, dst string) error {
 	}
 	defer source.Close()
 
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return fmt.Errorf("failed to create destination directory: %w", err)
+	}
 	destination, err := os.Create(dst)
 	if err != nil {
 		return fmt.Errorf("destination create failed: %w", err)

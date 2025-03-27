@@ -73,7 +73,7 @@ func (lrs *LiveReloadServer) Start(port int) error {
 	}
 
 	go func() {
-		log.Printf("Starting server on :%d", port)
+		log.Printf("Starting server on http://localhost:%d", port)
 		if err := lrs.server.ListenAndServe(); err != http.ErrServerClosed {
 			log.Fatalf("Server error: %v", err)
 		}

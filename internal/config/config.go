@@ -10,9 +10,10 @@ import (
 )
 
 type GlobalConfig struct {
-	BaseURL   string `toml:"base_url"`
-	Title     string `toml:"title"`
-	OutputDir string `toml:"output_dir"`
+	BaseURL     string `toml:"base_url"`
+	Title       string `toml:"title"`
+	Description string `toml:"Description"`
+	OutputDir   string `toml:"output_dir"`
 
 	Taxonomies []TaxonomyConfig `toml:"taxonomies"`
 	Markdown   MarkdownConfig   `toml:"markdown"`
@@ -36,12 +37,14 @@ type SectionConfig struct {
 }
 
 type PageConfig struct {
-	Title      string              `toml:"title"`
-	Date       string              `toml:"date"`
-	Draft      bool                `toml:"draft"`
-	Taxonomies map[string][]string `toml:"taxonomies"`
-	Template   string              `toml:"template"`
-	Extra      map[string]any      `toml:"extra"`
+	Title       string              `toml:"title"`
+	Description string              `toml:"description"`
+	Date        string              `toml:"date"`
+	Draft       bool                `toml:"draft"`
+	Taxonomies  map[string][]string `toml:"taxonomies"`
+	Template    string              `toml:"template"`
+	Image       string              `toml:"image"`
+	Extra       map[string]any      `toml:"extra"`
 }
 
 type TaxonomyConfig struct {
@@ -51,19 +54,21 @@ type TaxonomyConfig struct {
 }
 
 type MergedConfig struct {
-	BaseURL    string
-	Title      string
-	OutputDir  string
-	Template   string
-	PaginateBy int
-	SortBy     string
-	Render     bool
-	Date       string
-	Draft      bool
-	Taxonomies map[string][]string
-	Markdown   Markdown
-	Lang       string
-	Extra      map[string]any
+	BaseURL     string
+	Title       string
+	Description string
+	OutputDir   string
+	Template    string
+	PaginateBy  int
+	SortBy      string
+	Render      bool
+	Date        string
+	Draft       bool
+	Taxonomies  map[string][]string
+	Markdown    Markdown
+	Lang        string
+	Image       string
+	Extra       map[string]any
 }
 
 type Markdown struct {
@@ -99,9 +104,10 @@ func LoadPageConfig(content []byte) (*PageConfig, error) {
 
 func MergeConfigs(global *GlobalConfig, section *SectionConfig, page *PageConfig) *MergedConfig {
 	merged := &MergedConfig{
-		BaseURL:   global.BaseURL,
-		Title:     global.Title,
-		OutputDir: global.OutputDir,
+		BaseURL:     global.BaseURL,
+		Title:       global.Title,
+		Description: global.Description,
+		OutputDir:   global.OutputDir,
 		Markdown: Markdown{
 			HighlightCode:  global.Markdown.HighlightCode,
 			HighlightTheme: global.Markdown.HighlightTheme,
@@ -157,6 +163,10 @@ func mergePage(merged *MergedConfig, page *PageConfig) *MergedConfig {
 
 	if page.Template != "" {
 		merged.Template = page.Template
+	}
+
+	if page.Description != "" {
+		merged.Description = page.Description
 	}
 
 	merged.Draft = page.Draft

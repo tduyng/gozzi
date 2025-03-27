@@ -16,6 +16,7 @@ type GlobalConfig struct {
 
 	Taxonomies []TaxonomyConfig `toml:"taxonomies"`
 	Markdown   MarkdownConfig   `toml:"markdown"`
+	Lang       string           `toml:"language"`
 
 	Extra map[string]any `toml:"extra"`
 }
@@ -61,6 +62,7 @@ type MergedConfig struct {
 	Draft      bool
 	Taxonomies map[string][]string
 	Markdown   Markdown
+	Lang       string
 	Extra      map[string]any
 }
 

@@ -23,6 +23,7 @@ type Page struct {
 	Slug        string
 	FilePath    string
 	ModTime     time.Time
+	IsNotFound  bool
 }
 
 var md = goldmark.New(

@@ -11,42 +11,19 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/bep/godartsass/v2"
-	"github.com/tdewolff/minify/v2"
-	"github.com/tdewolff/minify/v2/html"
 	"github.com/tduyng/gozzi/internal/config"
 	"github.com/tduyng/gozzi/internal/parser"
 )
 
 type SiteGenerator struct {
-	cfg      *config.GlobalConfig
-	minifier *minify.M
-	sass     *godartsass.Transpiler
-	tmpl     *template.Template
+	cfg  *config.GlobalConfig
+	tmpl *template.Template
 }
 
 func NewSiteGenerator(cfg *config.GlobalConfig) (*SiteGenerator, error) {
 	sg := &SiteGenerator{
-		cfg:      cfg,
-		minifier: minify.New(),
-	}
-
-	sg.minifier.Add("text/html", &html.Minifier{
-		KeepDocumentTags: true,
-		KeepEndTags:      true,
-	})
-
-	if cfg.CompileSass {
-		transpiler, err := godartsass.Start(godartsass.Options{
-			DartSassEmbeddedFilename: "", // Use system default
-			Timeout:                  30 * time.Second,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize Sass compiler: %w", err)
-		}
-		sg.sass = transpiler
+		cfg: cfg,
 	}
 
 	tmpl, err := template.New("base").Funcs(template.FuncMap{
@@ -61,21 +38,11 @@ func NewSiteGenerator(cfg *config.GlobalConfig) (*SiteGenerator, error) {
 	return sg, nil
 }
 
-func (sg *SiteGenerator) Close() error {
-	if sg.sass != nil {
-		if err := sg.sass.Close(); err != nil {
-			return fmt.Errorf("error closing Sass transpiler: %w", err)
-		}
-	}
-	return nil
-}
-
 func BuildSite(cfg *config.GlobalConfig) error {
 	sg, err := NewSiteGenerator(cfg)
 	if err != nil {
 		return fmt.Errorf("site generator initialization failed: %w", err)
 	}
-	defer sg.Close()
 
 	if err := os.RemoveAll(cfg.OutputDir); err != nil {
 		return fmt.Errorf("failed to clean output directory: %w", err)
@@ -112,12 +79,6 @@ func BuildSite(cfg *config.GlobalConfig) error {
 
 	for err := range errChan {
 		log.Printf("Processing error: %v", err)
-	}
-
-	if cfg.CompileSass {
-		if err := sg.compileSass(); err != nil {
-			return fmt.Errorf("sass compilation failed: %w", err)
-		}
 	}
 
 	if err := sg.copyStatic(); err != nil {
@@ -171,65 +132,11 @@ func (sg *SiteGenerator) renderPage(outputPath string, page *parser.Page, cfg *c
 		return fmt.Errorf("template execution failed: %w", err)
 	}
 
-	// Minify HTML if enabled
-	if cfg.MinifyHTML {
-		var minBuf bytes.Buffer
-		if err := sg.minifier.Minify("text/html", &minBuf, &buf); err != nil {
-			return fmt.Errorf("minification failed: %w", err)
-		}
-		buf = minBuf
-	}
-
-	// Write output file
 	if err := os.WriteFile(outputPath, buf.Bytes(), 0644); err != nil {
 		return fmt.Errorf("file write failed: %w", err)
 	}
 
 	return nil
-}
-
-func (sg *SiteGenerator) compileSass() error {
-	return filepath.Walk(filepath.Join("static", "scss"), func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return fmt.Errorf("sass file access error: %w", err)
-		}
-
-		if info.IsDir() || filepath.Ext(path) != ".scss" {
-			return nil
-		}
-
-		content, err := os.ReadFile(path)
-		if err != nil {
-			return fmt.Errorf("failed to read SCSS file: %w", err)
-		}
-
-		result, err := sg.sass.Execute(godartsass.Args{
-			Source:          string(content),
-			SourceSyntax:    godartsass.SourceSyntaxSCSS,
-			OutputStyle:     godartsass.OutputStyleCompressed,
-			IncludePaths:    []string{filepath.Dir(path)},
-			EnableSourceMap: false,
-		})
-		if err != nil {
-			return fmt.Errorf("sass compilation error: %w", err)
-		}
-
-		outputPath := filepath.Join(
-			sg.cfg.OutputDir,
-			"css",
-			strings.TrimSuffix(info.Name(), ".scss")+".css",
-		)
-
-		if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-			return fmt.Errorf("CSS directory creation failed: %w", err)
-		}
-
-		if err := os.WriteFile(outputPath, []byte(result.CSS), 0644); err != nil {
-			return fmt.Errorf("CSS file write failed: %w", err)
-		}
-
-		return nil
-	})
 }
 
 func URLize(s string) string {

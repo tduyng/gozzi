@@ -10,11 +10,9 @@ import (
 )
 
 type GlobalConfig struct {
-	BaseURL     string `toml:"base_url"`
-	Title       string `toml:"title"`
-	OutputDir   string `toml:"output_dir"`
-	CompileSass bool   `toml:"compile_sass"`
-	MinifyHTML  bool   `toml:"minify_html"`
+	BaseURL   string `toml:"base_url"`
+	Title     string `toml:"title"`
+	OutputDir string `toml:"output_dir"`
 
 	Taxonomies []TaxonomyConfig `toml:"taxonomies"`
 	Markdown   MarkdownConfig   `toml:"markdown"`
@@ -52,20 +50,18 @@ type TaxonomyConfig struct {
 }
 
 type MergedConfig struct {
-	BaseURL     string
-	Title       string
-	OutputDir   string
-	CompileSass bool
-	MinifyHTML  bool
-	Template    string
-	PaginateBy  int
-	SortBy      string
-	Render      bool
-	Date        string
-	Draft       bool
-	Taxonomies  map[string][]string
-	Markdown    Markdown
-	Extra       map[string]any
+	BaseURL    string
+	Title      string
+	OutputDir  string
+	Template   string
+	PaginateBy int
+	SortBy     string
+	Render     bool
+	Date       string
+	Draft      bool
+	Taxonomies map[string][]string
+	Markdown   Markdown
+	Extra      map[string]any
 }
 
 type Markdown struct {
@@ -101,11 +97,9 @@ func LoadPageConfig(content []byte) (*PageConfig, error) {
 
 func MergeConfigs(global *GlobalConfig, section *SectionConfig, page *PageConfig) *MergedConfig {
 	merged := &MergedConfig{
-		BaseURL:     global.BaseURL,
-		Title:       global.Title,
-		OutputDir:   global.OutputDir,
-		CompileSass: global.CompileSass,
-		MinifyHTML:  global.MinifyHTML,
+		BaseURL:   global.BaseURL,
+		Title:     global.Title,
+		OutputDir: global.OutputDir,
 		Markdown: Markdown{
 			HighlightCode:  global.Markdown.HighlightCode,
 			HighlightTheme: global.Markdown.HighlightTheme,

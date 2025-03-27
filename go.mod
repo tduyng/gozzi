@@ -4,18 +4,16 @@ go 1.24.1
 
 tool (
 	github.com/BurntSushi/toml
-	github.com/bep/godartsass/v2
 	github.com/fsnotify/fsnotify
 	github.com/gorilla/websocket
-	github.com/tdewolff/minify/v2
 	github.com/yuin/goldmark
 	github.com/yuin/goldmark-highlighting/v2
 )
 
 require (
 	github.com/BurntSushi/toml v1.5.0
-	github.com/bep/godartsass/v2 v2.4.1
-	github.com/tdewolff/minify/v2 v2.22.4
+	github.com/fsnotify/fsnotify v1.8.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/yuin/goldmark v1.7.8
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
 )
@@ -23,9 +21,6 @@ require (
 require (
 	github.com/alecthomas/chroma/v2 v2.2.0 // indirect
 	github.com/dlclark/regexp2 v1.7.0 // indirect
-	github.com/fsnotify/fsnotify v1.8.0 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
-	github.com/tdewolff/parse/v2 v2.7.21 // indirect
 	golang.org/x/sys v0.31.0 // indirect
-	google.golang.org/protobuf v1.35.2 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

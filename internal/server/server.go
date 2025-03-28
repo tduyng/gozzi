@@ -1,12 +1,13 @@
 package server
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -35,53 +36,99 @@ func NewDevServer(cfg *config.GlobalConfig) (*DevServer, error) {
 }
 
 func (s *DevServer) Start(port int) {
-	// Initial build
 	if err := generator.BuildSite(s.cfg); err != nil {
 		log.Fatalf("Initial build failed: %v", err)
 	}
 
-	// Setup file watcher
 	go s.watchChanges()
 
-	// Start HTTP server
-	fs := http.FileServer(http.Dir(s.cfg.OutputDir))
+	handler := &fileHandler{
+		root:     http.Dir(s.cfg.OutputDir),
+		notFound: "404.html",
+	}
+
 	log.Printf("Server listening on http://localhost:%d", port)
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), fs))
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), handler))
+}
+
+type fileHandler struct {
+	root     http.Dir
+	notFound string
+}
+
+func (h *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	path := filepath.Clean(r.URL.Path)
+	if path == "." {
+		path = "/"
+	}
+
+	f, err := h.root.Open(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			h.serve404(w, r)
+			return
+		}
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+
+	stat, _ := f.Stat()
+
+	if stat.IsDir() {
+		indexPath := filepath.Join(path, "index.html")
+		indexFile, err := h.root.Open(indexPath)
+		if err != nil {
+			h.serve404(w, r)
+			return
+		}
+		defer indexFile.Close()
+
+		indexStat, _ := indexFile.Stat()
+		http.ServeContent(w, r, indexStat.Name(), indexStat.ModTime(), indexFile)
+		return
+	}
+
+	http.ServeContent(w, r, stat.Name(), stat.ModTime(), f)
+}
+
+func (h *fileHandler) serve404(w http.ResponseWriter, r *http.Request) {
+	f, err := h.root.Open(h.notFound)
+	if err == nil {
+		defer f.Close()
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusNotFound)
+		io.Copy(w, f)
+		return
+	}
+	http.NotFound(w, r)
 }
 
 func (s *DevServer) watchChanges() {
 	defer s.watcher.Close()
 
-	// Watch important directories and config file
 	watchPaths := []string{
 		"content",
 		"templates",
 		"static",
-		"config.toml",
+		filepath.Dir("config.toml"), // Watch config's directory
 	}
 
 	for _, path := range watchPaths {
-		if isFile(path) {
-			// Add parent directory for files
-			dir := filepath.Dir(path)
-			if err := s.watcher.Add(dir); err != nil {
-				log.Printf("Failed to watch %s: %v", dir, err)
-			}
-		} else {
-			// Add directory recursively
-			filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
-				if err == nil && info.IsDir() {
-					if err := s.watcher.Add(p); err != nil {
-						log.Printf("Failed to watch %s: %v", p, err)
-					}
-				}
+		filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+			if err != nil || !info.IsDir() || s.isIgnoredDir(p) {
 				return nil
-			})
-		}
+			}
+			if err := s.watcher.Add(p); err != nil {
+				log.Printf("Failed to watch %s: %v", p, err)
+			}
+			return nil
+		})
 	}
 
-	// Debounce rebuilds
-	lastRebuild := time.Now()
+	debounceTime := 300 * time.Millisecond
+	var timer *time.Timer
+
 	for {
 		select {
 		case event, ok := <-s.watcher.Events:
@@ -89,17 +136,11 @@ func (s *DevServer) watchChanges() {
 				return
 			}
 
-			// Only trigger on writes and creates
 			if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
-				// Check if it's config.toml or in watched directories
-				base := filepath.Base(event.Name)
-				if base == "config.toml" || contains(watchPaths, filepath.Dir(event.Name)) {
-					// Debounce logic
-					if time.Since(lastRebuild) > 1*time.Second {
-						s.triggerRebuild()
-						lastRebuild = time.Now()
-					}
+				if timer != nil {
+					timer.Stop()
 				}
+				timer = time.AfterFunc(debounceTime, s.triggerRebuild)
 			}
 
 		case err, ok := <-s.watcher.Errors:
@@ -111,29 +152,27 @@ func (s *DevServer) watchChanges() {
 	}
 }
 
+func (s *DevServer) isIgnoredDir(path string) bool {
+	ignored := []string{
+		".git",
+		"node_modules",
+		"vendor",
+		s.cfg.OutputDir,
+	}
+	for _, dir := range ignored {
+		if strings.Contains(path, dir) {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *DevServer) triggerRebuild() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Cancel any pending rebuild
-	if s.debounce != nil {
-		s.debounce.Stop()
+	log.Println("Detected changes, rebuilding site...")
+	if err := generator.BuildSite(s.cfg); err != nil {
+		log.Printf("Rebuild error: %v", err)
 	}
-
-	// Schedule new rebuild with debounce
-	s.debounce = time.AfterFunc(500*time.Millisecond, func() {
-		log.Println("Detected changes, rebuilding site...")
-		if err := generator.BuildSite(s.cfg); err != nil {
-			log.Printf("Rebuild error: %v", err)
-		}
-	})
-}
-
-func isFile(path string) bool {
-	info, err := os.Stat(path)
-	return err == nil && !info.IsDir()
-}
-
-func contains(slice []string, item string) bool {
-	return slices.Contains(slice, item)
 }

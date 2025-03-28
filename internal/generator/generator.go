@@ -24,7 +24,6 @@ type SiteGenerator struct {
 type TemplateData struct {
 	Config *config.MergedConfig
 	Page   *parser.Page
-	Site   *config.GlobalConfig
 }
 
 func NewSiteGenerator(cfg *config.GlobalConfig) (*SiteGenerator, error) {
@@ -80,6 +79,15 @@ func BuildSite(cfg *config.GlobalConfig) error {
 		return fmt.Errorf("content directory traversal failed: %w", err)
 	}
 
+	// Generate static pages
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := sg.generateStaticPages(); err != nil {
+			errChan <- fmt.Errorf("static pages generation failed: %w", err)
+		}
+	}()
+
 	wg.Wait()
 	close(errChan)
 
@@ -127,10 +135,32 @@ func (sg *SiteGenerator) processPage(path string) error {
 		return fmt.Errorf("unsupported file type: %s", filename)
 	}
 
-	return sg.renderPage(outputPath, page, mergedConfig)
+	return sg.renderContentPage(outputPath, page, mergedConfig)
 }
 
-func (sg *SiteGenerator) renderPage(outputPath string, page *parser.Page, cfg *config.MergedConfig) error {
+// New method for static pages
+func (sg *SiteGenerator) generateStaticPages() error {
+	staticPages := []struct {
+		templateName string
+		outputPath   string
+	}{
+		{"404.html", filepath.Join(sg.cfg.OutputDir, "404.html")},
+		{"robots.txt", filepath.Join(sg.cfg.OutputDir, "robots.txt")},
+	}
+
+	for _, page := range staticPages {
+		if sg.tmpl.Lookup(page.templateName) != nil {
+			err := sg.renderStaticPage(page.templateName, page.outputPath)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// Separate method for rendering content pages
+func (sg *SiteGenerator) renderContentPage(outputPath string, page *parser.Page, cfg *config.MergedConfig) error {
 	// Create output directory structure
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return fmt.Errorf("directory creation failed: %w", err)
@@ -147,18 +177,35 @@ func (sg *SiteGenerator) renderPage(outputPath string, page *parser.Page, cfg *c
 	data := TemplateData{
 		Config: cfg,
 		Page:   page,
-		Site:   sg.cfg,
 	}
 
 	if err := tmpl.Execute(&buf, data); err != nil {
 		return fmt.Errorf("template execution failed: %w", err)
 	}
 
-	if err := os.WriteFile(outputPath, buf.Bytes(), 0644); err != nil {
-		return fmt.Errorf("file write failed: %w", err)
+	return os.WriteFile(outputPath, buf.Bytes(), 0644)
+}
+
+func (sg *SiteGenerator) renderStaticPage(templateName, outputPath string) error {
+	var buf bytes.Buffer
+	data := TemplateData{
+		Config: sg.cfg.ToMergedConfig(),
 	}
 
-	return nil
+	tmpl := sg.tmpl.Lookup(templateName)
+	if tmpl == nil {
+		return fmt.Errorf("template %q not found", templateName)
+	}
+
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return fmt.Errorf("template execution failed: %w", err)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return fmt.Errorf("directory creation failed: %w", err)
+	}
+
+	return os.WriteFile(outputPath, buf.Bytes(), 0644)
 }
 
 func URLize(s string) string {

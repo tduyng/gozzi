@@ -102,18 +102,23 @@ func LoadPageConfig(content []byte) (*PageConfig, error) {
 	return parseFrontMatter[PageConfig](content)
 }
 
-func MergeConfigs(global *GlobalConfig, section *SectionConfig, page *PageConfig) *MergedConfig {
-	merged := &MergedConfig{
-		BaseURL:     global.BaseURL,
-		Title:       global.Title,
-		Description: global.Description,
-		OutputDir:   global.OutputDir,
+func (gc *GlobalConfig) ToMergedConfig() *MergedConfig {
+	return &MergedConfig{
+		BaseURL:     gc.BaseURL,
+		Title:       gc.Title,
+		Description: gc.Description,
+		OutputDir:   gc.OutputDir,
 		Markdown: Markdown{
-			HighlightCode:  global.Markdown.HighlightCode,
-			HighlightTheme: global.Markdown.HighlightTheme,
+			HighlightCode:  gc.Markdown.HighlightCode,
+			HighlightTheme: gc.Markdown.HighlightTheme,
 		},
-		Extra: mergeMaps(nil, global.Extra),
+		Lang:  gc.Lang,
+		Extra: mergeMaps(nil, gc.Extra),
 	}
+}
+
+func MergeConfigs(global *GlobalConfig, section *SectionConfig, page *PageConfig) *MergedConfig {
+	merged := global.ToMergedConfig()
 
 	if section != nil {
 		merged = mergeSection(merged, section)

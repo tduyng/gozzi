@@ -24,6 +24,7 @@ type SiteGenerator struct {
 type TemplateData struct {
 	Config *config.MergedConfig
 	Page   *parser.Page
+	Site   *config.GlobalConfig
 }
 
 func NewSiteGenerator(cfg *config.GlobalConfig) (*SiteGenerator, error) {
@@ -106,7 +107,25 @@ func (sg *SiteGenerator) processPage(path string) error {
 	}
 
 	mergedConfig := config.MergeConfigs(sg.cfg, sectionCfg, &page.FrontMatter)
-	outputPath := filepath.Join(mergedConfig.OutputDir, page.Slug, "index.html")
+
+	// Get relative path from content directory
+	relPath, err := filepath.Rel("content", filepath.Dir(path))
+	if err != nil {
+		return fmt.Errorf("failed to get relative path: %w", err)
+	}
+
+	// Determine output path based on file type
+	filename := filepath.Base(path)
+	var outputPath string
+
+	switch {
+	case filename == "_index.md":
+		outputPath = filepath.Join(sg.cfg.OutputDir, relPath, "index.html")
+	case strings.HasSuffix(filename, ".md"):
+		outputPath = filepath.Join(sg.cfg.OutputDir, relPath, page.Slug, "index.html")
+	default:
+		return fmt.Errorf("unsupported file type: %s", filename)
+	}
 
 	return sg.renderPage(outputPath, page, mergedConfig)
 }
@@ -128,6 +147,7 @@ func (sg *SiteGenerator) renderPage(outputPath string, page *parser.Page, cfg *c
 	data := TemplateData{
 		Config: cfg,
 		Page:   page,
+		Site:   sg.cfg,
 	}
 
 	if err := tmpl.Execute(&buf, data); err != nil {

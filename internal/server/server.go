@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -104,6 +105,16 @@ func (h *fileHandler) serve404(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
+func (s *DevServer) triggerRebuild() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Println("Detected changes, rebuilding site...")
+	if err := generator.BuildSite(s.cfg); err != nil {
+		log.Printf("Rebuild error: %v", err)
+	}
+}
+
 func (s *DevServer) watchChanges() {
 	defer s.watcher.Close()
 
@@ -111,22 +122,27 @@ func (s *DevServer) watchChanges() {
 		"content",
 		"templates",
 		"static",
-		filepath.Dir("config.toml"), // Watch config's directory
+		filepath.Dir("config.toml"),
 	}
 
 	for _, path := range watchPaths {
-		filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
-			if err != nil || !info.IsDir() || s.isIgnoredDir(p) {
+		absPath, _ := filepath.Abs(path)
+		if s.isIgnoredPath(absPath) {
+			continue
+		}
+
+		filepath.Walk(absPath, func(p string, info os.FileInfo, err error) error {
+			if err != nil || !info.IsDir() || s.isIgnoredPath(p) {
 				return nil
 			}
 			if err := s.watcher.Add(p); err != nil {
-				log.Printf("Failed to watch %s: %v", p, err)
+				log.Printf("Watching %s: %v", p, err)
 			}
 			return nil
 		})
 	}
 
-	debounceTime := 300 * time.Millisecond
+	debounceTime := 500 * time.Millisecond
 	var timer *time.Timer
 
 	for {
@@ -134,6 +150,11 @@ func (s *DevServer) watchChanges() {
 		case event, ok := <-s.watcher.Events:
 			if !ok {
 				return
+			}
+
+			// Skip ignored paths and non-content files
+			if s.shouldIgnoreEvent(event) {
+				continue
 			}
 
 			if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
@@ -152,27 +173,37 @@ func (s *DevServer) watchChanges() {
 	}
 }
 
-func (s *DevServer) isIgnoredDir(path string) bool {
-	ignored := []string{
-		".git",
-		"node_modules",
-		"vendor",
-		s.cfg.OutputDir,
+func (s *DevServer) shouldIgnoreEvent(event fsnotify.Event) bool {
+	// Ignore output directory changes
+	if s.isIgnoredPath(event.Name) {
+		return true
 	}
-	for _, dir := range ignored {
-		if strings.Contains(path, dir) {
+
+	// Ignore non-content files
+	ext := filepath.Ext(event.Name)
+	return !s.isRelevantExtension(ext)
+}
+
+func (s *DevServer) isRelevantExtension(ext string) bool {
+	relevant := []string{".md", ".html", ".toml", ".css", ".js", ""} // "" for directories
+	return slices.Contains(relevant, ext)
+}
+
+func (s *DevServer) isIgnoredPath(path string) bool {
+	absOutput, _ := filepath.Abs(s.cfg.OutputDir)
+	absPath, _ := filepath.Abs(path)
+
+	// Check if path is in output directory
+	if strings.HasPrefix(absPath, absOutput) {
+		return true
+	}
+
+	// Check other ignored patterns
+	ignored := []string{".git", "node_modules", "vendor"}
+	for _, pattern := range ignored {
+		if strings.Contains(absPath, pattern) {
 			return true
 		}
 	}
 	return false
-}
-
-func (s *DevServer) triggerRebuild() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	log.Println("Detected changes, rebuilding site...")
-	if err := generator.BuildSite(s.cfg); err != nil {
-		log.Printf("Rebuild error: %v", err)
-	}
 }

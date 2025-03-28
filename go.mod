@@ -5,7 +5,6 @@ go 1.24.1
 tool (
 	github.com/BurntSushi/toml
 	github.com/fsnotify/fsnotify
-	github.com/gorilla/websocket
 	github.com/yuin/goldmark
 	github.com/yuin/goldmark-highlighting/v2
 )
@@ -13,7 +12,6 @@ tool (
 require (
 	github.com/BurntSushi/toml v1.5.0
 	github.com/fsnotify/fsnotify v1.8.0
-	github.com/gorilla/websocket v1.5.3
 	github.com/yuin/goldmark v1.7.8
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
 )

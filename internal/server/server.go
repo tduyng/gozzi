@@ -1,103 +1,108 @@
 package server
 
 import (
-	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
+	"slices"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/gorilla/websocket"
 	"github.com/tduyng/gozzi/internal/config"
 	"github.com/tduyng/gozzi/internal/generator"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins in development
-	},
+type DevServer struct {
+	cfg      *config.GlobalConfig
+	watcher  *fsnotify.Watcher
+	debounce *time.Timer
+	mu       sync.Mutex
 }
 
-type LiveReloadServer struct {
-	clients    map[*websocket.Conn]struct{}
-	mu         sync.Mutex
-	watcher    *fsnotify.Watcher
-	cfg        *config.GlobalConfig
-	debouncer  *time.Timer
-	server     *http.Server
-	wsUpgrader websocket.Upgrader
-}
-
-func NewLiveReloadServer(cfg *config.GlobalConfig) (*LiveReloadServer, error) {
+func NewDevServer(cfg *config.GlobalConfig) (*DevServer, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create watcher: %w", err)
+		return nil, err
 	}
 
-	lrs := &LiveReloadServer{
-		clients:    make(map[*websocket.Conn]struct{}),
-		watcher:    watcher,
-		cfg:        cfg,
-		wsUpgrader: upgrader,
+	return &DevServer{
+		cfg:     cfg,
+		watcher: watcher,
+	}, nil
+}
+
+func (s *DevServer) Start(port int) {
+	// Initial build
+	if err := generator.BuildSite(s.cfg); err != nil {
+		log.Fatalf("Initial build failed: %v", err)
 	}
 
-	// Watch relevant directories
-	watchDirs := []string{"content", "templates", "static", "config.toml"}
-	for _, dir := range watchDirs {
-		if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-			if err != nil || !info.IsDir() || lrs.isIgnoredDir(path) {
-				return nil
+	// Setup file watcher
+	go s.watchChanges()
+
+	// Start HTTP server
+	fs := http.FileServer(http.Dir(s.cfg.OutputDir))
+	log.Printf("Server listening on http://localhost:%d", port)
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), fs))
+}
+
+func (s *DevServer) watchChanges() {
+	defer s.watcher.Close()
+
+	// Watch important directories and config file
+	watchPaths := []string{
+		"content",
+		"templates",
+		"static",
+		"config.toml",
+	}
+
+	for _, path := range watchPaths {
+		if isFile(path) {
+			// Add parent directory for files
+			dir := filepath.Dir(path)
+			if err := s.watcher.Add(dir); err != nil {
+				log.Printf("Failed to watch %s: %v", dir, err)
 			}
-			return watcher.Add(path)
-		}); err != nil {
-			return nil, fmt.Errorf("failed to add watch path: %w", err)
+		} else {
+			// Add directory recursively
+			filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+				if err == nil && info.IsDir() {
+					if err := s.watcher.Add(p); err != nil {
+						log.Printf("Failed to watch %s: %v", p, err)
+					}
+				}
+				return nil
+			})
 		}
 	}
 
-	return lrs, nil
-}
-
-func (lrs *LiveReloadServer) Start(port int) error {
-	mux := http.NewServeMux()
-	fileServer := NewFileServer(lrs.cfg.OutputDir)
-	mux.Handle("/", fileServer)
-	mux.HandleFunc("/livereload", lrs.handleWebSocket)
-
-	lrs.server = &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
-		Handler: mux,
-	}
-
-	go func() {
-		log.Printf("Starting server on http://localhost:%d", port)
-		if err := lrs.server.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
-		}
-	}()
-
-	go lrs.watchChanges()
-
-	return nil
-}
-
-func (lrs *LiveReloadServer) watchChanges() {
-	defer lrs.watcher.Close()
-
+	// Debounce rebuilds
+	lastRebuild := time.Now()
 	for {
 		select {
-		case event, ok := <-lrs.watcher.Events:
+		case event, ok := <-s.watcher.Events:
 			if !ok {
 				return
 			}
+
+			// Only trigger on writes and creates
 			if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
-				lrs.handleChange(event)
+				// Check if it's config.toml or in watched directories
+				base := filepath.Base(event.Name)
+				if base == "config.toml" || contains(watchPaths, filepath.Dir(event.Name)) {
+					// Debounce logic
+					if time.Since(lastRebuild) > 1*time.Second {
+						s.triggerRebuild()
+						lastRebuild = time.Now()
+					}
+				}
 			}
-		case err, ok := <-lrs.watcher.Errors:
+
+		case err, ok := <-s.watcher.Errors:
 			if !ok {
 				return
 			}
@@ -106,84 +111,29 @@ func (lrs *LiveReloadServer) watchChanges() {
 	}
 }
 
-func (lrs *LiveReloadServer) handleChange(_ fsnotify.Event) {
-	lrs.mu.Lock()
-	defer lrs.mu.Unlock()
+func (s *DevServer) triggerRebuild() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	if lrs.debouncer != nil {
-		lrs.debouncer.Stop()
+	// Cancel any pending rebuild
+	if s.debounce != nil {
+		s.debounce.Stop()
 	}
 
-	lrs.debouncer = time.AfterFunc(500*time.Millisecond, func() {
-		log.Println("Change detected, rebuilding site...")
-		if err := generator.BuildSite(lrs.cfg); err != nil {
+	// Schedule new rebuild with debounce
+	s.debounce = time.AfterFunc(500*time.Millisecond, func() {
+		log.Println("Detected changes, rebuilding site...")
+		if err := generator.BuildSite(s.cfg); err != nil {
 			log.Printf("Rebuild error: %v", err)
 		}
-		lrs.notifyClients()
 	})
 }
 
-func (lrs *LiveReloadServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
-	conn, err := lrs.wsUpgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("WebSocket upgrade failed: %v", err)
-		return
-	}
-	defer conn.Close()
-
-	lrs.mu.Lock()
-	lrs.clients[conn] = struct{}{}
-	lrs.mu.Unlock()
-
-	// Keep connection alive
-	for {
-		if _, _, err := conn.NextReader(); err != nil {
-			lrs.mu.Lock()
-			delete(lrs.clients, conn)
-			lrs.mu.Unlock()
-			break
-		}
-	}
+func isFile(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir()
 }
 
-func (lrs *LiveReloadServer) notifyClients() {
-	lrs.mu.Lock()
-	defer lrs.mu.Unlock()
-
-	for client := range lrs.clients {
-		if err := client.WriteMessage(websocket.TextMessage, []byte("reload")); err != nil {
-			log.Printf("Error sending reload message: %v", err)
-			client.Close()
-			delete(lrs.clients, client)
-		}
-	}
-}
-
-func (lrs *LiveReloadServer) Shutdown(ctx context.Context) error {
-	lrs.mu.Lock()
-	defer lrs.mu.Unlock()
-
-	for client := range lrs.clients {
-		client.Close()
-		delete(lrs.clients, client)
-	}
-
-	if lrs.debouncer != nil {
-		lrs.debouncer.Stop()
-	}
-
-	if lrs.server != nil {
-		return lrs.server.Shutdown(ctx)
-	}
-	return nil
-}
-
-func (lrs *LiveReloadServer) isIgnoredDir(path string) bool {
-	ignored := []string{".git", "node_modules", "vendor", lrs.cfg.OutputDir}
-	for _, dir := range ignored {
-		if strings.Contains(path, dir) {
-			return true
-		}
-	}
-	return false
+func contains(slice []string, item string) bool {
+	return slices.Contains(slice, item)
 }

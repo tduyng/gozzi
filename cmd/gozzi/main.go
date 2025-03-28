@@ -1,14 +1,11 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	"strconv"
 
 	"github.com/tduyng/gozzi/internal/config"
 	"github.com/tduyng/gozzi/internal/generator"
@@ -16,10 +13,6 @@ import (
 )
 
 func main() {
-	buildCmd := flag.NewFlagSet("build", flag.ExitOnError)
-	serveCmd := flag.NewFlagSet("serve", flag.ExitOnError)
-	servePort := serveCmd.Int("port", 1313, "Port to serve on")
-
 	if len(os.Args) < 2 {
 		printUsage()
 		os.Exit(1)
@@ -32,60 +25,28 @@ func main() {
 
 	switch os.Args[1] {
 	case "build":
-		if err := buildCmd.Parse(os.Args[2:]); err != nil {
-			log.Fatalf("Build command parse error: %v", err)
-		}
-
 		if err := generator.BuildSite(cfg); err != nil {
 			log.Fatal(err)
 		}
-
 	case "serve":
-		if err := serveCmd.Parse(os.Args[2:]); err != nil {
-			log.Fatalf("Serve command parse error: %v", err)
-		}
-		startDevServer(cfg, *servePort)
-
+		startDevServer(cfg)
 	default:
 		printUsage()
 		os.Exit(1)
 	}
 }
 
-func startDevServer(cfg *config.GlobalConfig, port int) {
-	if err := generator.BuildSite(cfg); err != nil {
-		log.Fatal(err)
+func startDevServer(cfg *config.GlobalConfig) {
+	port := 1313
+	if p := flag.Arg(1); p != "" {
+		port, _ = strconv.Atoi(p)
 	}
 
-	lrs, err := server.NewLiveReloadServer(cfg)
+	srv, err := server.NewDevServer(cfg)
 	if err != nil {
-		log.Fatalf("Failed to create live reload server: %v", err)
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		<-sigChan
-		log.Println("Shutting down server...")
-
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer shutdownCancel()
-		if err := lrs.Shutdown(shutdownCtx); err != nil {
-			log.Printf("Server shutdown error: %v", err)
-		}
-
-		cancel()
-	}()
-
-	if err := lrs.Start(port); err != nil {
 		log.Fatal(err)
 	}
-
-	<-ctx.Done()
+	srv.Start(port)
 }
 
 func printUsage() {

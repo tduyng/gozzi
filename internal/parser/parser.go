@@ -18,11 +18,18 @@ import (
 )
 
 type Page struct {
-	FrontMatter config.PageConfig
-	Content     template.HTML
-	Slug        string
-	FilePath    string
-	ModTime     time.Time
+	FrontMatter  config.PageConfig
+	Content      template.HTML
+	Slug         string
+	FilePath     string
+	ModTime      time.Time
+	ImagePreview ImagePreview
+}
+
+type ImagePreview struct {
+	URL    string
+	Width  int
+	Height int
 }
 
 var md = goldmark.New(
@@ -55,8 +62,9 @@ func ParseMarkdown(path string) (*Page, error) {
 		return nil, fmt.Errorf("failed to get file info: %w", err)
 	}
 
-	pageConfig, err := config.LoadPageConfig(content)
-	if err != nil {
+	pageConfig, errPage := config.LoadPageConfig(content)
+	siteConfig, _ := config.LoadConfig("config.toml")
+	if errPage != nil {
 		return nil, fmt.Errorf("front matter error: %w", err)
 	}
 
@@ -71,13 +79,15 @@ func ParseMarkdown(path string) (*Page, error) {
 		return nil, fmt.Errorf("failed to convert markdown: %w", err)
 	}
 	slug := generateSlug(path)
+	imgMeta := processImageMeta(siteConfig, pageConfig, path)
 
 	return &Page{
-		FrontMatter: *pageConfig,
-		Content:     template.HTML(buf.String()),
-		Slug:        slug,
-		FilePath:    path,
-		ModTime:     info.ModTime(),
+		FrontMatter:  *pageConfig,
+		Content:      template.HTML(buf.String()),
+		Slug:         slug,
+		FilePath:     path,
+		ModTime:      info.ModTime(),
+		ImagePreview: imgMeta,
 	}, nil
 }
 
@@ -108,4 +118,31 @@ func extractBaseName(path string) string {
 		}
 	}
 	return base
+}
+
+func processImageMeta(siteConfig *config.SiteConfig, pageConfig *config.PageConfig, mdPath string) ImagePreview {
+	var img string
+	if val, ok := pageConfig.Extra["img"]; ok {
+		if s, ok := val.(string); ok {
+			img = s
+		}
+	}
+
+	if img == "" {
+		return ImagePreview{URL: "http://localhost:1313/img/post-cover.webp", Width: 3456, Height: 3456}
+	}
+
+	return ImagePreview{
+		URL:    resolveImageURL(siteConfig.BaseURL, img, mdPath),
+		Width:  3456,
+		Height: 3456,
+	}
+}
+
+func resolveImageURL(baseURL, img, mdPath string) string {
+	if strings.HasPrefix(img, "/") {
+		return baseURL + img
+	}
+	mdDir := filepath.Dir(mdPath)
+	return baseURL + "/" + filepath.Join(mdDir, img)
 }

@@ -18,7 +18,6 @@ type SiteConfig struct {
 	Taxonomies []TaxonomyConfig `toml:"taxonomies"`
 	Markdown   MarkdownConfig   `toml:"markdown"`
 	Lang       string           `toml:"language"`
-	Image      string           `toml:"image"`
 	Extra      map[string]any   `toml:"extra"`
 }
 
@@ -42,7 +41,6 @@ type PageConfig struct {
 	Draft       bool                `toml:"draft"`
 	Taxonomies  map[string][]string `toml:"taxonomies"`
 	Template    string              `toml:"template"`
-	Image       string              `toml:"image"`
 	Extra       map[string]any      `toml:"extra"`
 }
 
@@ -66,7 +64,6 @@ type MergedConfig struct {
 	Taxonomies  map[string][]string
 	Markdown    Markdown
 	Lang        string
-	Image       string
 	Extra       map[string]any
 }
 
@@ -108,7 +105,6 @@ func (gc *SiteConfig) ToMergedConfig() *MergedConfig {
 		Description: gc.Description,
 		OutputDir:   gc.OutputDir,
 		Lang:        gc.Lang,
-		Image:       gc.Image,
 		Markdown: Markdown{
 			HighlightCode:  gc.Markdown.HighlightCode,
 			HighlightTheme: gc.Markdown.HighlightTheme,
@@ -160,7 +156,6 @@ func mergePage(merged *MergedConfig, page *PageConfig) *MergedConfig {
 
 	merged.Draft = page.Draft
 	merged.Taxonomies = page.Taxonomies
-	merged.Image = page.Image
 	merged.Extra = mergeMaps(merged.Extra, page.Extra)
 	return merged
 }

@@ -69,7 +69,7 @@ func BuildSite(cfg *config.SiteConfig) error {
 		wg.Add(1)
 		go func(p string) {
 			defer wg.Done()
-			if err := sg.processPage(p); err != nil {
+			if err := sg.processMarkdownPages(p); err != nil {
 				errChan <- fmt.Errorf("processing %q: %w", p, err)
 			}
 		}(path)
@@ -84,7 +84,7 @@ func BuildSite(cfg *config.SiteConfig) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := sg.generateStaticPages(); err != nil {
+		if err := sg.processStaticPages(); err != nil {
 			errChan <- fmt.Errorf("static pages generation failed: %w", err)
 		}
 	}()
@@ -103,7 +103,7 @@ func BuildSite(cfg *config.SiteConfig) error {
 	return nil
 }
 
-func (sg *SiteGenerator) processPage(path string) error {
+func (sg *SiteGenerator) processMarkdownPages(path string) error {
 	page, err := parser.ParseMarkdown(path)
 	if err != nil {
 		return fmt.Errorf("markdown parsing failed: %w", err)
@@ -140,7 +140,7 @@ func (sg *SiteGenerator) processPage(path string) error {
 }
 
 // New method for static pages
-func (sg *SiteGenerator) generateStaticPages() error {
+func (sg *SiteGenerator) processStaticPages() error {
 	staticPages := []struct {
 		templateName string
 		outputPath   string

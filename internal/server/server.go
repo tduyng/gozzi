@@ -1,6 +1,8 @@
 package server
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -18,10 +20,12 @@ import (
 )
 
 type DevServer struct {
-	cfg      *config.GlobalConfig
-	watcher  *fsnotify.Watcher
-	debounce *time.Timer
-	mu       sync.Mutex
+	cfg          *config.GlobalConfig
+	watcher      *fsnotify.Watcher
+	clients      map[chan []byte]struct{}
+	clientMutex  sync.Mutex
+	debounce     *time.Timer
+	rebuildMutex sync.Mutex
 }
 
 func NewDevServer(cfg *config.GlobalConfig) (*DevServer, error) {
@@ -33,6 +37,7 @@ func NewDevServer(cfg *config.GlobalConfig) (*DevServer, error) {
 	return &DevServer{
 		cfg:     cfg,
 		watcher: watcher,
+		clients: make(map[chan []byte]struct{}),
 	}, nil
 }
 
@@ -42,19 +47,22 @@ func (s *DevServer) Start(port int) {
 	}
 
 	go s.watchChanges()
-
-	handler := &fileHandler{
+	mux := http.NewServeMux()
+	mux.Handle("/", &fileHandler{
 		root:     http.Dir(s.cfg.OutputDir),
 		notFound: "404.html",
-	}
+		dev:      true,
+	})
+	mux.HandleFunc("/livereload", s.handleLiveReload)
 
 	log.Printf("Server listening on http://localhost:%d", port)
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), handler))
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), mux))
 }
 
 type fileHandler struct {
 	root     http.Dir
 	notFound string
+	dev      bool
 }
 
 func (h *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -84,34 +92,91 @@ func (h *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer indexFile.Close()
+		h.serveHTML(indexFile, w, r)
+		return
 
-		indexStat, _ := indexFile.Stat()
-		http.ServeContent(w, r, indexStat.Name(), indexStat.ModTime(), indexFile)
+	}
+
+	if h.dev && strings.HasSuffix(path, ".html") {
+		h.serveHTML(f, w, r)
 		return
 	}
 
 	http.ServeContent(w, r, stat.Name(), stat.ModTime(), f)
 }
 
+func (h *fileHandler) serveHTML(f http.File, w http.ResponseWriter, _ *http.Request) {
+	// Read the file content
+	content, err := io.ReadAll(f)
+	if err != nil {
+		http.Error(w, "Error reading file", http.StatusInternalServerError)
+		return
+	}
+
+	// Inject livereload script
+	script := []byte(`<script>
+	(new EventSource('/livereload')).onmessage = () => location.reload()
+	</script></body>`)
+	content = bytes.Replace(content, []byte("</body>"), script, 1)
+
+	// Set headers and serve
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write(content)
+}
+
 func (h *fileHandler) serve404(w http.ResponseWriter, r *http.Request) {
 	f, err := h.root.Open(h.notFound)
 	if err == nil {
 		defer f.Close()
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusNotFound)
-		io.Copy(w, f)
+		h.serveHTML(f, w, r)
 		return
 	}
 	http.NotFound(w, r)
 }
 
-func (s *DevServer) triggerRebuild() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *DevServer) handleLiveReload(w http.ResponseWriter, r *http.Request) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+		return
+	}
 
-	log.Println("Detected changes, rebuilding site...")
-	if err := generator.BuildSite(s.cfg); err != nil {
-		log.Printf("Rebuild error: %v", err)
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	messageChan := make(chan []byte)
+	s.clientMutex.Lock()
+	s.clients[messageChan] = struct{}{}
+	s.clientMutex.Unlock()
+
+	defer func() {
+		s.clientMutex.Lock()
+		delete(s.clients, messageChan)
+		s.clientMutex.Unlock()
+		close(messageChan)
+	}()
+
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case msg := <-messageChan:
+			fmt.Fprintf(w, "data: %s\n\n", msg)
+			flusher.Flush()
+		}
+	}
+}
+
+func (s *DevServer) notifyClients() {
+	s.rebuildMutex.Lock()
+	defer s.rebuildMutex.Unlock()
+
+	for client := range s.clients {
+		select {
+		case client <- []byte("reload"):
+		default:
+		}
 	}
 }
 
@@ -161,7 +226,10 @@ func (s *DevServer) watchChanges() {
 				if timer != nil {
 					timer.Stop()
 				}
-				timer = time.AfterFunc(debounceTime, s.triggerRebuild)
+				timer = time.AfterFunc(debounceTime, func() {
+					s.triggerRebuild()
+					s.notifyClients()
+				})
 			}
 
 		case err, ok := <-s.watcher.Errors:
@@ -170,6 +238,16 @@ func (s *DevServer) watchChanges() {
 			}
 			log.Printf("Watcher error: %v", err)
 		}
+	}
+}
+
+func (s *DevServer) triggerRebuild() {
+	s.clientMutex.Lock()
+	defer s.clientMutex.Unlock()
+
+	log.Println("Detected changes, rebuilding site...")
+	if err := generator.BuildSite(s.cfg); err != nil {
+		log.Printf("Rebuild error: %v", err)
 	}
 }
 

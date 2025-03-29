@@ -9,7 +9,7 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-type GlobalConfig struct {
+type SiteConfig struct {
 	BaseURL     string `toml:"base_url"`
 	Title       string `toml:"title"`
 	Description string `toml:"Description"`
@@ -18,8 +18,8 @@ type GlobalConfig struct {
 	Taxonomies []TaxonomyConfig `toml:"taxonomies"`
 	Markdown   MarkdownConfig   `toml:"markdown"`
 	Lang       string           `toml:"language"`
-
-	Extra map[string]any `toml:"extra"`
+	Image      string           `toml:"image"`
+	Extra      map[string]any   `toml:"extra"`
 }
 
 type MarkdownConfig struct {
@@ -28,7 +28,6 @@ type MarkdownConfig struct {
 }
 
 type SectionConfig struct {
-	Title      string         `toml:"title"`
 	Template   string         `toml:"template"`
 	PaginateBy int            `toml:"paginate_by"`
 	SortBy     string         `toml:"sort_by"`
@@ -76,8 +75,8 @@ type Markdown struct {
 	HighlightTheme string
 }
 
-func LoadConfig(path string) (*GlobalConfig, error) {
-	var cfg GlobalConfig
+func LoadConfig(path string) (*SiteConfig, error) {
+	var cfg SiteConfig
 	if _, err := toml.DecodeFile(path, &cfg); err != nil {
 		return nil, err
 	}
@@ -102,22 +101,23 @@ func LoadPageConfig(content []byte) (*PageConfig, error) {
 	return parseFrontMatter[PageConfig](content)
 }
 
-func (gc *GlobalConfig) ToMergedConfig() *MergedConfig {
+func (gc *SiteConfig) ToMergedConfig() *MergedConfig {
 	return &MergedConfig{
 		BaseURL:     gc.BaseURL,
 		Title:       gc.Title,
 		Description: gc.Description,
 		OutputDir:   gc.OutputDir,
+		Lang:        gc.Lang,
+		Image:       gc.Image,
 		Markdown: Markdown{
 			HighlightCode:  gc.Markdown.HighlightCode,
 			HighlightTheme: gc.Markdown.HighlightTheme,
 		},
-		Lang:  gc.Lang,
 		Extra: mergeMaps(nil, gc.Extra),
 	}
 }
 
-func MergeConfigs(global *GlobalConfig, section *SectionConfig, page *PageConfig) *MergedConfig {
+func MergeConfigs(global *SiteConfig, section *SectionConfig, page *PageConfig) *MergedConfig {
 	merged := global.ToMergedConfig()
 
 	if section != nil {
@@ -136,10 +136,6 @@ func MergeConfigs(global *GlobalConfig, section *SectionConfig, page *PageConfig
 }
 
 func mergeSection(merged *MergedConfig, section *SectionConfig) *MergedConfig {
-	if section.Title != "" {
-		merged.Title = section.Title
-	}
-
 	if section.Template != "" {
 		merged.Template = section.Template
 	}
@@ -158,26 +154,14 @@ func mergeSection(merged *MergedConfig, section *SectionConfig) *MergedConfig {
 }
 
 func mergePage(merged *MergedConfig, page *PageConfig) *MergedConfig {
-	if page.Title != "" {
-		merged.Title = page.Title
-	}
-
-	if page.Date != "" {
-		merged.Date = page.Date
-	}
-
 	if page.Template != "" {
 		merged.Template = page.Template
 	}
 
-	if page.Description != "" {
-		merged.Description = page.Description
-	}
-
 	merged.Draft = page.Draft
 	merged.Taxonomies = page.Taxonomies
+	merged.Image = page.Image
 	merged.Extra = mergeMaps(merged.Extra, page.Extra)
-
 	return merged
 }
 

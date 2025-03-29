@@ -23,7 +23,6 @@ type Page struct {
 	Slug        string
 	FilePath    string
 	ModTime     time.Time
-	Is404  bool
 }
 
 var md = goldmark.New(

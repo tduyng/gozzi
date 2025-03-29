@@ -20,7 +20,7 @@ import (
 )
 
 type DevServer struct {
-	cfg          *config.GlobalConfig
+	cfg          *config.SiteConfig
 	watcher      *fsnotify.Watcher
 	clients      map[chan []byte]struct{}
 	clientMutex  sync.Mutex
@@ -28,7 +28,7 @@ type DevServer struct {
 	rebuildMutex sync.Mutex
 }
 
-func NewDevServer(cfg *config.GlobalConfig) (*DevServer, error) {
+func NewDevServer(cfg *config.SiteConfig) (*DevServer, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err

@@ -36,7 +36,7 @@ func main() {
 	}
 }
 
-func startDevServer(cfg *config.GlobalConfig) {
+func startDevServer(cfg *config.SiteConfig) {
 	port := 1313
 	if p := flag.Arg(1); p != "" {
 		port, _ = strconv.Atoi(p)

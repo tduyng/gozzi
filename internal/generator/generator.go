@@ -17,16 +17,17 @@ import (
 )
 
 type SiteGenerator struct {
-	cfg  *config.GlobalConfig
+	cfg  *config.SiteConfig
 	tmpl *template.Template
 }
 
 type TemplateData struct {
 	Config *config.MergedConfig
 	Page   *parser.Page
+	Is404  bool
 }
 
-func NewSiteGenerator(cfg *config.GlobalConfig) (*SiteGenerator, error) {
+func NewSiteGenerator(cfg *config.SiteConfig) (*SiteGenerator, error) {
 	sg := &SiteGenerator{
 		cfg: cfg,
 	}
@@ -43,7 +44,7 @@ func NewSiteGenerator(cfg *config.GlobalConfig) (*SiteGenerator, error) {
 	return sg, nil
 }
 
-func BuildSite(cfg *config.GlobalConfig) error {
+func BuildSite(cfg *config.SiteConfig) error {
 	sg, err := NewSiteGenerator(cfg)
 	if err != nil {
 		return fmt.Errorf("site generator initialization failed: %w", err)

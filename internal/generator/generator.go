@@ -17,13 +17,16 @@ import (
 )
 
 type SiteGenerator struct {
-	cfg  *config.SiteConfig
-	tmpl *template.Template
+	cfg   *config.SiteConfig
+	tmpl  *template.Template
+	pages []*parser.Page
+	mutex sync.Mutex
 }
 
 type TemplateData struct {
 	Config *config.MergedConfig
 	Page   *parser.Page
+	Pages  []*parser.Page
 	Is404  bool
 }
 
@@ -32,7 +35,7 @@ func NewSiteGenerator(cfg *config.SiteConfig) (*SiteGenerator, error) {
 		cfg: cfg,
 	}
 
-	tmpl, err := template.New("base").Funcs(template.FuncMap{
+	tmpl, err := template.New("").Funcs(template.FuncMap{
 		"urlize":   URLize,
 		"safeHTML": SafeHTML,
 	}).ParseGlob("templates/*.html")
@@ -92,6 +95,11 @@ func BuildSite(cfg *config.SiteConfig) error {
 	wg.Wait()
 	close(errChan)
 
+	// Generate list pages after all content is processed
+	if err := sg.generateListPages(); err != nil {
+		log.Printf("List page generation failed: %v", err)
+	}
+
 	for err := range errChan {
 		log.Printf("Processing error: %v", err)
 	}
@@ -108,6 +116,10 @@ func (sg *SiteGenerator) processMarkdownPages(path string) error {
 	if err != nil {
 		return fmt.Errorf("markdown parsing failed: %w", err)
 	}
+
+	sg.mutex.Lock()
+	sg.pages = append(sg.pages, page)
+	sg.mutex.Unlock()
 
 	sectionPath := filepath.Dir(path)
 	sectionCfg, err := config.LoadSectionConfig(sectionPath)
@@ -128,7 +140,7 @@ func (sg *SiteGenerator) processMarkdownPages(path string) error {
 	var outputPath string
 
 	switch {
-	case filename == "_index.md":
+	case filename == "_index.md" || filename == "index.md":
 		outputPath = filepath.Join(sg.cfg.OutputDir, relPath, "index.html")
 	case strings.HasSuffix(filename, ".md"):
 		outputPath = filepath.Join(sg.cfg.OutputDir, relPath, page.Slug, "index.html")
@@ -137,6 +149,31 @@ func (sg *SiteGenerator) processMarkdownPages(path string) error {
 	}
 
 	return sg.renderContentPage(outputPath, page, mergedConfig)
+}
+
+func (sg *SiteGenerator) generateListPages() error {
+	// Generate blog index
+	blogPath := filepath.Join(sg.cfg.OutputDir, "blog.html", "index.html")
+	if err := sg.renderListPage("blog.html", blogPath, sg.pages); err != nil {
+		return fmt.Errorf("failed to generate blog index: %w", err)
+	}
+
+	// Generate tag pages
+	tags := make(map[string][]*parser.Page)
+	for _, page := range sg.pages {
+		for _, tag := range page.FrontMatter.Tags {
+			tags[tag] = append(tags[tag], page)
+		}
+	}
+
+	for tag, pages := range tags {
+		tagPath := filepath.Join(sg.cfg.OutputDir, "tag", tag, "index.html")
+		if err := sg.renderListPage("tag", tagPath, pages); err != nil {
+			return fmt.Errorf("failed to generate tag page %q: %w", tag, err)
+		}
+	}
+
+	return nil
 }
 
 // New method for static pages
@@ -187,10 +224,41 @@ func (sg *SiteGenerator) renderContentPage(outputPath string, page *parser.Page,
 	return os.WriteFile(outputPath, buf.Bytes(), 0644)
 }
 
+func (sg *SiteGenerator) renderListPage(templateName, outputPath string, pages []*parser.Page) error {
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return fmt.Errorf("directory creation failed: %w", err)
+	}
+
+	tmpl := sg.tmpl.Lookup(templateName)
+	if tmpl == nil {
+		return fmt.Errorf("template %q not found", templateName)
+	}
+
+	page, _ := parser.ParseEmptyPage()
+	var buf bytes.Buffer
+	data := TemplateData{
+		Config: sg.cfg.ToMergedConfig(),
+		Page:   page,
+		Pages:  pages,
+	}
+
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return fmt.Errorf("template execution failed: %w", err)
+	}
+
+	return os.WriteFile(outputPath, buf.Bytes(), 0644)
+}
+
 func (sg *SiteGenerator) renderStaticPage(templateName, outputPath string) error {
 	var buf bytes.Buffer
 	data := TemplateData{
 		Config: sg.cfg.ToMergedConfig(),
+		Page: &parser.Page{
+			FrontMatter: config.PageConfig{
+				Title:       "Page Not Found",
+				Description: "The requested page could not be found",
+			},
+		},
 	}
 
 	tmpl := sg.tmpl.Lookup(templateName)

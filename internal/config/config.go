@@ -5,6 +5,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/BurntSushi/toml"
 )
@@ -37,10 +38,12 @@ type SectionConfig struct {
 type PageConfig struct {
 	Title       string              `toml:"title"`
 	Description string              `toml:"description"`
-	Date        string              `toml:"date"`
+	Date        time.Time           `toml:"date"`
 	Draft       bool                `toml:"draft"`
 	Taxonomies  map[string][]string `toml:"taxonomies"`
 	Template    string              `toml:"template"`
+	Tags        []string            `toml:"tags"`
+	Lang        string              `toml:"language"`
 	Extra       map[string]any      `toml:"extra"`
 }
 
@@ -59,7 +62,7 @@ type MergedConfig struct {
 	PaginateBy  int
 	SortBy      string
 	Render      bool
-	Date        string
+	Date        time.Time
 	Draft       bool
 	Taxonomies  map[string][]string
 	Markdown    Markdown
@@ -110,6 +113,15 @@ func (gc *SiteConfig) ToMergedConfig() *MergedConfig {
 			HighlightTheme: gc.Markdown.HighlightTheme,
 		},
 		Extra: mergeMaps(nil, gc.Extra),
+	}
+}
+
+func (gc *SiteConfig) ToPageConfig() *PageConfig {
+	return &PageConfig{
+		Title:       gc.Title,
+		Description: gc.Description,
+		Lang:        gc.Lang,
+		Extra:       mergeMaps(nil, gc.Extra),
 	}
 }
 

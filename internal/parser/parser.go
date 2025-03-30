@@ -65,7 +65,7 @@ func ParseMarkdown(path string) (*Page, error) {
 	pageConfig, errPage := config.LoadPageConfig(content)
 	siteConfig, _ := config.LoadConfig("config.toml")
 	if errPage != nil {
-		return nil, fmt.Errorf("front matter error: %w", err)
+		return nil, fmt.Errorf("front matter error: %w", errPage)
 	}
 
 	// split content into front matter and markdown
@@ -88,6 +88,17 @@ func ParseMarkdown(path string) (*Page, error) {
 		FilePath:     path,
 		ModTime:      info.ModTime(),
 		ImagePreview: imgMeta,
+	}, nil
+}
+
+func ParseEmptyPage() (*Page, error) {
+	siteConfig, _ := config.LoadConfig("config.toml")
+
+	return &Page{
+		FrontMatter: *siteConfig.ToPageConfig(),
+		Content:     "",
+		Slug:        "",
+		FilePath:    "",
 	}, nil
 }
 

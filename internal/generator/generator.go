@@ -37,7 +37,8 @@ func NewSiteGenerator(cfg *config.SiteConfig) (*SiteGenerator, error) {
 
 	tmpl, err := template.New("").Funcs(template.FuncMap{
 		"urlize":   URLize,
-		"safeHTML": SafeHTML,
+		"safe":     SafeHTML,
+		"loadData": LoadData,
 	}).ParseGlob("templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("template parsing failed: %w", err)
@@ -346,4 +347,13 @@ func shouldSkip(path string) bool {
 	ext := filepath.Ext(path)
 	dir := filepath.Dir(path)
 	return strings.Contains(dir, "scss") && ext == ".scss"
+}
+
+func LoadData(path string) template.HTML {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("Error reading file %s: %v", path, err)
+		return ""
+	}
+	return template.HTML(string(content))
 }

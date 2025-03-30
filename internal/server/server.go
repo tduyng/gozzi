@@ -24,7 +24,6 @@ type DevServer struct {
 	watcher      *fsnotify.Watcher
 	clients      map[chan []byte]struct{}
 	clientMutex  sync.Mutex
-	debounce     *time.Timer
 	rebuildMutex sync.Mutex
 }
 
@@ -80,7 +79,11 @@ func (h *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Printf("Error closing file: %v\n", err)
+		}
+	}()
 
 	stat, _ := f.Stat()
 
@@ -91,7 +94,12 @@ func (h *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.serve404(w, r)
 			return
 		}
-		defer indexFile.Close()
+		defer func() {
+			if err := f.Close(); err != nil {
+				fmt.Printf("Error closing index.html: %v\n", err)
+			}
+		}()
+
 		h.serveHTML(indexFile, w, r)
 		return
 
@@ -121,13 +129,20 @@ func (h *fileHandler) serveHTML(f http.File, w http.ResponseWriter, _ *http.Requ
 
 	// Set headers and serve
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write(content)
+
+	if _, err := w.Write(content); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 func (h *fileHandler) serve404(w http.ResponseWriter, r *http.Request) {
 	f, err := h.root.Open(h.notFound)
 	if err == nil {
-		defer f.Close()
+		defer func() {
+			if err := f.Close(); err != nil {
+				log.Printf("Error closing file: %v", err)
+			}
+		}()
 		h.serveHTML(f, w, r)
 		return
 	}
@@ -162,7 +177,9 @@ func (s *DevServer) handleLiveReload(w http.ResponseWriter, r *http.Request) {
 		case <-r.Context().Done():
 			return
 		case msg := <-messageChan:
-			fmt.Fprintf(w, "data: %s\n\n", msg)
+			if _, err := fmt.Fprintf(w, "data: %s\n\n", msg); err != nil {
+				log.Printf("Error writing formatted output: %v", err)
+			}
 			flusher.Flush()
 		}
 	}
@@ -181,7 +198,11 @@ func (s *DevServer) notifyClients() {
 }
 
 func (s *DevServer) watchChanges() {
-	defer s.watcher.Close()
+	defer func() {
+		if err := s.watcher.Close(); err != nil {
+			log.Printf("Error closing watcher: %v", err)
+		}
+	}()
 
 	watchPaths := []string{
 		"content",
@@ -196,7 +217,7 @@ func (s *DevServer) watchChanges() {
 			continue
 		}
 
-		filepath.Walk(absPath, func(p string, info os.FileInfo, err error) error {
+		if errWalk := filepath.Walk(absPath, func(p string, info os.FileInfo, err error) error {
 			if err != nil || !info.IsDir() || s.isIgnoredPath(p) {
 				return nil
 			}
@@ -204,7 +225,9 @@ func (s *DevServer) watchChanges() {
 				log.Printf("Watching %s: %v", p, err)
 			}
 			return nil
-		})
+		}); errWalk != nil {
+			log.Printf("Error walking the path %q: %v", absPath, errWalk)
+		}
 	}
 
 	debounceTime := 500 * time.Millisecond

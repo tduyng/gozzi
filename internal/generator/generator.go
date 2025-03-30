@@ -307,7 +307,11 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("source open failed: %w", err)
 	}
-	defer source.Close()
+	defer func() {
+		if err := source.Close(); err != nil {
+			fmt.Printf("Error closing source file: %v\n", err)
+		}
+	}()
 
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		return fmt.Errorf("failed to create destination directory: %w", err)
@@ -316,7 +320,11 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("destination create failed: %w", err)
 	}
-	defer destination.Close()
+	defer func() {
+		if err := destination.Close(); err != nil {
+			fmt.Printf("Error closing destination file: %v\n", err)
+		}
+	}()
 
 	if _, err := io.Copy(destination, source); err != nil {
 		return fmt.Errorf("copy operation failed: %w", err)

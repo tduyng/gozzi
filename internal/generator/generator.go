@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 
@@ -38,7 +37,7 @@ func NewSiteGenerator(cfg *config.SiteConfig) (*SiteGenerator, error) {
 	tmpl, err := template.New("").Funcs(template.FuncMap{
 		"urlize":   URLize,
 		"safe":     SafeHTML,
-		"loadData": LoadData,
+		"loadData": LoadDataToHtml,
 	}).ParseGlob("templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("template parsing failed: %w", err)
@@ -278,19 +277,6 @@ func (sg *SiteGenerator) renderStaticPage(templateName, outputPath string) error
 	return os.WriteFile(outputPath, buf.Bytes(), 0644)
 }
 
-func URLize(s string) string {
-	s = strings.ToLower(s)
-	s = strings.ReplaceAll(s, " ", "-")
-	s = regexp.MustCompile(`[^a-z0-9-]`).ReplaceAllString(s, "")
-	s = regexp.MustCompile(`-+`).ReplaceAllString(s, "-")
-
-	return strings.Trim(s, "-")
-}
-
-func SafeHTML(s string) template.HTML {
-	return template.HTML(s)
-}
-
 func (sg *SiteGenerator) copyStatic() error {
 	return filepath.Walk(filepath.Join("static"), func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -347,13 +333,4 @@ func shouldSkip(path string) bool {
 	ext := filepath.Ext(path)
 	dir := filepath.Dir(path)
 	return strings.Contains(dir, "scss") && ext == ".scss"
-}
-
-func LoadData(path string) template.HTML {
-	content, err := os.ReadFile(path)
-	if err != nil {
-		log.Printf("Error reading file %s: %v", path, err)
-		return ""
-	}
-	return template.HTML(string(content))
 }

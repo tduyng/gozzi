@@ -37,7 +37,7 @@ func NewSiteGenerator(cfg *config.SiteConfig) (*SiteGenerator, error) {
 	tmpl, err := template.New("").Funcs(template.FuncMap{
 		"urlize":   URLize,
 		"safe":     SafeHTML,
-		"loadData": LoadDataToHtml,
+		"loadData": LoadDataToHTML,
 	}).ParseGlob("templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("template parsing failed: %w", err)

@@ -21,7 +21,7 @@ func SafeHTML(s string) template.HTML {
 	return template.HTML(s)
 }
 
-func LoadDataToHtml(path string) template.HTML {
+func LoadDataToHTML(path string) template.HTML {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		log.Printf("Error reading file %s: %v", path, err)

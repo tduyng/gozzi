@@ -1,14 +1,13 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/tduyng/gozzi/internal/config"
 	"github.com/tduyng/gozzi/internal/generator"
+	"github.com/tduyng/gozzi/internal/parser"
 	"github.com/tduyng/gozzi/internal/server"
 )
 
@@ -18,40 +17,38 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfg, err := config.LoadConfig("config.toml")
+	site, err := config.LoadSite("config.toml")
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
 
+	contentParser := parser.NewParser(site)
+	if err := contentParser.Parse("content"); err != nil {
+		log.Fatalf("Error parsing content: %v", err)
+	}
+
+	gen, err := generator.NewGenerator(site)
+	if err != nil {
+		log.Fatalf("Error creating generator: %v", err)
+	}
+
 	switch os.Args[1] {
 	case "build":
-		if err := generator.BuildSite(cfg); err != nil {
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
 			log.Fatal(err)
 		}
 	case "serve":
-		startDevServer(cfg)
+		srv, _ := server.NewDevServer(site, gen, contentParser)
+		srv.Start(1313)
 	default:
 		printUsage()
 		os.Exit(1)
 	}
 }
 
-func startDevServer(cfg *config.SiteConfig) {
-	port := 1313
-	if p := flag.Arg(1); p != "" {
-		port, _ = strconv.Atoi(p)
-	}
-
-	srv, err := server.NewDevServer(cfg)
-	if err != nil {
-		log.Fatal(err)
-	}
-	srv.Start(port)
-}
-
 func printUsage() {
 	fmt.Println(`Usage: gozzi <command>
 Commands:
   build    Generate static site
-  serve    Start development server with live reload`)
+  serve    Start development server`)
 }

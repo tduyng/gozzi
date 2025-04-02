@@ -6,154 +6,194 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
-	"time"
+	"sync"
 
 	"github.com/tduyng/gozzi/internal/config"
+	"github.com/tduyng/gozzi/internal/content"
 	"github.com/yuin/goldmark"
 	highlight "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/renderer/html"
 )
 
-type Page struct {
-	FrontMatter  config.PageConfig
-	Content      template.HTML
-	Slug         string
-	FilePath     string
-	ModTime      time.Time
-	ImagePreview ImagePreview
+type ContentParser struct {
+	Site       *config.Site
+	ContentMap map[string]*content.Node
+	mu         sync.Mutex
+	md         goldmark.Markdown
 }
 
-type ImagePreview struct {
-	URL    string
-	Width  int
-	Height int
-}
-
-var md = goldmark.New(
-	goldmark.WithExtensions(
-		extension.GFM,
-		extension.Footnote,
-		highlight.NewHighlighting(
-			highlight.WithGuessLanguage(true),
+func NewParser(cfg *config.Site) *ContentParser {
+	return &ContentParser{
+		Site:       cfg,
+		ContentMap: make(map[string]*content.Node),
+		md: goldmark.New(
+			goldmark.WithExtensions(
+				extension.GFM,
+				extension.Footnote,
+				highlight.NewHighlighting(
+					highlight.WithGuessLanguage(true),
+					highlight.WithStyle("github"),
+				),
+			),
+			goldmark.WithRendererOptions(
+				html.WithUnsafe(),
+			),
 		),
-	),
-	goldmark.WithRendererOptions(
-		html.WithUnsafe(),
-	),
-)
+	}
+}
 
-var (
-	datePrefixRe  = regexp.MustCompile(`^\d{4}[-_]\d{1,2}[-_]\d{1,2}[-_]`)
-	slugCleanerRe = regexp.MustCompile(`[^a-z0-9\-]`)
-	multiDashRe   = regexp.MustCompile(`\-+`)
-)
+func (p *ContentParser) Parse(rootDir string) error {
+	return filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
+		}
 
-func ParseMarkdown(path string) (*Page, error) {
-	content, err := os.ReadFile(path)
+		relPath, _ := filepath.Rel(rootDir, path)
+		dir := filepath.Dir(relPath)
+
+		switch {
+		case filepath.Base(path) == "_index.md":
+			return p.parseSection(path, dir)
+		case filepath.Ext(path) == ".md":
+			return p.parsePage(path, dir)
+		}
+
+		return nil
+	})
+}
+
+func (p *ContentParser) parseSection(path, dir string) error {
+	mkdown, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
+		return err
 	}
 
-	info, err := os.Stat(path)
+	frontMatter, err := config.LoadFrontMatter(mkdown)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get file info: %w", err)
+		return err
 	}
 
-	pageConfig, errPage := config.LoadPageConfig(content)
-	siteConfig, _ := config.LoadConfig("config.toml")
-	if errPage != nil {
-		return nil, fmt.Errorf("front matter error: %w", errPage)
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	node := p.getOrCreateSection(dir)
+	node.Type = content.NodeTypeSection
+	node.Section = &content.Section{
+		Title: frontMatter.Title,
+	}
+	node.Config = config.MergeConfigs(p.Site, frontMatter, nil)
+
+	return nil
+}
+
+func (p *ContentParser) parsePage(path, dir string) error {
+	mkdownContent, err := os.ReadFile(path)
+	if err != nil {
+		return err
 	}
 
-	// split content into front matter and markdown
-	parts := bytes.SplitN(content, []byte("+++"), 3)
+	parts := bytes.SplitN(mkdownContent, []byte("+++"), 3)
+	var frontMatter *config.FrontMatter
+	var contentPart []byte
 	if len(parts) < 3 {
-		return nil, fmt.Errorf("invalid front matter format in %s", path)
+		frontMatter = &config.FrontMatter{}
+		contentPart = mkdownContent
+	} else {
+		frontMatter, err = config.LoadFrontMatter(mkdownContent)
+		if err != nil {
+			return err
+		}
+		contentPart = parts[2]
 	}
 
 	var buf bytes.Buffer
-	if err := md.Convert(parts[2], &buf); err != nil {
-		return nil, fmt.Errorf("failed to convert markdown: %w", err)
+	if err := p.md.Convert(contentPart, &buf); err != nil {
+		return fmt.Errorf("markdown conversion failed: %w", err)
 	}
-	slug := generateSlug(path)
-	imgMeta := processImageMeta(siteConfig, pageConfig, path)
 
-	return &Page{
-		FrontMatter:  *pageConfig,
-		Content:      template.HTML(buf.String()),
-		Slug:         slug,
-		FilePath:     path,
-		ModTime:      info.ModTime(),
-		ImagePreview: imgMeta,
-	}, nil
-}
-
-func ParseEmptyPage() (*Page, error) {
-	siteConfig, _ := config.LoadConfig("config.toml")
-
-	return &Page{
-		FrontMatter: *siteConfig.ToPageConfig(),
-		Content:     "",
-		Slug:        "",
-		FilePath:    "",
-	}, nil
-}
-
-func generateSlug(path string) string {
-	base := extractBaseName(path)
-	base = datePrefixRe.ReplaceAllString(base, "")
-
-	slug := strings.ToLower(base)
-	slug = strings.ReplaceAll(slug, "_", "-")
-	slug = slugCleanerRe.ReplaceAllString(slug, "-")
-	slug = multiDashRe.ReplaceAllString(slug, "-")
-	slug = strings.Trim(slug, "-")
-
-	if slug == "" {
-		return "untitled"
+	var sectionConfig map[string]any
+	if secNode, exists := p.ContentMap[dir]; exists {
+		sectionConfig = secNode.Config
 	}
-	return slug
-}
 
-func extractBaseName(path string) string {
-	dir, file := filepath.Split(path)
-	base := strings.TrimSuffix(file, filepath.Ext(file))
-
-	if base == "index" {
-		parentDir := strings.TrimRight(dir, string(filepath.Separator))
-		if parentDir != "" {
-			return filepath.Base(parentDir)
-		}
+	mergedConfigPage := config.MergeConfigs(p.Site, nil, frontMatter)
+	mergedConfig := mergedConfigPage
+	if sectionConfig != nil {
+		mergedConfig = config.MergeExtra(sectionConfig, mergedConfigPage)
 	}
-	return base
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	pageNode := content.NewContentNode(path, nil)
+	pageNode.Type = content.NodeTypePage
+	pageNode.Config = mergedConfig
+	pageNode.Content = template.HTML(buf.String())
+	pageNode.PageMeta = &content.PageMeta{
+		Date:    frontMatter.Date,
+		Updated: frontMatter.Update,
+		Tags:    frontMatter.Tags,
+		Assets:  filepath.Join(filepath.Dir(path), "img"),
+		Draft:   frontMatter.Draft,
+		ImgURL:  p.resolveImgURL(frontMatter, path),
+	}
+
+	sectionDir := filepath.Dir(dir)
+	parent := p.getOrCreateSection(sectionDir)
+	pageNode.Parent = parent
+	parent.Children = append(parent.Children, pageNode)
+	parent.Section.Pages = append(parent.Section.Pages, pageNode)
+
+	return nil
 }
 
-func processImageMeta(siteConfig *config.SiteConfig, pageConfig *config.PageConfig, mdPath string) ImagePreview {
-	var img string
-	if val, ok := pageConfig.Extra["img"]; ok {
-		if s, ok := val.(string); ok {
-			img = s
+func (p *ContentParser) resolveImgURL(fm *config.FrontMatter, path string) string {
+	img := ""
+	if fm.Extra != nil {
+		if val, ok := fm.Extra["img"]; ok {
+			img = fmt.Sprintf("%v", val)
 		}
 	}
 
-	if img == "" {
-		return ImagePreview{URL: "http://localhost:1313/img/post-cover.webp", Width: 3456, Height: 3456}
+	if img == "" && p.Site.Extra != nil {
+		if val, ok := p.Site.Extra["img"]; ok {
+			img = fmt.Sprintf("%v", val)
+		}
 	}
 
-	return ImagePreview{
-		URL:    resolveImageURL(siteConfig.BaseURL, img, mdPath),
-		Width:  3456,
-		Height: 3456,
-	}
-}
-
-func resolveImageURL(baseURL, img, mdPath string) string {
+	baseURL := strings.TrimSuffix(p.Site.BaseURL, "/")
 	if strings.HasPrefix(img, "/") {
 		return baseURL + img
 	}
-	mdDir := filepath.Dir(mdPath)
-	return baseURL + "/" + filepath.Join(mdDir, img)
+
+	mdDir := filepath.Dir(path)
+	return baseURL + filepath.Join("/", mdDir, img)
+}
+
+func (p *ContentParser) getOrCreateSection(dir string) *content.Node {
+	if node, exists := p.ContentMap[dir]; exists {
+		if node.Section == nil {
+			node.Section = &content.Section{}
+		}
+		return node
+	}
+
+	var parent *content.Node
+	if dir != "." {
+		parentDir := filepath.Dir(dir)
+		parent = p.getOrCreateSection(parentDir)
+	}
+
+	node := content.NewContentNode(dir, parent)
+	node.Type = content.NodeTypeSection
+	node.Section = &content.Section{}
+
+	if parent != nil {
+		parent.Children = append(parent.Children, node)
+	}
+
+	p.ContentMap[dir] = node
+	return node
 }

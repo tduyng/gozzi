@@ -5,340 +5,209 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/tduyng/gozzi/internal/config"
-	"github.com/tduyng/gozzi/internal/parser"
+	"github.com/tduyng/gozzi/internal/content"
 )
 
-type SiteGenerator struct {
-	cfg   *config.SiteConfig
-	tmpl  *template.Template
-	pages []*parser.Page
-	mutex sync.Mutex
+type Generator struct {
+	site  *config.Site
+	templ *template.Template
+	mu    sync.Mutex
 }
 
-type TemplateData struct {
-	Config *config.MergedConfig
-	Page   *parser.Page
-	Pages  []*parser.Page
-	Is404  bool
-}
-
-func NewSiteGenerator(cfg *config.SiteConfig) (*SiteGenerator, error) {
-	sg := &SiteGenerator{
-		cfg: cfg,
+func NewGenerator(site *config.Site) (*Generator, error) {
+	gen := &Generator{
+		site: site,
 	}
 
-	tmpl, err := template.New("").Funcs(template.FuncMap{
-		"urlize":   URLize,
-		"safe":     SafeHTML,
-		"loadData": LoadDataToHTML,
-	}).ParseGlob("templates/*.html")
+	tmpl, err := template.New("").Funcs(gen.CreateFuncMap()).ParseGlob("templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("template parsing failed: %w", err)
 	}
-	sg.tmpl = tmpl
 
-	return sg, nil
+	gen.templ = tmpl
+	return gen, nil
 }
 
-func BuildSite(cfg *config.SiteConfig) error {
-	sg, err := NewSiteGenerator(cfg)
-	if err != nil {
-		return fmt.Errorf("site generator initialization failed: %w", err)
-	}
-
-	if err := os.RemoveAll(cfg.OutputDir); err != nil {
-		return fmt.Errorf("failed to clean output directory: %w", err)
+func (g *Generator) Generate(contentRoot *content.Node) error {
+	if err := os.RemoveAll(g.site.OutputDir); err != nil {
+		return fmt.Errorf("failed to clean output: %w", err)
 	}
 
 	var wg sync.WaitGroup
 	errChan := make(chan error, 100)
 
-	err = filepath.Walk("content", func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return fmt.Errorf("access error for %q: %w", path, err)
-		}
-
-		if info.IsDir() || filepath.Ext(path) != ".md" {
-			return nil
-		}
-
+	g.walkNodes(contentRoot, func(n *content.Node) {
 		wg.Add(1)
-		go func(p string) {
+		go func(node *content.Node) {
 			defer wg.Done()
-			if err := sg.processMarkdownPages(p); err != nil {
-				errChan <- fmt.Errorf("processing %q: %w", p, err)
+			if err := g.processNode(node); err != nil {
+				errChan <- err
 			}
-		}(path)
-
-		return nil
+		}(n)
 	})
-	if err != nil {
-		return fmt.Errorf("content directory traversal failed: %w", err)
-	}
-
-	// Generate static pages
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := sg.processStaticPages(); err != nil {
-			errChan <- fmt.Errorf("static pages generation failed: %w", err)
-		}
-	}()
 
 	wg.Wait()
 	close(errChan)
 
-	// Generate list pages after all content is processed
-	if err := sg.generateListPages(); err != nil {
-		log.Printf("List page generation failed: %v", err)
-	}
-
 	for err := range errChan {
-		log.Printf("Processing error: %v", err)
+		fmt.Printf("Processing error: %v\n", err)
 	}
 
-	if err := sg.copyStatic(); err != nil {
-		return fmt.Errorf("static assets copy failed: %w", err)
-	}
+	return g.copyStaticAssets()
+}
 
+func (g *Generator) processNode(node *content.Node) error {
+	switch node.Type {
+	case content.NodeTypeSection:
+		return g.generateSection(node)
+	case content.NodeTypePage:
+		return g.generatePage(node)
+	}
 	return nil
 }
 
-func (sg *SiteGenerator) processMarkdownPages(path string) error {
-	page, err := parser.ParseMarkdown(path)
-	if err != nil {
-		return fmt.Errorf("markdown parsing failed: %w", err)
-	}
-
-	sg.mutex.Lock()
-	sg.pages = append(sg.pages, page)
-	sg.mutex.Unlock()
-
-	sectionPath := filepath.Dir(path)
-	sectionCfg, err := config.LoadSectionConfig(sectionPath)
-	if err != nil {
-		return fmt.Errorf("section config load failed: %w", err)
-	}
-
-	mergedConfig := config.MergeConfigs(sg.cfg, sectionCfg, &page.FrontMatter)
-
-	// Get relative path from content directory
-	relPath, err := filepath.Rel("content", filepath.Dir(path))
-	if err != nil {
-		return fmt.Errorf("failed to get relative path: %w", err)
-	}
-
-	// Determine output path based on file type
-	filename := filepath.Base(path)
+func (g *Generator) generateSection(node *content.Node) error {
 	var outputPath string
-
-	switch {
-	case filename == "_index.md" || filename == "index.md":
-		outputPath = filepath.Join(sg.cfg.OutputDir, relPath, "index.html")
-	case strings.HasSuffix(filename, ".md"):
-		outputPath = filepath.Join(sg.cfg.OutputDir, relPath, page.Slug, "index.html")
-	default:
-		return fmt.Errorf("unsupported file type: %s", filename)
+	if node.Path == "." {
+		outputPath = filepath.Join(g.site.OutputDir, "index.html")
+	} else {
+		outputPath = filepath.Join(g.site.OutputDir, node.Slug, "index.html")
 	}
-
-	return sg.renderContentPage(outputPath, page, mergedConfig)
+	tmplName := getTemplateName(node)
+	return g.renderTemplate(tmplName, outputPath, map[string]any{
+		"Site":    g.site,
+		"Section": node,
+		"Pages":   node.Children,
+	})
 }
 
-func (sg *SiteGenerator) generateListPages() error {
-	// Generate blog index
-	blogPath := filepath.Join(sg.cfg.OutputDir, "blog.html", "index.html")
-	if err := sg.renderListPage("blog.html", blogPath, sg.pages); err != nil {
-		return fmt.Errorf("failed to generate blog index: %w", err)
+func (g *Generator) generatePage(node *content.Node) error {
+	basePath := g.site.OutputDir
+	if node.Parent != nil {
+		basePath = filepath.Join(basePath, node.Parent.Slug)
 	}
-
-	// Generate tag pages
-	tags := make(map[string][]*parser.Page)
-	for _, page := range sg.pages {
-		for _, tag := range page.FrontMatter.Tags {
-			tags[tag] = append(tags[tag], page)
-		}
-	}
-
-	for tag, pages := range tags {
-		tagPath := filepath.Join(sg.cfg.OutputDir, "tag", tag, "index.html")
-		if err := sg.renderListPage("tag", tagPath, pages); err != nil {
-			return fmt.Errorf("failed to generate tag page %q: %w", tag, err)
-		}
-	}
-
-	return nil
-}
-
-// New method for static pages
-func (sg *SiteGenerator) processStaticPages() error {
-	staticPages := []struct {
-		templateName string
-		outputPath   string
-	}{
-		{"404.html", filepath.Join(sg.cfg.OutputDir, "404.html")},
-		{"robots.txt", filepath.Join(sg.cfg.OutputDir, "robots.txt")},
-	}
-
-	for _, page := range staticPages {
-		if sg.tmpl.Lookup(page.templateName) != nil {
-			err := sg.renderStaticPage(page.templateName, page.outputPath)
-			if err != nil {
-				return err
+	outputPath := filepath.Join(basePath, node.Slug, "index.html")
+	tmplName := getTemplateName(node)
+	if node.PageMeta.Assets != "" {
+		if _, err := os.Stat(node.PageMeta.Assets); err != nil {
+			if !os.IsNotExist(err) {
+				return fmt.Errorf("error checking assets directory: %w", err)
+			}
+		} else {
+			assetFolderName := filepath.Base(node.PageMeta.Assets)
+			var dest string
+			if node.Parent != nil && node.Slug == node.Parent.Slug {
+				dest = filepath.Join(g.site.OutputDir, node.Parent.Slug, assetFolderName)
+			} else {
+				dest = filepath.Join(g.site.OutputDir, node.Parent.Slug, node.Slug, assetFolderName)
+			}
+			if err := copyDir(node.PageMeta.Assets, dest); err != nil {
+				return fmt.Errorf("failed to copy assets: %w", err)
 			}
 		}
 	}
-	return nil
+
+	return g.renderTemplate(tmplName, outputPath, map[string]any{
+		"Site":    g.site,
+		"Page":    node,
+		"Section": node.Parent,
+	})
 }
 
-// Separate method for rendering content pages
-func (sg *SiteGenerator) renderContentPage(outputPath string, page *parser.Page, cfg *config.MergedConfig) error {
-	// Create output directory structure
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return fmt.Errorf("directory creation failed: %w", err)
-	}
+func (g *Generator) renderTemplate(name, outputPath string, data any) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
 
-	// Find appropriate template
-	tmpl := sg.tmpl.Lookup(cfg.Template)
+	tmpl := g.templ.Lookup(name)
 	if tmpl == nil {
-		return fmt.Errorf("template %q not found", cfg.Template)
+		return fmt.Errorf("template %q not found", name)
 	}
 
-	// Execute template with context
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return err
+	}
+
 	var buf bytes.Buffer
-	data := TemplateData{
-		Config: cfg,
-		Page:   page,
-	}
-
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return fmt.Errorf("template execution failed: %w", err)
+		return err
 	}
 
 	return os.WriteFile(outputPath, buf.Bytes(), 0644)
 }
 
-func (sg *SiteGenerator) renderListPage(templateName, outputPath string, pages []*parser.Page) error {
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return fmt.Errorf("directory creation failed: %w", err)
+func (g *Generator) walkNodes(node *content.Node, fn func(*content.Node)) {
+	fn(node)
+	for _, child := range node.Children {
+		g.walkNodes(child, fn)
 	}
-
-	tmpl := sg.tmpl.Lookup(templateName)
-	if tmpl == nil {
-		return fmt.Errorf("template %q not found", templateName)
-	}
-
-	page, _ := parser.ParseEmptyPage()
-	var buf bytes.Buffer
-	data := TemplateData{
-		Config: sg.cfg.ToMergedConfig(),
-		Page:   page,
-		Pages:  pages,
-	}
-
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return fmt.Errorf("template execution failed: %w", err)
-	}
-
-	return os.WriteFile(outputPath, buf.Bytes(), 0644)
 }
 
-func (sg *SiteGenerator) renderStaticPage(templateName, outputPath string) error {
-	var buf bytes.Buffer
-	data := TemplateData{
-		Config: sg.cfg.ToMergedConfig(),
-		Page: &parser.Page{
-			FrontMatter: config.PageConfig{
-				Title:       "Page Not Found",
-				Description: "The requested page could not be found",
-			},
-		},
-	}
-
-	tmpl := sg.tmpl.Lookup(templateName)
-	if tmpl == nil {
-		return fmt.Errorf("template %q not found", templateName)
-	}
-
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return fmt.Errorf("template execution failed: %w", err)
-	}
-
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return fmt.Errorf("directory creation failed: %w", err)
-	}
-
-	return os.WriteFile(outputPath, buf.Bytes(), 0644)
-}
-
-func (sg *SiteGenerator) copyStatic() error {
-	return filepath.Walk(filepath.Join("static"), func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return fmt.Errorf("static file access error: %w", err)
-		}
-
-		if info.IsDir() || isHiddenFile(path) || shouldSkip(path) {
+func (g *Generator) copyStaticAssets() error {
+	return filepath.Walk("static", func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
 			return nil
 		}
 
-		relPath, err := filepath.Rel("static", path)
-		if err != nil {
-			return fmt.Errorf("path resolution failed: %w", err)
+		relPath, _ := filepath.Rel("static", path)
+		dest := filepath.Join(g.site.OutputDir, relPath)
+
+		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+			return err
 		}
 
-		destPath := filepath.Join(sg.cfg.OutputDir, relPath)
-
-		if err := copyFile(path, destPath); err != nil {
-			return fmt.Errorf("file copy failed: %w", err)
-		}
-
-		return nil
+		return copyFile(path, dest)
 	})
 }
 
 func copyFile(src, dst string) error {
-	source, err := os.Open(src)
-	if err != nil {
-		return fmt.Errorf("source open failed: %w", err)
-	}
-	defer func() {
-		if err := source.Close(); err != nil {
-			fmt.Printf("Error closing source file: %v\n", err)
-		}
-	}()
-
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
-		return fmt.Errorf("failed to create destination directory: %w", err)
+		return err
 	}
-	destination, err := os.Create(dst)
+
+	in, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("destination create failed: %w", err)
+		return err
 	}
-	defer func() {
-		if err := destination.Close(); err != nil {
-			fmt.Printf("Error closing destination file: %v\n", err)
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	return err
+}
+
+func copyDir(src, dst string) error {
+	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
 		}
-	}()
 
-	if _, err := io.Copy(destination, source); err != nil {
-		return fmt.Errorf("copy operation failed: %w", err)
+		relPath, _ := filepath.Rel(src, path)
+		target := filepath.Join(dst, relPath)
+
+		if info.IsDir() {
+			return os.MkdirAll(target, 0755)
+		}
+
+		return copyFile(path, target)
+	})
+}
+
+func getTemplateName(node *content.Node) string {
+	if custom, ok := node.Config["template"].(string); ok && custom != "" {
+		return custom
 	}
-
-	return nil
-}
-
-func isHiddenFile(path string) bool {
-	return strings.HasPrefix(filepath.Base(path), ".")
-}
-
-func shouldSkip(path string) bool {
-	ext := filepath.Ext(path)
-	dir := filepath.Dir(path)
-	return strings.Contains(dir, "scss") && ext == ".scss"
+	if node.Type == content.NodeTypeSection {
+		return "default.html"
+	}
+	return "post.html"
 }

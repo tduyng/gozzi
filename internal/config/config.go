@@ -3,191 +3,134 @@ package config
 import (
 	"bytes"
 	"maps"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/BurntSushi/toml"
 )
 
-type SiteConfig struct {
-	BaseURL     string `toml:"base_url"`
-	Title       string `toml:"title"`
-	Description string `toml:"Description"`
-	OutputDir   string `toml:"output_dir"`
-
-	Taxonomies []TaxonomyConfig `toml:"taxonomies"`
-	Markdown   MarkdownConfig   `toml:"markdown"`
-	Lang       string           `toml:"language"`
-	Extra      map[string]any   `toml:"extra"`
+type Site struct {
+	BaseURL      string         `toml:"base_url"`
+	FeedURL      string         `toml:"feed_url"`
+	Description  string         `toml:"Description"`
+	Extra        map[string]any `toml:"extra"`
+	GenerateFeed bool           `toml:"generate_feed"`
+	Theme        string         `toml:"theme"`
+	Img          string         `toml:"img"`
+	Lang         string         `toml:"language"`
+	OutputDir    string         `toml:"output_dir"`
+	Title        string         `toml:"title"`
 }
 
-type MarkdownConfig struct {
-	HighlightCode  bool   `toml:"highlight_code"`
-	HighlightTheme string `toml:"highlight_theme"`
+type FrontMatter struct {
+	Date         time.Time      `toml:"date"`
+	Description  string         `toml:"description"`
+	Draft        bool           `toml:"draft"`
+	Extra        map[string]any `toml:"extra"`
+	GenerateFeed bool           `toml:"generate_feed"`
+	Img          string         `toml:"img"`
+	Lang         string         `toml:"language"`
+	Tags         []string       `toml:"tags"`
+	Template     string         `toml:"template"`
+	Title        string         `toml:"title"`
+	Featured     bool           `toml:"featured"`
+	Update       time.Time      `toml:"update"`
 }
 
-type SectionConfig struct {
-	Template   string         `toml:"template"`
-	PaginateBy int            `toml:"paginate_by"`
-	SortBy     string         `toml:"sort_by"`
-	Render     bool           `toml:"render"`
-	Extra      map[string]any `toml:"extra"`
-}
-
-type PageConfig struct {
-	Title       string              `toml:"title"`
-	Description string              `toml:"description"`
-	Date        time.Time           `toml:"date"`
-	Draft       bool                `toml:"draft"`
-	Taxonomies  map[string][]string `toml:"taxonomies"`
-	Template    string              `toml:"template"`
-	Tags        []string            `toml:"tags"`
-	Lang        string              `toml:"language"`
-	Extra       map[string]any      `toml:"extra"`
-}
-
-type TaxonomyConfig struct {
-	Name         string `toml:"name"`
-	PaginateBy   int    `toml:"paginate_by"`
-	GenerateFeed bool   `toml:"generate_feed"`
-}
-
-type MergedConfig struct {
-	BaseURL     string
-	Title       string
-	Description string
-	OutputDir   string
-	Template    string
-	PaginateBy  int
-	SortBy      string
-	Render      bool
-	Date        time.Time
-	Draft       bool
-	Taxonomies  map[string][]string
-	Markdown    Markdown
-	Lang        string
-	Extra       map[string]any
-}
-
-type Markdown struct {
-	HighlightCode  bool
-	HighlightTheme string
-}
-
-func LoadConfig(path string) (*SiteConfig, error) {
-	var cfg SiteConfig
+func LoadSite(path string) (*Site, error) {
+	var cfg Site
 	if _, err := toml.DecodeFile(path, &cfg); err != nil {
 		return nil, err
 	}
 	return &cfg, nil
 }
 
-func LoadSectionConfig(sectionPath string) (*SectionConfig, error) {
-	cfgPath := filepath.Join(sectionPath, "_index.md")
-	content, err := os.ReadFile(cfgPath)
-	if os.IsNotExist(err) {
-		return &SectionConfig{}, nil
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return parseFrontMatter[SectionConfig](content)
+func LoadFrontMatter(content []byte) (*FrontMatter, error) {
+	return parseFrontMatter[FrontMatter](content)
 }
 
-func LoadPageConfig(content []byte) (*PageConfig, error) {
-	return parseFrontMatter[PageConfig](content)
-}
-
-func (gc *SiteConfig) ToMergedConfig() *MergedConfig {
-	return &MergedConfig{
-		BaseURL:     gc.BaseURL,
-		Title:       gc.Title,
-		Description: gc.Description,
-		OutputDir:   gc.OutputDir,
-		Lang:        gc.Lang,
-		Markdown: Markdown{
-			HighlightCode:  gc.Markdown.HighlightCode,
-			HighlightTheme: gc.Markdown.HighlightTheme,
-		},
-		Extra: mergeMaps(nil, gc.Extra),
+func MergeConfigs(site *Site, section *FrontMatter, page *FrontMatter) map[string]any {
+	merged := make(map[string]any)
+	if site != nil {
+		merged["base_url"] = site.BaseURL
+		merged["feed_url"] = site.FeedURL
+		merged["title"] = site.Title
+		merged["description"] = site.Description
+		merged["output_dir"] = site.OutputDir
+		merged["lang"] = site.Lang
+		merged["generate_feed"] = site.GenerateFeed
+		merged["img"] = site.Img
+		merged["extra"] = MergeExtra(make(map[string]any), site.Extra)
 	}
-}
-
-func (gc *SiteConfig) ToPageConfig() *PageConfig {
-	return &PageConfig{
-		Title:       gc.Title,
-		Description: gc.Description,
-		Lang:        gc.Lang,
-		Extra:       mergeMaps(nil, gc.Extra),
-	}
-}
-
-func MergeConfigs(global *SiteConfig, section *SectionConfig, page *PageConfig) *MergedConfig {
-	merged := global.ToMergedConfig()
 
 	if section != nil {
-		merged = mergeSection(merged, section)
+		merged = mergeFrontMatter(merged, section)
 	}
 
 	if page != nil {
-		merged = mergePage(merged, page)
-	}
-
-	if merged.Template == "" {
-		merged.Template = "default.html"
+		merged = mergeFrontMatter(merged, page)
 	}
 
 	return merged
 }
 
-func mergeSection(merged *MergedConfig, section *SectionConfig) *MergedConfig {
-	if section.Template != "" {
-		merged.Template = section.Template
+func mergeFrontMatter(merged map[string]any, frontMatter *FrontMatter) map[string]any {
+	if frontMatter.Title != "" {
+		merged["title"] = frontMatter.Title
+	}
+	if frontMatter.Description != "" {
+		merged["description"] = frontMatter.Description
+	}
+	if frontMatter.Template != "" {
+		merged["template"] = frontMatter.Template
 	}
 
-	if section.PaginateBy > 0 {
-		merged.PaginateBy = section.PaginateBy
+	if frontMatter.GenerateFeed {
+		merged["generate_feed"] = frontMatter.GenerateFeed
 	}
 
-	if section.SortBy != "" {
-		merged.SortBy = section.SortBy
+	if frontMatter.Img != "" {
+		merged["img"] = frontMatter.Img
 	}
 
-	merged.Render = section.Render
-	merged.Extra = mergeMaps(merged.Extra, section.Extra)
+	if frontMatter.Lang != "" {
+		merged["lang"] = frontMatter.Lang
+	}
+
+	if frontMatter.Featured {
+		merged["featured"] = frontMatter.Featured
+	}
+
+	if frontMatter.Draft {
+		merged["draft"] = frontMatter.Draft
+	}
+
+	merged["tags"] = frontMatter.Tags
+	merged["date"] = frontMatter.Date
+	merged["update"] = frontMatter.Update
+
+	merged["extra"] = MergeExtra(merged, frontMatter.Extra)
 	return merged
 }
 
-func mergePage(merged *MergedConfig, page *PageConfig) *MergedConfig {
-	if page.Template != "" {
-		merged.Template = page.Template
+func MergeExtra(base map[string]any, extra map[string]any) map[string]any {
+	for k, v := range extra {
+		if existing, exists := base[k]; exists {
+			if existingMap, ok := existing.(map[string]any); ok {
+				if newMap, ok := v.(map[string]any); ok {
+					base[k] = mergeMaps(existingMap, newMap)
+					continue
+				}
+			}
+		}
+		base[k] = v
 	}
-
-	merged.Draft = page.Draft
-	merged.Taxonomies = page.Taxonomies
-	merged.Extra = mergeMaps(merged.Extra, page.Extra)
-	return merged
+	return base
 }
 
 func mergeMaps(base, override map[string]any) map[string]any {
-	result := make(map[string]any)
+	result := make(map[string]any, len(base))
 	maps.Copy(result, base)
-
-	for k, overrideVal := range override {
-		if baseVal, exist := result[k]; exist {
-			baseMap, baseIsMap := baseVal.(map[string]any)
-			overrideMap, overrideIsMap := overrideVal.(map[string]any)
-			if baseIsMap && overrideIsMap {
-				result[k] = mergeMaps(baseMap, overrideMap)
-				continue
-			}
-		}
-		result[k] = overrideVal
-	}
-
+	maps.Copy(result, override)
 	return result
 }
 

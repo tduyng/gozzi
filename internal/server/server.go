@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,38 +16,46 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/tduyng/gozzi/internal/config"
 	"github.com/tduyng/gozzi/internal/generator"
+	"github.com/tduyng/gozzi/internal/parser"
 )
 
 type DevServer struct {
-	cfg          *config.SiteConfig
-	watcher      *fsnotify.Watcher
-	clients      map[chan []byte]struct{}
-	clientMutex  sync.Mutex
-	rebuildMutex sync.Mutex
+	site    *config.Site
+	gen     *generator.Generator
+	parser  *parser.ContentParser
+	watcher *fsnotify.Watcher
+	clients map[chan string]struct{}
+	mu      sync.Mutex
 }
 
-func NewDevServer(cfg *config.SiteConfig) (*DevServer, error) {
+func NewDevServer(site *config.Site, gen *generator.Generator, parser *parser.ContentParser) (*DevServer, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create watcher: %w", err)
 	}
 
 	return &DevServer{
-		cfg:     cfg,
+		site:    site,
+		gen:     gen,
+		parser:  parser,
 		watcher: watcher,
-		clients: make(map[chan []byte]struct{}),
+		clients: make(map[chan string]struct{}),
 	}, nil
 }
 
 func (s *DevServer) Start(port int) {
-	if err := generator.BuildSite(s.cfg); err != nil {
+	// Initial build
+	if err := s.parser.Parse("content"); err != nil {
+		log.Fatalf("Initial content parse failed: %v", err)
+	}
+	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
 		log.Fatalf("Initial build failed: %v", err)
 	}
 
 	go s.watchChanges()
 	mux := http.NewServeMux()
 	mux.Handle("/", &fileHandler{
-		root:     http.Dir(s.cfg.OutputDir),
+		root:     http.Dir(s.site.OutputDir),
 		notFound: "404.html",
 		dev:      true,
 	})
@@ -79,12 +86,7 @@ func (h *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			fmt.Printf("Error closing file: %v\n", err)
-		}
-	}()
-
+	defer f.Close()
 	stat, _ := f.Stat()
 
 	if stat.IsDir() {
@@ -94,59 +96,44 @@ func (h *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.serve404(w, r)
 			return
 		}
-		defer func() {
-			if err := f.Close(); err != nil {
-				fmt.Printf("Error closing index.html: %v\n", err)
-			}
-		}()
-
-		h.serveHTML(indexFile, w, r)
+		defer indexFile.Close()
+		h.serveHTML(indexFile, w)
 		return
 
 	}
 
 	if h.dev && strings.HasSuffix(path, ".html") {
-		h.serveHTML(f, w, r)
+		h.serveHTML(f, w)
 		return
 	}
 
 	http.ServeContent(w, r, stat.Name(), stat.ModTime(), f)
 }
 
-func (h *fileHandler) serveHTML(f http.File, w http.ResponseWriter, _ *http.Request) {
-	// Read the file content
+func (h *fileHandler) serveHTML(f http.File, w http.ResponseWriter) {
 	content, err := io.ReadAll(f)
 	if err != nil {
 		http.Error(w, "Error reading file", http.StatusInternalServerError)
 		return
 	}
 
-	// Inject livereload script
 	script := []byte(`<script>
 	(new EventSource('/livereload')).onmessage = () => location.reload()
 	</script></body>`)
 	content = bytes.Replace(content, []byte("</body>"), script, 1)
 
-	// Set headers and serve
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	if _, err := w.Write(content); err != nil {
-		log.Printf("Error writing response: %v", err)
-	}
+	w.Write(content)
 }
 
 func (h *fileHandler) serve404(w http.ResponseWriter, r *http.Request) {
 	f, err := h.root.Open(h.notFound)
-	if err == nil {
-		defer func() {
-			if err := f.Close(); err != nil {
-				log.Printf("Error closing file: %v", err)
-			}
-		}()
-		h.serveHTML(f, w, r)
+	if err != nil {
+		http.NotFound(w, r)
 		return
 	}
-	http.NotFound(w, r)
+	defer f.Close()
+	h.serveHTML(f, w)
 }
 
 func (s *DevServer) handleLiveReload(w http.ResponseWriter, r *http.Request) {
@@ -160,78 +147,64 @@ func (s *DevServer) handleLiveReload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
-	messageChan := make(chan []byte)
-	s.clientMutex.Lock()
-	s.clients[messageChan] = struct{}{}
-	s.clientMutex.Unlock()
+	msgChan := make(chan string)
+	s.mu.Lock()
+	s.clients[msgChan] = struct{}{}
+	s.mu.Unlock()
 
 	defer func() {
-		s.clientMutex.Lock()
-		delete(s.clients, messageChan)
-		s.clientMutex.Unlock()
-		close(messageChan)
+		s.mu.Lock()
+		delete(s.clients, msgChan)
+		s.mu.Unlock()
+		close(msgChan)
 	}()
 
 	for {
 		select {
 		case <-r.Context().Done():
 			return
-		case msg := <-messageChan:
-			if _, err := fmt.Fprintf(w, "data: %s\n\n", msg); err != nil {
-				log.Printf("Error writing formatted output: %v", err)
-			}
+		case msg := <-msgChan:
+			fmt.Fprintf(w, "data: %s\n\n", msg)
 			flusher.Flush()
 		}
 	}
 }
 
 func (s *DevServer) notifyClients() {
-	s.rebuildMutex.Lock()
-	defer s.rebuildMutex.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	for client := range s.clients {
 		select {
-		case client <- []byte("reload"):
+		case client <- "reload":
 		default:
 		}
 	}
 }
 
 func (s *DevServer) watchChanges() {
-	defer func() {
-		if err := s.watcher.Close(); err != nil {
-			log.Printf("Error closing watcher: %v", err)
-		}
-	}()
+	defer s.watcher.Close()
 
-	watchPaths := []string{
+	paths := []string{
 		"content",
 		"templates",
 		"static",
-		filepath.Dir("config.toml"),
+		"config.toml",
 	}
 
-	for _, path := range watchPaths {
-		absPath, _ := filepath.Abs(path)
-		if s.isIgnoredPath(absPath) {
-			continue
-		}
-
-		if errWalk := filepath.Walk(absPath, func(p string, info os.FileInfo, err error) error {
-			if err != nil || !info.IsDir() || s.isIgnoredPath(p) {
+	for _, path := range paths {
+		if err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+			if !info.IsDir() {
 				return nil
 			}
-			if err := s.watcher.Add(p); err != nil {
-				log.Printf("Watching %s: %v", p, err)
-			}
-			return nil
-		}); errWalk != nil {
-			log.Printf("Error walking the path %q: %v", absPath, errWalk)
+			return s.watcher.Add(p)
+		}); err != nil {
+			log.Printf("Error watching path %q: %v", path, err)
 		}
 	}
 
-	debounceTime := 500 * time.Millisecond
-	var timer *time.Timer
+	debounce := time.NewTimer(0)
+	debounce.Stop()
 
 	for {
 		select {
@@ -239,20 +212,8 @@ func (s *DevServer) watchChanges() {
 			if !ok {
 				return
 			}
-
-			// Skip ignored paths and non-content files
-			if s.shouldIgnoreEvent(event) {
-				continue
-			}
-
-			if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
-				if timer != nil {
-					timer.Stop()
-				}
-				timer = time.AfterFunc(debounceTime, func() {
-					s.triggerRebuild()
-					s.notifyClients()
-				})
+			if s.isRelevantChange(event) {
+				debounce.Reset(500 * time.Millisecond)
 			}
 
 		case err, ok := <-s.watcher.Errors:
@@ -260,51 +221,33 @@ func (s *DevServer) watchChanges() {
 				return
 			}
 			log.Printf("Watcher error: %v", err)
+
+		case <-debounce.C:
+			log.Println("Detected changes, rebuilding...")
+			if err := s.parser.Parse("content"); err != nil {
+				log.Printf("Content parse error: %v", err)
+			}
+			if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
+				log.Printf("Build error: %v", err)
+			}
+			s.notifyClients()
 		}
 	}
 }
 
-func (s *DevServer) triggerRebuild() {
-	s.clientMutex.Lock()
-	defer s.clientMutex.Unlock()
-
-	log.Println("Detected changes, rebuilding site...")
-	if err := generator.BuildSite(s.cfg); err != nil {
-		log.Printf("Rebuild error: %v", err)
-	}
-}
-
-func (s *DevServer) shouldIgnoreEvent(event fsnotify.Event) bool {
-	// Ignore output directory changes
-	if s.isIgnoredPath(event.Name) {
-		return true
+func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
+	if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
+		return false
 	}
 
-	// Ignore non-content files
 	ext := filepath.Ext(event.Name)
-	return !s.isRelevantExtension(ext)
-}
-
-func (s *DevServer) isRelevantExtension(ext string) bool {
-	relevant := []string{".md", ".html", ".toml", ".css", ".js", ""} // "" for directories
-	return slices.Contains(relevant, ext)
-}
-
-func (s *DevServer) isIgnoredPath(path string) bool {
-	absOutput, _ := filepath.Abs(s.cfg.OutputDir)
-	absPath, _ := filepath.Abs(path)
-
-	// Check if path is in output directory
-	if strings.HasPrefix(absPath, absOutput) {
-		return true
+	relevant := map[string]bool{
+		".md":   true,
+		".html": true,
+		".toml": true,
+		".css":  true,
+		".js":   true,
+		"":      true, // Directories
 	}
-
-	// Check other ignored patterns
-	ignored := []string{".git", "node_modules", "vendor"}
-	for _, pattern := range ignored {
-		if strings.Contains(absPath, pattern) {
-			return true
-		}
-	}
-	return false
+	return relevant[ext]
 }

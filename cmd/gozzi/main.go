@@ -27,7 +27,7 @@ func main() {
 		log.Fatalf("Error parsing content: %v", err)
 	}
 
-	gen, err := generator.NewGenerator(site)
+	gen, err := generator.NewGenerator(site, contentParser)
 	if err != nil {
 		log.Fatalf("Error creating generator: %v", err)
 	}

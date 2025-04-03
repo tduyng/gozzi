@@ -2,7 +2,6 @@ package config
 
 import (
 	"bytes"
-	"maps"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -115,9 +114,15 @@ func mergeFrontMatter(merged map[string]any, frontMatter *FrontMatter) map[strin
 func MergeExtra(base map[string]any, extra map[string]any) map[string]any {
 	for k, v := range extra {
 		if existing, exists := base[k]; exists {
-			if existingMap, ok := existing.(map[string]any); ok {
+			switch existingVal := existing.(type) {
+			case map[string]any:
 				if newMap, ok := v.(map[string]any); ok {
-					base[k] = mergeMaps(existingMap, newMap)
+					base[k] = mergeMapsDeep(existingVal, newMap)
+					continue
+				}
+			case []any:
+				if newArr, ok := v.([]any); ok {
+					base[k] = append(existingVal, newArr...)
 					continue
 				}
 			}
@@ -127,10 +132,29 @@ func MergeExtra(base map[string]any, extra map[string]any) map[string]any {
 	return base
 }
 
-func mergeMaps(base, override map[string]any) map[string]any {
+func mergeMapsDeep(base, override map[string]any) map[string]any {
 	result := make(map[string]any, len(base))
-	maps.Copy(result, base)
-	maps.Copy(result, override)
+	for k, v := range base {
+		result[k] = v
+	}
+
+	for k, overrideVal := range override {
+		if baseVal, exists := base[k]; exists {
+			switch baseValTyped := baseVal.(type) {
+			case map[string]any:
+				if overrideMap, ok := overrideVal.(map[string]any); ok {
+					result[k] = mergeMapsDeep(baseValTyped, overrideMap)
+					continue
+				}
+			case []any:
+				if overrideArr, ok := overrideVal.([]any); ok {
+					result[k] = append(baseValTyped, overrideArr...)
+					continue
+				}
+			}
+		}
+		result[k] = overrideVal
+	}
 	return result
 }
 

@@ -50,7 +50,7 @@ var (
 func NewContentNode(path string, parent *Node) *Node {
 	slug := GenerateSlug(path)
 	if path == "." {
-		slug = "home"
+		slug = "/"
 	}
 	return &Node{
 		Path:     path,
@@ -76,6 +76,44 @@ func GenerateSlug(path string) string {
 		return "untitled"
 	}
 	return slug
+}
+
+func (n *Node) TemplateChain() []string {
+	chain := []string{"default.html"}
+	if templateName, ok := n.Config["template"].(string); ok && templateName != "" {
+		chain = append([]string{templateName}, chain...)
+	}
+	if n.Parent != nil {
+		chain = append(n.Parent.TemplateChain(), chain...)
+	}
+	return chain
+}
+
+func (n *Node) Breadcrumbs() []*Node {
+	var crumbs []*Node
+	for current := n; current != nil; current = current.Parent {
+		if current.Slug != "/" {
+			crumbs = append([]*Node{current}, crumbs...)
+		}
+	}
+	return crumbs
+}
+
+func (n *Node) AllSections() []*Node {
+	var sections []*Node
+	var traverse func(*Node)
+
+	traverse = func(node *Node) {
+		if node.Type == NodeTypeSection {
+			sections = append(sections, node)
+		}
+		for _, child := range node.Children {
+			traverse(child)
+		}
+	}
+
+	traverse(n)
+	return sections
 }
 
 func extractBaseName(path string) string {

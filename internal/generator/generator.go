@@ -6,22 +6,26 @@ import (
 	"html/template"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"sync"
 
 	"github.com/tduyng/gozzi/internal/config"
 	"github.com/tduyng/gozzi/internal/content"
+	"github.com/tduyng/gozzi/internal/parser"
 )
 
 type Generator struct {
-	site  *config.Site
-	templ *template.Template
-	mu    sync.Mutex
+	site   *config.Site
+	templ  *template.Template
+	parser *parser.ContentParser
+	mu     sync.Mutex
 }
 
-func NewGenerator(site *config.Site) (*Generator, error) {
+func NewGenerator(site *config.Site, parser *parser.ContentParser) (*Generator, error) {
 	gen := &Generator{
-		site: site,
+		site:   site,
+		parser: parser,
 	}
 
 	tmpl, err := template.New("").Funcs(gen.CreateFuncMap()).ParseGlob("templates/*.html")
@@ -72,72 +76,82 @@ func (g *Generator) processNode(node *content.Node) error {
 }
 
 func (g *Generator) generateSection(node *content.Node) error {
-	var outputPath string
-	if node.Path == "." {
-		outputPath = filepath.Join(g.site.OutputDir, "index.html")
-	} else {
-		outputPath = filepath.Join(g.site.OutputDir, node.Slug, "index.html")
+	outputPath := filepath.Join(g.site.OutputDir, node.Slug, "index.html")
+	data := map[string]any{
+		"Site":        g.site,
+		"Section":     node,
+		"Pages":       node.Children,
+		"CurrentURL":  g.buildCurrentURL(node),
+		"Breadcrumbs": node.Breadcrumbs(),
+		"AllSections": g.getAllSections(),
 	}
-	tmplName := getTemplateName(node)
-	return g.renderTemplate(tmplName, outputPath, map[string]any{
-		"Site":    g.site,
-		"Section": node,
-		"Pages":   node.Children,
-	})
+	return g.renderTemplate(node, outputPath, data)
 }
 
 func (g *Generator) generatePage(node *content.Node) error {
-	basePath := g.site.OutputDir
-	if node.Parent != nil {
-		basePath = filepath.Join(basePath, node.Parent.Slug)
-	}
-	outputPath := filepath.Join(basePath, node.Slug, "index.html")
-	tmplName := getTemplateName(node)
+	outputPath := filepath.Join(
+		g.site.OutputDir,
+		node.Parent.Slug,
+		node.Slug,
+		"index.html",
+	)
+
 	if node.PageMeta.Assets != "" {
-		if _, err := os.Stat(node.PageMeta.Assets); err != nil {
-			if !os.IsNotExist(err) {
-				return fmt.Errorf("error checking assets directory: %w", err)
-			}
-		} else {
-			assetFolderName := filepath.Base(node.PageMeta.Assets)
-			var dest string
-			if node.Parent != nil && node.Slug == node.Parent.Slug {
-				dest = filepath.Join(g.site.OutputDir, node.Parent.Slug, assetFolderName)
-			} else {
-				dest = filepath.Join(g.site.OutputDir, node.Parent.Slug, node.Slug, assetFolderName)
-			}
-			if err := copyDir(node.PageMeta.Assets, dest); err != nil {
-				return fmt.Errorf("failed to copy assets: %w", err)
-			}
+		if err := g.copyPageAssets(node); err != nil {
+			return err
 		}
 	}
 
-	return g.renderTemplate(tmplName, outputPath, map[string]any{
-		"Site":    g.site,
-		"Page":    node,
-		"Section": node.Parent,
-	})
+	data := map[string]any{
+		"Site":        g.site,
+		"Page":        node,
+		"Section":     node.Parent,
+		"CurrentURL":  g.buildCurrentURL(node),
+		"Breadcrumbs": node.Breadcrumbs(),
+		"AllSections": g.getAllSections(),
+	}
+
+	return g.renderTemplate(node, outputPath, data)
 }
 
-func (g *Generator) renderTemplate(name, outputPath string, data any) error {
+func (g *Generator) renderTemplate(node *content.Node, outputPath string, data any) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	tmpl := g.templ.Lookup(name)
-	if tmpl == nil {
-		return fmt.Errorf("template %q not found", name)
+	for _, tplName := range node.TemplateChain() {
+		tmpl := g.templ.Lookup(tplName)
+		if tmpl != nil {
+			if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+				return fmt.Errorf("create output dir: %w", err)
+			}
+
+			var buf bytes.Buffer
+			if err := tmpl.Execute(&buf, data); err != nil {
+				return fmt.Errorf("template execution: %w", err)
+			}
+
+			if err := os.WriteFile(outputPath, buf.Bytes(), 0644); err != nil {
+				return fmt.Errorf("write output: %w", err)
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("no template found in chain: %v", node.TemplateChain())
+}
+
+func (g *Generator) copyPageAssets(node *content.Node) error {
+	if _, err := os.Stat(node.PageMeta.Assets); os.IsNotExist(err) {
+		return nil // Skip missing assets
 	}
 
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return err
-	}
+	dest := filepath.Join(
+		g.site.OutputDir,
+		node.Parent.Slug,
+		node.Slug,
+		filepath.Base(node.PageMeta.Assets),
+	)
 
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return err
-	}
-
-	return os.WriteFile(outputPath, buf.Bytes(), 0644)
+	return copyDir(node.PageMeta.Assets, dest)
 }
 
 func (g *Generator) walkNodes(node *content.Node, fn func(*content.Node)) {
@@ -148,41 +162,42 @@ func (g *Generator) walkNodes(node *content.Node, fn func(*content.Node)) {
 }
 
 func (g *Generator) copyStaticAssets() error {
-	return filepath.Walk("static", func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk("static", func(srcPath string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil
 		}
 
-		relPath, _ := filepath.Rel("static", path)
-		dest := filepath.Join(g.site.OutputDir, relPath)
-
-		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-			return err
+		relPath, err := filepath.Rel("static", srcPath)
+		if err != nil {
+			return fmt.Errorf("get relative path: %w", err)
 		}
 
-		return copyFile(path, dest)
+		destPath := filepath.Join(g.site.OutputDir, relPath)
+		return copyFile(srcPath, destPath)
 	})
 }
 
 func copyFile(src, dst string) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
-		return err
+		return fmt.Errorf("create dir: %w", err)
 	}
 
 	in, err := os.Open(src)
 	if err != nil {
-		return err
+		return fmt.Errorf("open source: %w", err)
 	}
 	defer in.Close()
 
 	out, err := os.Create(dst)
 	if err != nil {
-		return err
+		return fmt.Errorf("create dest: %w", err)
 	}
 	defer out.Close()
 
-	_, err = io.Copy(out, in)
-	return err
+	if _, err = io.Copy(out, in); err != nil {
+		return fmt.Errorf("copy content: %w", err)
+	}
+	return nil
 }
 
 func copyDir(src, dst string) error {
@@ -191,9 +206,12 @@ func copyDir(src, dst string) error {
 			return err
 		}
 
-		relPath, _ := filepath.Rel(src, path)
-		target := filepath.Join(dst, relPath)
+		relPath, err := filepath.Rel(src, path)
+		if err != nil {
+			return fmt.Errorf("get relative path: %w", err)
+		}
 
+		target := filepath.Join(dst, relPath)
 		if info.IsDir() {
 			return os.MkdirAll(target, 0755)
 		}
@@ -202,12 +220,25 @@ func copyDir(src, dst string) error {
 	})
 }
 
-func getTemplateName(node *content.Node) string {
-	if custom, ok := node.Config["template"].(string); ok && custom != "" {
-		return custom
+func (g *Generator) buildCurrentURL(node *content.Node) string {
+	parts := []string{}
+	for n := node; n != nil; n = n.Parent {
+		if n.Slug != "/" {
+			parts = append([]string{n.Slug}, parts...)
+		}
 	}
-	if node.Type == content.NodeTypeSection {
-		return "default.html"
+	return path.Join(g.site.BaseURL, path.Join(parts...)) + "/"
+}
+
+func (g *Generator) getAllSections() []*content.Node {
+	if g.parser == nil || g.parser.ContentMap == nil {
+		return nil
 	}
-	return "post.html"
+
+	root := g.parser.ContentMap["."]
+	if root == nil {
+		return nil
+	}
+
+	return root.AllSections()
 }

@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 )
@@ -13,6 +14,7 @@ func (g *Generator) CreateFuncMap() template.FuncMap {
 		"urlize": urlize,
 		"safe":   safeHTML,
 		"load":   loadDataToHTML,
+		"asset":  g.assetPath,
 	}
 }
 
@@ -36,4 +38,8 @@ func loadDataToHTML(path string) template.HTML {
 		return ""
 	}
 	return template.HTML(string(content))
+}
+
+func (g *Generator) assetPath(relPath string) string {
+	return path.Join(g.site.BaseURL, relPath)
 }

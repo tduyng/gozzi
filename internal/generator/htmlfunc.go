@@ -7,19 +7,23 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/tduyng/gozzi/internal/content"
 )
 
 func (g *Generator) CreateFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"urlize":   urlize,
-		"safe":     safeHTML,
-		"load":     loadDataToHTML,
-		"asset":    g.assetPath,
-		"priority": priority,
-		"section":  g.getSection,
-		"get":      getConfig,
+		"asset":       g.assetPath,
+		"default":     defaultValue,
+		"format_date": formatDate,
+		"get_section": g.getSection,
+		"limit":       limit,
+		"load":        loadDataToHTML,
+		"priority":    priority,
+		"reverse":     reverse,
+		"safe":        safeHTML,
+		"urlize":      urlize,
 	}
 }
 
@@ -99,9 +103,50 @@ func (g *Generator) getSection(path string) *content.Node {
 	return g.parser.GetOrCreateSection(sectionDir)
 }
 
-func getConfig(ctx map[string]any, key string) any {
-	if val, ok := ctx[key]; ok {
-		return val
+func formatDate(t time.Time, format ...string) string {
+	if len(format) > 0 && format[0] != "" {
+		return t.Format(format[0])
 	}
-	return nil
+	return t.Format("2006-01-02")
+}
+
+func limit(max any, items []*content.Node) []*content.Node {
+	var m int
+	switch v := max.(type) {
+	case int:
+		m = v
+	case int64:
+		m = int(v)
+	default:
+		m = 0
+	}
+	if m > len(items) {
+		m = len(items)
+	}
+	return items[:m]
+}
+
+func reverse(items []*content.Node) []*content.Node {
+	reversed := make([]*content.Node, len(items))
+	for i := range items {
+		reversed[len(items)-1-i] = items[i]
+	}
+	return reversed
+}
+
+func defaultValue(val any, def string) string {
+	if val == nil {
+		return def
+	}
+	if s, ok := val.(string); ok {
+		if s == "" {
+			return def
+		}
+		return s
+	}
+	s := fmt.Sprint(val)
+	if s == "" || s == "<nil>" {
+		return def
+	}
+	return s
 }

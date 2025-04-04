@@ -26,9 +26,8 @@ type Node struct {
 }
 
 type Section struct {
-	Title  string
-	Pages  []*Node
-	Config map[string]any
+	Children []*Node
+	Config   map[string]any
 }
 
 var (

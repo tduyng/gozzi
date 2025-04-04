@@ -66,6 +66,10 @@ func (g *Generator) Generate(contentRoot *content.Node) error {
 }
 
 func (g *Generator) processNode(node *content.Node) error {
+	if draft, ok := node.Config["draft"].(bool); ok && draft {
+		return nil
+	}
+
 	switch node.Type {
 	case content.NodeTypeSection:
 		return g.generateSection(node)
@@ -78,12 +82,16 @@ func (g *Generator) processNode(node *content.Node) error {
 func (g *Generator) generateSection(node *content.Node) error {
 	outputPath := filepath.Join(g.site.OutputDir, node.Slug, "index.html")
 	data := map[string]any{
-		"Site":   g.site,
+		"Site": map[string]any{
+			"Config": g.site.ToConfig(),
+		},
 		"Config": node.Config,
-		"Section": map[string]any{
-			"Title":  node.Section.Title,
-			"Pages":  node.Section.Pages,
+		"Page": map[string]any{ // page is a section now
 			"Config": node.Config,
+		},
+		"Section": map[string]any{
+			"Children": node.Children,
+			"Config":   node.Config,
 		},
 		"URL":         g.buildURL(node),
 		"Breadcrumbs": node.Breadcrumbs(),
@@ -107,16 +115,16 @@ func (g *Generator) generatePage(node *content.Node) error {
 	}
 
 	data := map[string]any{
-		"Site":   g.site,
+		"Site": map[string]any{
+			"Config": g.site.ToConfig(),
+		},
 		"Config": node.Config,
-		"Page": map[string]any{
-			"Title":   node.Config["title"],
-			"Content": node.Content,
-			"Config":  node.Config,
+		"Page": map[string]any{ // page is a page, child of section
+			"Config": node.Config,
 		},
 		"Section": map[string]any{
-			"Title":  node.Parent.Section.Title,
-			"Config": node.Parent.Config,
+			"Config":   node.Parent.Config,
+			"Children": node.Parent.Children,
 		},
 		"URL":         g.buildURL(node),
 		"Breadcrumbs": node.Breadcrumbs(),

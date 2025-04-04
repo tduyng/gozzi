@@ -80,10 +80,7 @@ func (p *ContentParser) parseSection(path, dir string) error {
 
 	node := p.GetOrCreateSection(dir)
 	node.Type = content.NodeTypeSection
-	node.Section = &content.Section{
-		Title: frontMatter.Title,
-	}
-	node.Config = config.MergeConfigs(p.Site, frontMatter, nil)
+	node.Config = config.MergeConfigs(p.Site.ToConfig(), frontMatter.ToConfig(), nil)
 
 	return nil
 }
@@ -95,13 +92,13 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	}
 
 	parts := bytes.SplitN(mkdownContent, []byte("+++"), 3)
-	var frontMatter *config.FrontMatter
+	var pageConfig *config.FrontMatter
 	var contentPart []byte
 	if len(parts) < 3 {
-		frontMatter = &config.FrontMatter{}
+		pageConfig = &config.FrontMatter{}
 		contentPart = mkdownContent
 	} else {
-		frontMatter, err = config.LoadFrontMatter(mkdownContent)
+		pageConfig, err = config.LoadFrontMatter(mkdownContent)
 		if err != nil {
 			return err
 		}
@@ -118,13 +115,9 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		sectionConfig = secNode.Config
 	}
 
-	mergedConfigPage := config.MergeConfigs(p.Site, nil, frontMatter)
-	mergedConfig := mergedConfigPage
+	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, pageConfig.ToConfig())
 	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
-	mergedConfig["img"] = p.resolveImgURL(frontMatter, path)
-	if sectionConfig != nil {
-		mergedConfig = config.MergeExtra(sectionConfig, mergedConfigPage)
-	}
+	mergedConfig["img"] = p.resolveImgURL(pageConfig, path)
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -138,7 +131,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	parent := p.GetOrCreateSection(sectionDir)
 	pageNode.Parent = parent
 	parent.Children = append(parent.Children, pageNode)
-	parent.Section.Pages = append(parent.Section.Pages, pageNode)
+	parent.Section.Children = append(parent.Section.Children, pageNode)
 
 	return nil
 }

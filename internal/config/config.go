@@ -48,19 +48,42 @@ func LoadFrontMatter(content []byte) (*FrontMatter, error) {
 	return parseFrontMatter[FrontMatter](content)
 }
 
-func MergeConfigs(site *Site, section *FrontMatter, page *FrontMatter) map[string]any {
-	merged := make(map[string]any)
+func (site *Site) ToConfig() map[string]any {
+	siteConfig := make(map[string]any)
 	if site != nil {
-		merged["base_url"] = site.BaseURL
-		merged["feed_url"] = site.FeedURL
-		merged["title"] = site.Title
-		merged["description"] = site.Description
-		merged["output_dir"] = site.OutputDir
-		merged["lang"] = site.Lang
-		merged["generate_feed"] = site.GenerateFeed
-		merged["img"] = site.Img
-		merged["extra"] = MergeExtra(make(map[string]any), site.Extra)
+		siteConfig["base_url"] = site.BaseURL
+		siteConfig["feed_url"] = site.FeedURL
+		siteConfig["title"] = site.Title
+		siteConfig["description"] = site.Description
+		siteConfig["output_dir"] = site.OutputDir
+		siteConfig["lang"] = site.Lang
+		siteConfig["generate_feed"] = site.GenerateFeed
+		siteConfig["img"] = site.Img
+		siteConfig["extra"] = MergeExtra(make(map[string]any), site.Extra)
 	}
+	return siteConfig
+}
+
+func (frontMatter *FrontMatter) ToConfig() map[string]any {
+	config := make(map[string]any)
+	config["title"] = frontMatter.Title
+	config["description"] = frontMatter.Description
+	config["template"] = frontMatter.Template
+	config["generate_feed"] = frontMatter.GenerateFeed
+	config["img"] = frontMatter.Img
+	config["lang"] = frontMatter.Lang
+	config["featured"] = frontMatter.Featured
+	config["draft"] = frontMatter.Draft
+	config["tags"] = frontMatter.Tags
+	config["date"] = frontMatter.Date
+	config["update"] = frontMatter.Update
+	config["extra"] = MergeExtra(config, frontMatter.Extra)
+	return config
+}
+
+func MergeConfigs(site, section, page map[string]any) map[string]any {
+	merged := make(map[string]any)
+	maps.Copy(merged, site)
 
 	if section != nil {
 		merged = mergeFrontMatter(merged, section)
@@ -73,42 +96,42 @@ func MergeConfigs(site *Site, section *FrontMatter, page *FrontMatter) map[strin
 	return merged
 }
 
-func mergeFrontMatter(merged map[string]any, frontMatter *FrontMatter) map[string]any {
-	if frontMatter.Title != "" {
-		merged["title"] = frontMatter.Title
+func mergeFrontMatter(merged, frontMatter map[string]any) map[string]any {
+	if frontMatter["title"] != "" {
+		merged["title"] = frontMatter["title"]
 	}
-	if frontMatter.Description != "" {
-		merged["description"] = frontMatter.Description
+	if frontMatter["description"] != "" {
+		merged["description"] = frontMatter["description"]
 	}
-	if frontMatter.Template != "" {
-		merged["template"] = frontMatter.Template
-	}
-
-	if frontMatter.GenerateFeed {
-		merged["generate_feed"] = frontMatter.GenerateFeed
+	if frontMatter["template"] != "" {
+		merged["template"] = frontMatter["template"]
 	}
 
-	if frontMatter.Img != "" {
-		merged["img"] = frontMatter.Img
+	if frontMatter["generate_feed"].(bool) {
+		merged["generate_feed"] = frontMatter["generate_feed"]
 	}
 
-	if frontMatter.Lang != "" {
-		merged["lang"] = frontMatter.Lang
+	if frontMatter["img"] != "" {
+		merged["img"] = frontMatter["img"]
 	}
 
-	if frontMatter.Featured {
-		merged["featured"] = frontMatter.Featured
+	if frontMatter["lang"] != "" {
+		merged["lang"] = frontMatter["lang"]
 	}
 
-	if frontMatter.Draft {
-		merged["draft"] = frontMatter.Draft
+	if frontMatter["featured"].(bool) {
+		merged["featured"] = frontMatter["featured"]
 	}
 
-	merged["tags"] = frontMatter.Tags
-	merged["date"] = frontMatter.Date
-	merged["update"] = frontMatter.Update
+	if frontMatter["draft"].(bool) {
+		merged["draft"] = frontMatter["draft"].(bool)
+	}
 
-	merged["extra"] = MergeExtra(merged, frontMatter.Extra)
+	merged["tags"] = frontMatter["tags"]
+	merged["date"] = frontMatter["date"]
+	merged["update"] = frontMatter["update"]
+
+	merged["extra"] = MergeExtra(merged, frontMatter["extra"].(map[string]any))
 	return merged
 }
 

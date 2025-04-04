@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"maps"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -134,9 +135,7 @@ func MergeExtra(base map[string]any, extra map[string]any) map[string]any {
 
 func mergeMapsDeep(base, override map[string]any) map[string]any {
 	result := make(map[string]any, len(base))
-	for k, v := range base {
-		result[k] = v
-	}
+	maps.Copy(result, base)
 
 	for k, overrideVal := range override {
 		if baseVal, exists := base[k]; exists {

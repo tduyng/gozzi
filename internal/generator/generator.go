@@ -78,10 +78,14 @@ func (g *Generator) processNode(node *content.Node) error {
 func (g *Generator) generateSection(node *content.Node) error {
 	outputPath := filepath.Join(g.site.OutputDir, node.Slug, "index.html")
 	data := map[string]any{
-		"Site":        g.site,
-		"Section":     node,
-		"Pages":       node.Children,
-		"CurrentURL":  g.buildCurrentURL(node),
+		"Site":   g.site,
+		"Config": node.Config,
+		"Section": map[string]any{
+			"Title":  node.Section.Title,
+			"Pages":  node.Section.Pages,
+			"Config": node.Config,
+		},
+		"URL":         g.buildURL(node),
 		"Breadcrumbs": node.Breadcrumbs(),
 		"AllSections": g.getAllSections(),
 	}
@@ -96,17 +100,25 @@ func (g *Generator) generatePage(node *content.Node) error {
 		"index.html",
 	)
 
-	if node.PageMeta.Assets != "" {
+	if node.Config["assets"] != "" {
 		if err := g.copyPageAssets(node); err != nil {
 			return err
 		}
 	}
 
 	data := map[string]any{
-		"Site":        g.site,
-		"Page":        node,
-		"Section":     node.Parent,
-		"CurrentURL":  g.buildCurrentURL(node),
+		"Site":   g.site,
+		"Config": node.Config,
+		"Page": map[string]any{
+			"Title":   node.Config["title"],
+			"Content": node.Content,
+			"Config":  node.Config,
+		},
+		"Section": map[string]any{
+			"Title":  node.Parent.Section.Title,
+			"Config": node.Parent.Config,
+		},
+		"URL":         g.buildURL(node),
 		"Breadcrumbs": node.Breadcrumbs(),
 		"AllSections": g.getAllSections(),
 	}
@@ -140,7 +152,8 @@ func (g *Generator) renderTemplate(node *content.Node, outputPath string, data a
 }
 
 func (g *Generator) copyPageAssets(node *content.Node) error {
-	if _, err := os.Stat(node.PageMeta.Assets); os.IsNotExist(err) {
+	assets := node.Config["assets"].(string)
+	if _, err := os.Stat(assets); os.IsNotExist(err) {
 		return nil // Skip missing assets
 	}
 
@@ -148,10 +161,10 @@ func (g *Generator) copyPageAssets(node *content.Node) error {
 		g.site.OutputDir,
 		node.Parent.Slug,
 		node.Slug,
-		filepath.Base(node.PageMeta.Assets),
+		filepath.Base(assets),
 	)
 
-	return copyDir(node.PageMeta.Assets, dest)
+	return copyDir(assets, dest)
 }
 
 func (g *Generator) walkNodes(node *content.Node, fn func(*content.Node)) {
@@ -220,7 +233,7 @@ func copyDir(src, dst string) error {
 	})
 }
 
-func (g *Generator) buildCurrentURL(node *content.Node) string {
+func (g *Generator) buildURL(node *content.Node) string {
 	parts := []string{}
 	for n := node; n != nil; n = n.Parent {
 		if n.Slug != "/" {

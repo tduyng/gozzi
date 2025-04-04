@@ -120,6 +120,8 @@ func (p *ContentParser) parsePage(path, dir string) error {
 
 	mergedConfigPage := config.MergeConfigs(p.Site, nil, frontMatter)
 	mergedConfig := mergedConfigPage
+	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
+	mergedConfig["img"] = p.resolveImgURL(frontMatter, path)
 	if sectionConfig != nil {
 		mergedConfig = config.MergeExtra(sectionConfig, mergedConfigPage)
 	}
@@ -131,14 +133,6 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	pageNode.Type = content.NodeTypePage
 	pageNode.Config = mergedConfig
 	pageNode.Content = template.HTML(buf.String())
-	pageNode.PageMeta = &content.PageMeta{
-		Date:    frontMatter.Date,
-		Updated: frontMatter.Update,
-		Tags:    frontMatter.Tags,
-		Assets:  filepath.Join(filepath.Dir(path), "img"),
-		Draft:   frontMatter.Draft,
-		ImgURL:  p.resolveImgURL(frontMatter, path),
-	}
 
 	sectionDir := filepath.Dir(dir)
 	parent := p.GetOrCreateSection(sectionDir)

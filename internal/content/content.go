@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 )
 
 type NodeType int
@@ -23,22 +22,13 @@ type Node struct {
 	Content  template.HTML
 	Parent   *Node
 	Children []*Node
-	PageMeta *PageMeta
 	Section  *Section
 }
 
 type Section struct {
-	Title string
-	Pages []*Node
-}
-
-type PageMeta struct {
-	Date    time.Time
-	Updated time.Time
-	Tags    []string
-	Assets  string
-	Draft   bool
-	ImgURL  string
+	Title  string
+	Pages  []*Node
+	Config map[string]any
 }
 
 var (

@@ -19,6 +19,7 @@ func (g *Generator) CreateFuncMap() template.FuncMap {
 		"asset":    g.assetPath,
 		"priority": priority,
 		"section":  g.getSection,
+		"get":      getConfig,
 	}
 }
 
@@ -96,4 +97,11 @@ func (g *Generator) getSection(path string) *content.Node {
 		return node
 	}
 	return g.parser.GetOrCreateSection(sectionDir)
+}
+
+func getConfig(ctx map[string]any, key string) any {
+	if val, ok := ctx[key]; ok {
+		return val
+	}
+	return nil
 }

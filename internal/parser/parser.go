@@ -78,7 +78,7 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	node := p.getOrCreateSection(dir)
+	node := p.GetOrCreateSection(dir)
 	node.Type = content.NodeTypeSection
 	node.Section = &content.Section{
 		Title: frontMatter.Title,
@@ -141,7 +141,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	}
 
 	sectionDir := filepath.Dir(dir)
-	parent := p.getOrCreateSection(sectionDir)
+	parent := p.GetOrCreateSection(sectionDir)
 	pageNode.Parent = parent
 	parent.Children = append(parent.Children, pageNode)
 	parent.Section.Pages = append(parent.Section.Pages, pageNode)
@@ -172,7 +172,7 @@ func (p *ContentParser) resolveImgURL(fm *config.FrontMatter, path string) strin
 	return baseURL + filepath.Join("/", mdDir, img)
 }
 
-func (p *ContentParser) getOrCreateSection(dir string) *content.Node {
+func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 	if node, exists := p.ContentMap[dir]; exists {
 		if node.Section == nil {
 			node.Section = &content.Section{}
@@ -183,7 +183,7 @@ func (p *ContentParser) getOrCreateSection(dir string) *content.Node {
 	var parent *content.Node
 	if dir != "." {
 		parentDir := filepath.Dir(dir)
-		parent = p.getOrCreateSection(parentDir)
+		parent = p.GetOrCreateSection(parentDir)
 	}
 
 	node := content.NewContentNode(dir, parent)

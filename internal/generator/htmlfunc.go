@@ -1,20 +1,24 @@
 package generator
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"os"
-	"path"
 	"regexp"
 	"strings"
+
+	"github.com/tduyng/gozzi/internal/content"
 )
 
 func (g *Generator) CreateFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"urlize": urlize,
-		"safe":   safeHTML,
-		"load":   loadDataToHTML,
-		"asset":  g.assetPath,
+		"urlize":   urlize,
+		"safe":     safeHTML,
+		"load":     loadDataToHTML,
+		"asset":    g.assetPath,
+		"priority": priority,
+		"section":  g.getSection,
 	}
 }
 
@@ -40,6 +44,56 @@ func loadDataToHTML(path string) template.HTML {
 	return template.HTML(string(content))
 }
 
-func (g *Generator) assetPath(relPath string) string {
-	return path.Join(g.site.BaseURL, relPath)
+func (g *Generator) assetPath(relPath string, context any) string {
+	baseURL := strings.TrimSuffix(g.site.BaseURL, "/")
+
+	if strings.HasPrefix(relPath, "http://") || strings.HasPrefix(relPath, "https://") {
+		return relPath
+	}
+
+	if strings.HasPrefix(relPath, "/") {
+		return baseURL + relPath
+	}
+	if ctx, ok := context.(*content.Node); ok {
+		pagePath := ctx.Slug
+		if !strings.HasSuffix(pagePath, "/") {
+			pagePath += "/"
+		}
+		return baseURL + pagePath + relPath
+	}
+	return baseURL + "/" + relPath
+}
+
+func priority(vals ...any) string {
+	for _, v := range vals {
+		if v == nil {
+			continue
+		}
+		if s, ok := v.(string); ok && s != "" {
+			return s
+		}
+		s := fmt.Sprint(v)
+		if s != "" && s != "<nil>" {
+			return s
+		}
+	}
+	return ""
+}
+
+func (g *Generator) getSection(path string) *content.Node {
+	if !strings.Contains(path, "_index.md") {
+		if strings.HasSuffix(path, "/") {
+			path = path + "_index.md"
+		} else {
+			path = path + "/_index.md"
+		}
+	}
+	sectionDir := strings.TrimSuffix(path, "/_index.md")
+	if sectionDir == "" {
+		sectionDir = "."
+	}
+	if node, ok := g.parser.ContentMap[sectionDir]; ok {
+		return node
+	}
+	return g.parser.GetOrCreateSection(sectionDir)
 }

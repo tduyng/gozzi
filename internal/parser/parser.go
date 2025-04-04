@@ -70,9 +70,12 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		return err
 	}
 
-	frontMatter, err := config.LoadFrontMatter(mkdown)
+	sectionConfig, err := config.LoadFrontMatter(mkdown)
 	if err != nil {
 		return err
+	}
+	if sectionConfig.Draft {
+		return nil
 	}
 
 	p.mu.Lock()
@@ -80,7 +83,7 @@ func (p *ContentParser) parseSection(path, dir string) error {
 
 	node := p.GetOrCreateSection(dir)
 	node.Type = content.NodeTypeSection
-	node.Config = config.MergeConfigs(p.Site.ToConfig(), frontMatter.ToConfig(), nil)
+	node.Config = config.MergeConfigs(p.Site.ToConfig(), sectionConfig.ToConfig(), nil)
 
 	return nil
 }
@@ -103,6 +106,9 @@ func (p *ContentParser) parsePage(path, dir string) error {
 			return err
 		}
 		contentPart = parts[2]
+	}
+	if pageConfig.Draft {
+		return nil
 	}
 
 	var buf bytes.Buffer

@@ -66,10 +66,6 @@ func (g *Generator) Generate(contentRoot *content.Node) error {
 }
 
 func (g *Generator) processNode(node *content.Node) error {
-	if draft, ok := node.Config["draft"].(bool); ok && draft {
-		return nil
-	}
-
 	switch node.Type {
 	case content.NodeTypeSection:
 		return g.generateSection(node)

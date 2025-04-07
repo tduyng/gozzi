@@ -91,9 +91,7 @@ func (g *Generator) generateSection(node *content.Node) error {
 			"Config":   node.Config,
 			"Content":  node.Content,
 		},
-		"URL":         g.buildURL(node),
-		"Breadcrumbs": node.Breadcrumbs(),
-		"AllSections": g.getAllSections(),
+		"URL": g.buildURL(node),
 	}
 	return g.renderTemplate(node, outputPath, data)
 }
@@ -126,9 +124,7 @@ func (g *Generator) generatePage(node *content.Node) error {
 			"Children": node.Parent.Children,
 			"Content":  node.Parent.Content,
 		},
-		"URL":         g.buildURL(node),
-		"Breadcrumbs": node.Breadcrumbs(),
-		"AllSections": g.getAllSections(),
+		"URL": g.buildURL(node),
 	}
 
 	return g.renderTemplate(node, outputPath, data)
@@ -249,19 +245,6 @@ func (g *Generator) buildURL(node *content.Node) string {
 		}
 	}
 	return path.Join(g.site.BaseURL, path.Join(parts...)) + "/"
-}
-
-func (g *Generator) getAllSections() []*content.Node {
-	if g.parser == nil || g.parser.ContentMap == nil {
-		return nil
-	}
-
-	root := g.parser.ContentMap["."]
-	if root == nil {
-		return nil
-	}
-
-	return root.AllSections()
 }
 
 func (g *Generator) ReloadTemplates() error {

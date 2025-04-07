@@ -263,3 +263,14 @@ func (g *Generator) getAllSections() []*content.Node {
 
 	return root.AllSections()
 }
+
+func (g *Generator) ReloadTemplates() error {
+	tmpl, err := template.New("").Funcs(g.CreateFuncMap()).ParseGlob("templates/*.html")
+	if err != nil {
+		return fmt.Errorf("template reload failed: %w", err)
+	}
+	g.mu.Lock()
+	g.templ = tmpl
+	g.mu.Unlock()
+	return nil
+}

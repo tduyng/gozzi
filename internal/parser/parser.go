@@ -45,6 +45,10 @@ func NewParser(cfg *config.Site) *ContentParser {
 }
 
 func (p *ContentParser) Parse(rootDir string) error {
+	p.mu.Lock()
+	p.ContentMap = make(map[string]*content.Node) // Reset ContentMap
+	p.mu.Unlock()
+
 	return filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil

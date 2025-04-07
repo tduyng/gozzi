@@ -223,7 +223,11 @@ func (s *DevServer) watchChanges() {
 			log.Printf("Watcher error: %v", err)
 
 		case <-debounce.C:
-			log.Println("Detected changes, rebuilding...")
+			startTime := time.Now()
+			log.Println("Detected change, rebuilding...")
+			if err := s.gen.ReloadTemplates(); err != nil {
+				log.Printf("Failed to reload templates: %v", err)
+			}
 			if err := s.parser.Parse("content"); err != nil {
 				log.Printf("Content parse error: %v", err)
 			}
@@ -231,6 +235,8 @@ func (s *DevServer) watchChanges() {
 				log.Printf("Build error: %v", err)
 			}
 			s.notifyClients()
+			ms := time.Since(startTime).Milliseconds()
+			log.Printf("Build done in %dms", ms)
 		}
 	}
 }
@@ -241,6 +247,12 @@ func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
 	}
 
 	ext := filepath.Ext(event.Name)
+	dir := filepath.Dir(event.Name)
+
+	if dir == "templates" && ext == ".html" {
+		return true
+	}
+
 	relevant := map[string]bool{
 		".md":   true,
 		".html": true,

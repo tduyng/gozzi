@@ -62,12 +62,14 @@ func GenerateSlug(path string) string {
 }
 
 func (n *Node) TemplateChain() []string {
-	chain := []string{}
-	if templateName, ok := n.Config["template"].(string); ok && templateName != "" {
-		chain = append([]string{templateName}, chain...)
-	}
+	chain := []string{"default.html"}
+
 	if n.Parent != nil {
 		chain = append(n.Parent.TemplateChain(), chain...)
+	}
+
+	if templateName, ok := n.Config["template"].(string); ok && templateName != "" {
+		chain = append([]string{templateName}, chain...)
 	}
 	return chain
 }

@@ -74,8 +74,8 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		return err
 	}
 
-	sectionConfig, contentPart, err := config.LoadFrontMatter(mkdown)
-	if err != nil || sectionConfig.Draft {
+	frontMatter, contentPart, err := config.LoadFrontMatter(mkdown)
+	if err != nil || frontMatter.Draft {
 		return err
 	}
 
@@ -83,13 +83,17 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	if err := p.md.Convert(contentPart, &buf); err != nil {
 		return fmt.Errorf("markdown conversion failed: %w", err)
 	}
+	sectionConfig := frontMatter.ToConfig()
+	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, nil)
+	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
+	mergedConfig["img"] = p.resolveImgURL(frontMatter, path)
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	node := p.GetOrCreateSection(dir)
 	node.Type = content.NodeTypeSection
-	node.Config = config.MergeConfigs(p.Site.ToConfig(), sectionConfig.ToConfig(), nil)
+	node.Config = sectionConfig
 	node.Content = template.HTML(buf.String())
 
 	return nil

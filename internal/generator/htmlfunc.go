@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,7 +18,7 @@ func (g *Generator) CreateFuncMap() template.FuncMap {
 	return template.FuncMap{
 		"asset":       g.assetPath,
 		"default":     defaultValue,
-		"format_date": formatDate,
+		"date":        formatDate,
 		"get_section": g.getSection,
 		"limit":       limit,
 		"load":        loadDataToHTML,
@@ -24,7 +26,13 @@ func (g *Generator) CreateFuncMap() template.FuncMap {
 		"reverse":     reverse,
 		"safe":        safeHTML,
 		"urlize":      urlize,
+		"group_by":    g.groupBy,
 	}
+}
+
+type Group struct {
+	Key   string
+	Items []*content.Node
 }
 
 func urlize(s string) string {
@@ -149,4 +157,56 @@ func defaultValue(val any, def string) string {
 		return def
 	}
 	return s
+}
+
+func (g *Generator) groupBy(key string, nodes []*content.Node) []Group {
+	groups := make(map[string][]*content.Node)
+
+	for _, node := range nodes {
+		// Extract date from node config
+		dateVal, ok := node.Config["date"]
+		if !ok {
+			continue
+		}
+
+		var t time.Time
+		switch v := dateVal.(type) {
+		case time.Time:
+			t = v
+		case string:
+			parsed, err := time.Parse(time.RFC3339, v)
+			if err != nil {
+				continue
+			}
+			t = parsed
+		}
+
+		// Get grouping key
+		var groupKey string
+		switch key {
+		case "year":
+			groupKey = strconv.Itoa(t.Year())
+		case "month":
+			groupKey = t.Format("2006-01")
+		case "day":
+			groupKey = t.Format("2006-01-02")
+		default:
+			continue
+		}
+
+		groups[groupKey] = append(groups[groupKey], node)
+	}
+
+	// Convert to sorted slice
+	var result []Group
+	for k, items := range groups {
+		result = append(result, Group{Key: k, Items: items})
+	}
+
+	// Sort descending chronological order
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Key > result[j].Key
+	})
+
+	return result
 }

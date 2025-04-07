@@ -34,7 +34,7 @@ type FrontMatter struct {
 	Template     string         `toml:"template"`
 	Title        string         `toml:"title"`
 	Featured     bool           `toml:"featured"`
-	Update       time.Time      `toml:"update"`
+	Updated      time.Time      `toml:"updated"`
 }
 
 func LoadSite(path string) (*Site, error) {
@@ -77,7 +77,7 @@ func (frontMatter *FrontMatter) ToConfig() map[string]any {
 	config["draft"] = frontMatter.Draft
 	config["tags"] = frontMatter.Tags
 	config["date"] = frontMatter.Date
-	config["update"] = frontMatter.Update
+	config["updated"] = frontMatter.Updated
 	config["extra"] = MergeExtra(config, frontMatter.Extra)
 	return config
 }
@@ -130,7 +130,7 @@ func mergeFrontMatter(merged, frontMatter map[string]any) map[string]any {
 
 	merged["tags"] = frontMatter["tags"]
 	merged["date"] = frontMatter["date"]
-	merged["update"] = frontMatter["update"]
+	merged["updated"] = frontMatter["updated"]
 
 	merged["extra"] = MergeExtra(merged, frontMatter["extra"].(map[string]any))
 	return merged

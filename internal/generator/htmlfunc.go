@@ -111,9 +111,12 @@ func (g *Generator) getSection(path string) *content.Node {
 	return g.parser.GetOrCreateSection(sectionDir)
 }
 
-func formatDate(t time.Time, format ...string) string {
-	if len(format) > 0 && format[0] != "" {
-		return t.Format(format[0])
+func formatDate(t time.Time, layout ...string) string {
+	if t.IsZero() {
+		return ""
+	}
+	if len(layout) > 0 {
+		return t.Format(layout[0])
 	}
 	return t.Format("2006-01-02")
 }

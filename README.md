@@ -8,3 +8,4 @@ TODO:
 - [ ] Handle better html template + config
 - [ ] Create .GetURL func for html template, support cache
 - [ ] Copy correctly images from child folder
+- [ ] Support toc

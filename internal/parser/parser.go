@@ -70,12 +70,14 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		return err
 	}
 
-	sectionConfig, err := config.LoadFrontMatter(mkdown)
-	if err != nil {
+	sectionConfig, contentPart, err := config.LoadFrontMatter(mkdown)
+	if err != nil || sectionConfig.Draft {
 		return err
 	}
-	if sectionConfig.Draft {
-		return nil
+
+	var buf bytes.Buffer
+	if err := p.md.Convert(contentPart, &buf); err != nil {
+		return fmt.Errorf("markdown conversion failed: %w", err)
 	}
 
 	p.mu.Lock()
@@ -84,6 +86,7 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	node := p.GetOrCreateSection(dir)
 	node.Type = content.NodeTypeSection
 	node.Config = config.MergeConfigs(p.Site.ToConfig(), sectionConfig.ToConfig(), nil)
+	node.Content = template.HTML(buf.String())
 
 	return nil
 }
@@ -94,21 +97,9 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		return err
 	}
 
-	parts := bytes.SplitN(mkdownContent, []byte("+++"), 3)
-	var pageConfig *config.FrontMatter
-	var contentPart []byte
-	if len(parts) < 3 {
-		pageConfig = &config.FrontMatter{}
-		contentPart = mkdownContent
-	} else {
-		pageConfig, err = config.LoadFrontMatter(mkdownContent)
-		if err != nil {
-			return err
-		}
-		contentPart = parts[2]
-	}
-	if pageConfig.Draft {
-		return nil
+	pageConfig, contentPart, err := config.LoadFrontMatter(mkdownContent)
+	if err != nil || pageConfig.Draft {
+		return err
 	}
 
 	var buf bytes.Buffer
@@ -137,7 +128,6 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	parent := p.GetOrCreateSection(sectionDir)
 	pageNode.Parent = parent
 	parent.Children = append(parent.Children, pageNode)
-	parent.Section.Children = append(parent.Section.Children, pageNode)
 
 	return nil
 }
@@ -167,9 +157,6 @@ func (p *ContentParser) resolveImgURL(fm *config.FrontMatter, path string) strin
 
 func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 	if node, exists := p.ContentMap[dir]; exists {
-		if node.Section == nil {
-			node.Section = &content.Section{}
-		}
 		return node
 	}
 
@@ -181,7 +168,6 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 
 	node := content.NewContentNode(dir, parent)
 	node.Type = content.NodeTypeSection
-	node.Section = &content.Section{}
 
 	if parent != nil {
 		parent.Children = append(parent.Children, node)

@@ -83,11 +83,13 @@ func (g *Generator) generateSection(node *content.Node) error {
 		},
 		"Config": node.Config,
 		"Page": map[string]any{ // page is a section now
-			"Config": node.Config,
+			"Config":  node.Config,
+			"Content": node.Content,
 		},
 		"Section": map[string]any{
 			"Children": node.Children,
 			"Config":   node.Config,
+			"Content":  node.Content,
 		},
 		"URL":         g.buildURL(node),
 		"Breadcrumbs": node.Breadcrumbs(),
@@ -116,11 +118,13 @@ func (g *Generator) generatePage(node *content.Node) error {
 		},
 		"Config": node.Config,
 		"Page": map[string]any{ // page is a page, child of section
-			"Config": node.Config,
+			"Config":  node.Config,
+			"Content": node.Content,
 		},
 		"Section": map[string]any{
 			"Config":   node.Parent.Config,
 			"Children": node.Parent.Children,
+			"Content":  node.Parent.Content,
 		},
 		"URL":         g.buildURL(node),
 		"Breadcrumbs": node.Breadcrumbs(),

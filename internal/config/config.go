@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"fmt"
 	"maps"
 	"time"
 
@@ -44,7 +45,7 @@ func LoadSite(path string) (*Site, error) {
 	return &cfg, nil
 }
 
-func LoadFrontMatter(content []byte) (*FrontMatter, error) {
+func LoadFrontMatter(content []byte) (*FrontMatter, []byte, error) {
 	return parseFrontMatter[FrontMatter](content)
 }
 
@@ -180,19 +181,30 @@ func mergeMapsDeep(base, override map[string]any) map[string]any {
 	return result
 }
 
-func parseFrontMatter[T any](content []byte) (*T, error) {
+func parseFrontMatter[T any](content []byte) (*T, []byte, error) {
 	frontMatterDelim := []byte("+++")
 	parts := bytes.SplitN(content, frontMatterDelim, 3)
 
-	if len(parts) < 3 {
-		return nil, nil // No front matter found
+	var (
+		config *T
+		body   []byte
+		err    error
+	)
+
+	switch len(parts) {
+	case 1: // No front matter
+		body = content
+	case 2: // Only opening +++
+		body = bytes.Join(parts, frontMatterDelim)
+	case 3:
+		frontMatter := bytes.TrimSpace(parts[1])
+		config = new(T)
+		if err = toml.Unmarshal(frontMatter, config); err != nil {
+			return nil, nil, fmt.Errorf("front matter parsing failed: %w", err)
+		}
+
+		body = bytes.TrimSpace(parts[2])
 	}
 
-	frontMatter := bytes.TrimSpace(parts[1])
-
-	var config T
-	if err := toml.Unmarshal(frontMatter, &config); err != nil {
-		return nil, err
-	}
-	return &config, nil
+	return config, body, nil
 }

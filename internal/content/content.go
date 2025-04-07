@@ -22,12 +22,6 @@ type Node struct {
 	Content  template.HTML
 	Parent   *Node
 	Children []*Node
-	Section  *Section
-}
-
-type Section struct {
-	Children []*Node
-	Config   map[string]any
 }
 
 var (

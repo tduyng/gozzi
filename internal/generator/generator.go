@@ -77,21 +77,25 @@ func (g *Generator) processNode(node *content.Node) error {
 
 func (g *Generator) generateSection(node *content.Node) error {
 	outputPath := filepath.Join(g.site.OutputDir, node.Slug, "index.html")
+
+	permalink := g.BuilPermalink(node)
+	node.Permalink = permalink
 	data := map[string]any{
 		"Site": map[string]any{
 			"Config": g.site.ToConfig(),
 		},
 		"Config": node.Config,
 		"Page": map[string]any{ // page is a section now
-			"Config":  node.Config,
-			"Content": node.Content,
+			"Config":    node.Config,
+			"Content":   node.Content,
+			"Permalink": permalink,
 		},
 		"Section": map[string]any{
-			"Children": node.Children,
-			"Config":   node.Config,
-			"Content":  node.Content,
+			"Children":  node.Children,
+			"Config":    node.Config,
+			"Content":   node.Content,
+			"Permalink": permalink,
 		},
-		"URL": g.buildURL(node),
 	}
 	return g.renderTemplate(node, outputPath, data)
 }
@@ -109,22 +113,24 @@ func (g *Generator) generatePage(node *content.Node) error {
 			return err
 		}
 	}
-
+	permalink := g.BuilPermalink(node)
+	node.Permalink = permalink
 	data := map[string]any{
 		"Site": map[string]any{
 			"Config": g.site.ToConfig(),
 		},
 		"Config": node.Config,
 		"Page": map[string]any{ // page is a page, child of section
-			"Config":  node.Config,
-			"Content": node.Content,
+			"Config":    node.Config,
+			"Content":   node.Content,
+			"Permalink": permalink,
 		},
 		"Section": map[string]any{
-			"Config":   node.Parent.Config,
-			"Children": node.Parent.Children,
-			"Content":  node.Parent.Content,
+			"Config":    node.Parent.Config,
+			"Children":  node.Parent.Children,
+			"Content":   node.Parent.Content,
+			"Permalink": g.BuilPermalink(node.Parent),
 		},
-		"URL": g.buildURL(node),
 	}
 
 	return g.renderTemplate(node, outputPath, data)
@@ -237,14 +243,14 @@ func copyDir(src, dst string) error {
 	})
 }
 
-func (g *Generator) buildURL(node *content.Node) string {
+func (g *Generator) BuilPermalink(node *content.Node) string {
 	parts := []string{}
 	for n := node; n != nil; n = n.Parent {
 		if n.Slug != "/" {
 			parts = append([]string{n.Slug}, parts...)
 		}
 	}
-	return path.Join(g.site.BaseURL, path.Join(parts...)) + "/"
+	return path.Join(path.Join(parts...)) + "/"
 }
 
 func (g *Generator) ReloadTemplates() error {

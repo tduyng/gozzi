@@ -34,7 +34,7 @@ func NewParser(cfg *config.Site) *ContentParser {
 				extension.Footnote,
 				highlight.NewHighlighting(
 					highlight.WithGuessLanguage(true),
-					highlight.WithStyle("github"),
+					highlight.WithStyle("dracula"),
 				),
 			),
 			goldmark.WithRendererOptions(

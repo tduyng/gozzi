@@ -15,13 +15,14 @@ const (
 )
 
 type Node struct {
-	Type     NodeType
-	Path     string
-	Slug     string
-	Config   map[string]any
-	Content  template.HTML
-	Parent   *Node
-	Children []*Node
+	Type      NodeType
+	Path      string
+	Slug      string
+	Permalink string
+	Config    map[string]any
+	Content   template.HTML
+	Parent    *Node
+	Children  []*Node
 }
 
 var (

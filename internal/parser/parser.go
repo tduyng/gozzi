@@ -127,14 +127,18 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	pageNode := content.NewContentNode(path, nil)
-	pageNode.Type = content.NodeTypePage
-	pageNode.Config = mergedConfig
-	pageNode.Content = template.HTML(buf.String())
+	parent := p.GetOrCreateSection(filepath.Dir(dir))
+	slug := content.GenerateSlug(path, parent)
 
-	sectionDir := filepath.Dir(dir)
-	parent := p.GetOrCreateSection(sectionDir)
-	pageNode.Parent = parent
+	pageNode := &content.Node{
+		Path:    path,
+		Slug:    slug,
+		Type:    content.NodeTypePage,
+		Parent:  parent,
+		Config:  mergedConfig,
+		Content: template.HTML(buf.String()),
+	}
+
 	parent.Children = append(parent.Children, pageNode)
 
 	return nil
@@ -169,13 +173,25 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 	}
 
 	var parent *content.Node
-	if dir != "." {
+	var sectionSlug string
+
+	if dir == "." { // Handle root section
+		sectionSlug = ""
+	} else {
 		parentDir := filepath.Dir(dir)
 		parent = p.GetOrCreateSection(parentDir)
+		baseName := filepath.Base(dir)
+		sectionSlug = content.GenerateSlug(baseName, nil)
+
+		// Combine with parent slug
+		if parent.Slug != "" {
+			sectionSlug = parent.Slug + "/" + sectionSlug
+		}
 	}
 
 	node := content.NewContentNode(dir, parent)
 	node.Type = content.NodeTypeSection
+	node.Slug = sectionSlug // Override generated slug
 
 	if parent != nil {
 		parent.Children = append(parent.Children, node)

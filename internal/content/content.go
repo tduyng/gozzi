@@ -31,10 +31,7 @@ var (
 )
 
 func NewContentNode(path string, parent *Node) *Node {
-	slug := GenerateSlug(path)
-	if path == "." {
-		slug = "/"
-	}
+	slug := GenerateSlug(path, parent)
 	return &Node{
 		Path:     path,
 		Slug:     slug,
@@ -43,12 +40,9 @@ func NewContentNode(path string, parent *Node) *Node {
 	}
 }
 
-func GenerateSlug(path string) string {
+func GenerateSlug(path string, parent *Node) string {
 	base := extractBaseName(path)
-	if match := datePrefixRe.FindStringSubmatch(base); len(match) > 0 {
-		base = strings.TrimPrefix(base, match[0])
-	}
-
+	base = datePrefixRe.ReplaceAllString(base, "")
 	slug := strings.ToLower(base)
 	slug = strings.ReplaceAll(slug, "_", "-")
 	slug = slugCleanerRe.ReplaceAllString(slug, "-")

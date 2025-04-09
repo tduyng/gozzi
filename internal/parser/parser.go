@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"math"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -88,7 +90,7 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	sectionConfig := frontMatter.ToConfig()
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, nil)
 	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
-	mergedConfig["img"] = p.resolveImgURL(frontMatter, path)
+	mergedConfig["img_url"] = p.resolveImgURL(frontMatter, path)
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -97,6 +99,9 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	node.Type = content.NodeTypeSection
 	node.Config = sectionConfig
 	node.Content = template.HTML(buf.String())
+	wordCount, readTime := calculateReadStats(buf.String())
+	node.WordCount = wordCount
+	node.ReadTime = readTime
 
 	var pages []*content.Node
 	for _, child := range node.Children {
@@ -149,21 +154,24 @@ func (p *ContentParser) parsePage(path, dir string) error {
 
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, pageConfig.ToConfig())
 	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
-	mergedConfig["img"] = p.resolveImgURL(pageConfig, path)
+	mergedConfig["img_url"] = p.resolveImgURL(pageConfig, path)
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	parent := p.GetOrCreateSection(filepath.Dir(dir))
 	slug := content.GenerateSlug(path, parent)
+	wordCount, readTime := calculateReadStats(buf.String())
 
 	pageNode := &content.Node{
-		Path:    path,
-		Slug:    slug,
-		Type:    content.NodeTypePage,
-		Parent:  parent,
-		Config:  mergedConfig,
-		Content: template.HTML(buf.String()),
+		Path:      path,
+		Slug:      slug,
+		Type:      content.NodeTypePage,
+		Parent:    parent,
+		Config:    mergedConfig,
+		Content:   template.HTML(buf.String()),
+		WordCount: wordCount,
+		ReadTime:  readTime,
 	}
 
 	parent.Children = append(parent.Children, pageNode)
@@ -226,4 +234,19 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 
 	p.ContentMap[dir] = node
 	return node
+}
+
+func calculateReadStats(content string) (int, int) {
+	// Strip HTML tags
+	re := regexp.MustCompile(`<[^>]*>`)
+	plainText := re.ReplaceAllString(content, " ")
+
+	// Count words
+	words := strings.Fields(plainText)
+	wordCount := len(words)
+
+	// Calculate read time (220 words/minute)
+	readTime := max(int(math.Ceil(float64(wordCount)/220)), 1)
+
+	return wordCount, readTime
 }

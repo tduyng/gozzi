@@ -26,6 +26,8 @@ type Node struct {
 	Children  []*Node
 	Lower     *Node
 	Higher    *Node
+	WordCount int
+	ReadTime  int
 }
 
 var (
@@ -57,6 +59,8 @@ func (node *Node) ToMap() map[string]any {
 		"Children":  node.Children,
 		"Higher":    node.Higher,
 		"Lower":     node.Lower,
+		"WordCount": node.WordCount,
+		"ReadTime":  node.ReadTime,
 	}
 }
 

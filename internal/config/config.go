@@ -59,7 +59,6 @@ func (site *Site) ToConfig() map[string]any {
 		siteConfig["output_dir"] = site.OutputDir
 		siteConfig["lang"] = site.Lang
 		siteConfig["generate_feed"] = site.GenerateFeed
-		siteConfig["img"] = site.Img
 		siteConfig["extra"] = MergeExtra(make(map[string]any), site.Extra)
 	}
 	return siteConfig
@@ -71,7 +70,6 @@ func (frontMatter *FrontMatter) ToConfig() map[string]any {
 	config["description"] = frontMatter.Description
 	config["template"] = frontMatter.Template
 	config["generate_feed"] = frontMatter.GenerateFeed
-	config["img"] = frontMatter.Img
 	config["lang"] = frontMatter.Lang
 	config["featured"] = frontMatter.Featured
 	config["draft"] = frontMatter.Draft

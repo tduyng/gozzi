@@ -19,10 +19,13 @@ type Node struct {
 	Path      string
 	Slug      string
 	Permalink string
+	URL       string
 	Config    map[string]any
 	Content   template.HTML
 	Parent    *Node
 	Children  []*Node
+	Lower     *Node
+	Higher    *Node
 }
 
 var (
@@ -38,6 +41,22 @@ func NewContentNode(path string, parent *Node) *Node {
 		Slug:     slug,
 		Parent:   parent,
 		Children: make([]*Node, 0),
+	}
+}
+
+func (node *Node) ToMap() map[string]any {
+	return map[string]any{
+		"Type":      node.Type,
+		"Path":      node.Path,
+		"Slug":      node.Slug,
+		"Permalink": node.Permalink,
+		"URL":       node.URL,
+		"Config":    node.Config,
+		"Content":   node.Content,
+		"Parent":    node.Parent,
+		"Children":  node.Children,
+		"Higher":    node.Higher,
+		"Lower":     node.Lower,
 	}
 }
 

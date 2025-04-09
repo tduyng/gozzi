@@ -78,24 +78,26 @@ func (g *Generator) processNode(node *content.Node) error {
 func (g *Generator) generateSection(node *content.Node) error {
 	outputPath := filepath.Join(g.site.OutputDir, node.Slug, "index.html")
 
-	permalink := g.buildPermalink(node)
-	node.Permalink = permalink
+	node.Permalink = g.buildPermalink(node)
+	node.URL = g.buildURL(node)
+
+	if node.Higher != nil {
+		node.Higher.URL = g.buildURL(node.Higher)
+		node.Higher.Permalink = g.buildPermalink(node.Higher)
+	}
+	if node.Lower != nil {
+		node.Lower.URL = g.buildURL(node.Lower)
+		node.Lower.Permalink = g.buildPermalink(node.Lower)
+	}
+	nodeMap := node.ToMap()
+
 	data := map[string]any{
 		"Site": map[string]any{
 			"Config": g.site.ToConfig(),
 		},
-		"Config": node.Config,
-		"Page": map[string]any{ // page is a section now
-			"Config":    node.Config,
-			"Content":   node.Content,
-			"Permalink": permalink,
-		},
-		"Section": map[string]any{
-			"Children":  node.Children,
-			"Config":    node.Config,
-			"Content":   node.Content,
-			"Permalink": permalink,
-		},
+		"Config":  node.Config,
+		"Page":    nodeMap,
+		"Section": nodeMap,
 	}
 	return g.renderTemplate(node, outputPath, data)
 }
@@ -113,26 +115,19 @@ func (g *Generator) generatePage(node *content.Node) error {
 			return err
 		}
 	}
-	permalink := g.buildPermalink(node)
-	node.Permalink = permalink
+	node.Permalink = g.buildPermalink(node)
+	node.URL = g.buildURL(node)
+	node.Parent.Permalink = g.buildPermalink(node.Parent)
+	node.Parent.URL = g.buildURL(node.Parent)
+	nodeMap := node.ToMap()
+	parentMap := node.Parent.ToMap()
+
 	data := map[string]any{
 		"Site": map[string]any{
 			"Config": g.site.ToConfig(),
 		},
 		"Config": node.Config,
-		"Page": map[string]any{ // page is a page, child of section
-			"Config":    node.Config,
-			"Content":   node.Content,
-			"Permalink": permalink,
-			"URL":       g.buildURL(node),
-		},
-		"Section": map[string]any{
-			"Config":    node.Parent.Config,
-			"Children":  node.Parent.Children,
-			"Content":   node.Parent.Content,
-			"Permalink": g.buildPermalink(node.Parent),
-			"URL":       g.buildURL(node.Parent),
-		},
+		"Page":   nodeMap, "Section": parentMap,
 	}
 
 	return g.renderTemplate(node, outputPath, data)
@@ -252,7 +247,7 @@ func (g *Generator) buildPermalink(node *content.Node) string {
 			parts = append([]string{n.Slug}, parts...)
 		}
 	}
-	return path.Join(path.Join(parts...)) + "/"
+	return path.Join("/", path.Join(parts...)) + "/"
 }
 
 func (g *Generator) buildURL(node *content.Node) string {

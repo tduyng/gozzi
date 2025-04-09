@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"log"
@@ -27,6 +28,7 @@ func (g *Generator) CreateFuncMap() template.FuncMap {
 		"safe":        safeHTML,
 		"urlize":      urlize,
 		"group_by":    g.groupBy,
+		"pagination":  g.renderPagination,
 	}
 }
 
@@ -212,4 +214,23 @@ func (g *Generator) groupBy(key string, nodes []*content.Node) []Group {
 	})
 
 	return result
+}
+
+func (g *Generator) renderPagination(data map[string]any) template.HTML {
+	var buf bytes.Buffer
+	tpl := g.templ.Lookup("pagination")
+	if tpl == nil {
+		return ""
+	}
+
+	err := tpl.Execute(&buf, map[string]any{
+		"Page": data["Page"],
+		"Site": map[string]any{
+			"Config": g.site.ToConfig(),
+		},
+	})
+	if err != nil {
+		return template.HTML(fmt.Sprintf("<!-- Pagination error: %v -->", err))
+	}
+	return template.HTML(buf.String())
 }

@@ -6,8 +6,10 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/tduyng/gozzi/internal/config"
 	"github.com/tduyng/gozzi/internal/content"
@@ -95,6 +97,31 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	node.Type = content.NodeTypeSection
 	node.Config = sectionConfig
 	node.Content = template.HTML(buf.String())
+
+	var pages []*content.Node
+	for _, child := range node.Children {
+		if child.Type == content.NodeTypePage {
+			pages = append(pages, child)
+		}
+	}
+
+	// Sort pages by date (newest first)
+	sort.SliceStable(pages, func(i, j int) bool {
+		dateI := pages[i].Config["date"].(time.Time)
+		dateJ := pages[j].Config["date"].(time.Time)
+		return dateI.After(dateJ)
+	})
+
+	// Set pagination links
+	for i := range pages {
+		if i > 0 {
+			pages[i].Higher = pages[i-1] // Older post
+		}
+		if i < len(pages)-1 {
+			pages[i].Lower = pages[i+1] // Newer post
+		}
+		pages[i].Parent = node
+	}
 
 	return nil
 }

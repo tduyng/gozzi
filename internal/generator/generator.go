@@ -78,7 +78,7 @@ func (g *Generator) processNode(node *content.Node) error {
 func (g *Generator) generateSection(node *content.Node) error {
 	outputPath := filepath.Join(g.site.OutputDir, node.Slug, "index.html")
 
-	permalink := g.BuilPermalink(node)
+	permalink := g.buildPermalink(node)
 	node.Permalink = permalink
 	data := map[string]any{
 		"Site": map[string]any{
@@ -113,7 +113,7 @@ func (g *Generator) generatePage(node *content.Node) error {
 			return err
 		}
 	}
-	permalink := g.BuilPermalink(node)
+	permalink := g.buildPermalink(node)
 	node.Permalink = permalink
 	data := map[string]any{
 		"Site": map[string]any{
@@ -124,12 +124,14 @@ func (g *Generator) generatePage(node *content.Node) error {
 			"Config":    node.Config,
 			"Content":   node.Content,
 			"Permalink": permalink,
+			"URL":       g.buildURL(node),
 		},
 		"Section": map[string]any{
 			"Config":    node.Parent.Config,
 			"Children":  node.Parent.Children,
 			"Content":   node.Parent.Content,
-			"Permalink": g.BuilPermalink(node.Parent),
+			"Permalink": g.buildPermalink(node.Parent),
+			"URL":       g.buildURL(node.Parent),
 		},
 	}
 
@@ -243,7 +245,7 @@ func copyDir(src, dst string) error {
 	})
 }
 
-func (g *Generator) BuilPermalink(node *content.Node) string {
+func (g *Generator) buildPermalink(node *content.Node) string {
 	parts := []string{}
 	for n := node; n != nil; n = n.Parent {
 		if n.Slug != "/" {
@@ -251,6 +253,10 @@ func (g *Generator) BuilPermalink(node *content.Node) string {
 		}
 	}
 	return path.Join(path.Join(parts...)) + "/"
+}
+
+func (g *Generator) buildURL(node *content.Node) string {
+	return path.Join(g.site.BaseURL, node.Permalink) + "/"
 }
 
 func (g *Generator) ReloadTemplates() error {

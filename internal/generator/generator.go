@@ -62,6 +62,10 @@ func (g *Generator) Generate(contentRoot *content.Node) error {
 		fmt.Printf("Processing error: %v\n", err)
 	}
 
+	if err := g.generate404Page(); err != nil {
+		return fmt.Errorf("failed to generate 404 page: %w", err)
+	}
+
 	return g.copyStaticAssets()
 }
 
@@ -136,26 +140,37 @@ func (g *Generator) generatePage(node *content.Node) error {
 func (g *Generator) renderTemplate(node *content.Node, outputPath string, data any) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+	var tpl *template.Template
 
-	for _, tplName := range node.TemplateChain() {
-		tmpl := g.templ.Lookup(tplName)
-		if tmpl != nil {
-			if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-				return fmt.Errorf("create output dir: %w", err)
+	if node != nil {
+		for _, tplName := range node.TemplateChain() {
+			tpl = g.templ.Lookup(tplName)
+			if tpl != nil {
+				break
 			}
-
-			var buf bytes.Buffer
-			if err := tmpl.Execute(&buf, data); err != nil {
-				return fmt.Errorf("template execution: %w", err)
-			}
-
-			if err := os.WriteFile(outputPath, buf.Bytes(), 0644); err != nil {
-				return fmt.Errorf("write output: %w", err)
-			}
-			return nil
 		}
+	} else {
+		tpl = g.templ.Lookup("404.html")
 	}
-	return fmt.Errorf("no template found in chain: %v", node.TemplateChain())
+
+	if tpl == nil {
+		return fmt.Errorf("no template found for path: %s", outputPath)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return fmt.Errorf("create output dir: %w", err)
+	}
+
+	var buf bytes.Buffer
+	if err := tpl.Execute(&buf, data); err != nil {
+		return fmt.Errorf("template execution: %w", err)
+	}
+
+	if err := os.WriteFile(outputPath, buf.Bytes(), 0644); err != nil {
+		return fmt.Errorf("write html output: %w", err)
+	}
+
+	return nil
 }
 
 func (g *Generator) copyPageAssets(node *content.Node) error {
@@ -263,4 +278,24 @@ func (g *Generator) ReloadTemplates() error {
 	g.templ = tmpl
 	g.mu.Unlock()
 	return nil
+}
+
+func (g *Generator) generate404Page() error {
+	tpl := g.templ.Lookup("404.html")
+	if tpl == nil {
+		return nil
+	}
+
+	outputPath := filepath.Join(g.site.OutputDir, "404.html")
+	data := map[string]any{
+		"Site": map[string]any{
+			"Config": g.site.ToConfig(),
+		},
+		"Page": map[string]any{
+			"Title": "Page Not Found",
+			"URL":   path.Join(g.site.BaseURL, "404.html"),
+		},
+	}
+
+	return g.renderTemplate(nil, outputPath, data)
 }

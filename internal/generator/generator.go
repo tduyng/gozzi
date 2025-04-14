@@ -28,13 +28,63 @@ func NewGenerator(site *config.Site, parser *parser.ContentParser) (*Generator, 
 		parser: parser,
 	}
 
-	tmpl, err := template.New("").Funcs(gen.CreateFuncMap()).ParseGlob("templates/*.html")
+	tmpl, err := loadTemplatesWithFuncs(gen.CreateFuncMap())
 	if err != nil {
 		return nil, fmt.Errorf("template parsing failed: %w", err)
 	}
 
 	gen.templ = tmpl
 	return gen, nil
+}
+
+func (g *Generator) ReloadTemplates() error {
+	tmpl, err := loadTemplatesWithFuncs(g.CreateFuncMap())
+	if err != nil {
+		return fmt.Errorf("template reload failed: %w", err)
+	}
+
+	g.mu.Lock()
+	g.templ = tmpl
+	g.mu.Unlock()
+	return nil
+}
+
+func loadTemplatesWithFuncs(funcMap template.FuncMap) (*template.Template, error) {
+	tmpl := template.New("").Funcs(funcMap)
+
+	err := filepath.Walk("templates", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() || filepath.Ext(path) != ".html" {
+			return nil
+		}
+
+		relPath, err := filepath.Rel("templates", path)
+		if err != nil {
+			return fmt.Errorf("error getting relative path: %w", err)
+		}
+
+		templateName := filepath.ToSlash(relPath)
+
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("error reading template %s: %w", path, err)
+		}
+
+		_, err = tmpl.New(templateName).Parse(string(content))
+		if err != nil {
+			return fmt.Errorf("error parsing template %s: %w", templateName, err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("template loading failed: %w", err)
+	}
+
+	return tmpl, nil
 }
 
 func (g *Generator) Generate(contentRoot *content.Node) error {
@@ -267,17 +317,6 @@ func (g *Generator) buildPermalink(node *content.Node) string {
 
 func (g *Generator) buildURL(node *content.Node) string {
 	return path.Join(g.site.BaseURL, node.Permalink) + "/"
-}
-
-func (g *Generator) ReloadTemplates() error {
-	tmpl, err := template.New("").Funcs(g.CreateFuncMap()).ParseGlob("templates/*.html")
-	if err != nil {
-		return fmt.Errorf("template reload failed: %w", err)
-	}
-	g.mu.Lock()
-	g.templ = tmpl
-	g.mu.Unlock()
-	return nil
 }
 
 func (g *Generator) generate404Page() error {

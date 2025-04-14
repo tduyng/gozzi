@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -30,6 +31,18 @@ func (g *Generator) CreateFuncMap() template.FuncMap {
 		"group_by":    g.groupBy,
 		"pagination":  g.renderPagination,
 		"start_with":  startWith,
+		"first":       first,
+		"last":        last,
+		"eq":          equal,
+		"ne":          notEqual,
+		"contains":    contains,
+		"and":         and,
+		"or":          or,
+		"lower":       strings.ToLower,
+		"upper":       strings.ToUpper,
+		"join":        strings.Join,
+		"split":       strings.Split,
+		"add":         add,
 	}
 }
 
@@ -238,4 +251,50 @@ func (g *Generator) renderPagination(data map[string]any) template.HTML {
 
 func startWith(s, prefix string) bool {
 	return strings.HasPrefix(s, prefix)
+}
+
+func first(slice any) any {
+	v := reflect.ValueOf(slice)
+	if v.Kind() != reflect.Slice && v.Kind() != reflect.Array {
+		return nil
+	}
+	if v.Len() == 0 {
+		return nil
+	}
+	return v.Index(0).Interface()
+}
+
+func last(slice any) any {
+	v := reflect.ValueOf(slice)
+	if v.Kind() != reflect.Slice && v.Kind() != reflect.Array {
+		return nil
+	}
+	if v.Len() == 0 {
+		return nil
+	}
+	return v.Index(v.Len() - 1).Interface()
+}
+
+func equal(a, b any) bool {
+	return reflect.DeepEqual(a, b)
+}
+
+func notEqual(a, b any) bool {
+	return !reflect.DeepEqual(a, b)
+}
+
+func contains(s, substr string) bool {
+	return strings.Contains(s, substr)
+}
+
+func and(a, b bool) bool {
+	return a && b
+}
+
+func or(a, b bool) bool {
+	return a || b
+}
+
+func add(a, b int) int {
+	return a + b
 }

@@ -29,6 +29,7 @@ func (g *Generator) CreateFuncMap() template.FuncMap {
 		"urlize":      urlize,
 		"group_by":    g.groupBy,
 		"pagination":  g.renderPagination,
+		"start_with":  startWith,
 	}
 }
 
@@ -218,7 +219,7 @@ func (g *Generator) groupBy(key string, nodes []*content.Node) []Group {
 
 func (g *Generator) renderPagination(data map[string]any) template.HTML {
 	var buf bytes.Buffer
-	tpl := g.templ.Lookup("pagination")
+	tpl := g.templ.Lookup("macros/pagination.html")
 	if tpl == nil {
 		return ""
 	}
@@ -233,4 +234,8 @@ func (g *Generator) renderPagination(data map[string]any) template.HTML {
 		return template.HTML(fmt.Sprintf("<!-- Pagination error: %v -->", err))
 	}
 	return template.HTML(buf.String())
+}
+
+func startWith(s, prefix string) bool {
+	return strings.HasPrefix(s, prefix)
 }

@@ -9,3 +9,10 @@ TODO:
 - [ ] Create .GetURL func for html template, support cache
 - [ ] Copy correctly images from child folder
 - [ ] Support toc
+- [ ] Support tags
+- [ ] Support notes page
+- [ ] Fix correctly fold nav
+- [ ] Check Seo
+- [ ] Support --draft cli options for serve
+- [ ] Clean unnescessary config and go code
+- [ ] Faster build and reload

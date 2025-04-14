@@ -102,6 +102,7 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	wordCount, readTime := calculateReadStats(buf.String())
 	node.WordCount = wordCount
 	node.ReadTime = readTime
+	node.Path = strings.TrimPrefix(path, "content/")
 
 	var pages []*content.Node
 	for _, child := range node.Children {
@@ -164,7 +165,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	wordCount, readTime := calculateReadStats(buf.String())
 
 	pageNode := &content.Node{
-		Path:      path,
+		Path:      strings.TrimSuffix(path, "content/"),
 		Slug:      slug,
 		Type:      content.NodeTypePage,
 		Parent:    parent,
@@ -249,4 +250,8 @@ func calculateReadStats(content string) (int, int) {
 	readTime := max(int(math.Ceil(float64(wordCount)/220)), 1)
 
 	return wordCount, readTime
+}
+
+func (p *ContentParser) GetMarkdownProcessor() goldmark.Markdown {
+	return p.md
 }

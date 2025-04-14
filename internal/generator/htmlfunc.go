@@ -8,6 +8,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,31 +19,41 @@ import (
 
 func (g *Generator) CreateFuncMap() template.FuncMap {
 	return template.FuncMap{
+		"add":         addNumbers,
+		"and":         andLogic,
 		"asset":       g.assetPath,
-		"default":     defaultValue,
+		"contains":    contains,
 		"date":        formatDate,
+		"default":     defaultValue,
+		"dict":        createDictionary,
+		"eq":          eq,
+		"first":       firstElement,
 		"get_section": g.getSection,
+		"group_by":    g.groupBy,
+		"has_prefix":  strings.HasPrefix,
+		"has_suffix":  strings.HasSuffix,
+		"join":        strings.Join,
+		"last":        lastElement,
 		"limit":       limit,
 		"load":        loadDataToHTML,
+		"lower":       strings.ToLower,
+		"markdown":    g.renderMarkdown,
+		"ne":          ne,
+		"now":         time.Now,
+		"or":          orLogic,
+		"pagination":  g.renderPagination,
+		"pluralize":   pluralize,
 		"priority":    priority,
+		"replace":     strings.ReplaceAll,
 		"reverse":     reverse,
 		"safe":        safeHTML,
-		"urlize":      urlize,
-		"group_by":    g.groupBy,
-		"pagination":  g.renderPagination,
-		"start_with":  startWith,
-		"first":       first,
-		"last":        last,
-		"eq":          equal,
-		"ne":          notEqual,
-		"contains":    contains,
-		"and":         and,
-		"or":          or,
-		"lower":       strings.ToLower,
-		"upper":       strings.ToUpper,
-		"join":        strings.Join,
 		"split":       strings.Split,
-		"add":         add,
+		"sub":         func(a, b int) int { return a - b },
+		"to_date":     parseDate,
+		"trim":        strings.TrimSpace,
+		"upper":       strings.ToUpper,
+		"urlize":      urlize,
+		"where":       where,
 	}
 }
 
@@ -249,52 +260,165 @@ func (g *Generator) renderPagination(data map[string]any) template.HTML {
 	return template.HTML(buf.String())
 }
 
-func startWith(s, prefix string) bool {
-	return strings.HasPrefix(s, prefix)
+func eq(a, b any) bool {
+	return fmt.Sprintf("%v", a) == fmt.Sprintf("%v", b)
 }
 
-func first(slice any) any {
-	v := reflect.ValueOf(slice)
-	if v.Kind() != reflect.Slice && v.Kind() != reflect.Array {
-		return nil
+func ne(a, b any) bool {
+	return !eq(a, b)
+}
+
+func firstElement(items any) any {
+	switch reflect.TypeOf(items).Kind() {
+	case reflect.Slice, reflect.Array:
+		s := reflect.ValueOf(items)
+		if s.Len() == 0 {
+			return nil
+		}
+		return s.Index(0).Interface()
 	}
-	if v.Len() == 0 {
-		return nil
+	return nil
+}
+
+func lastElement(items any) any {
+	switch reflect.TypeOf(items).Kind() {
+	case reflect.Slice, reflect.Array:
+		s := reflect.ValueOf(items)
+		if s.Len() == 0 {
+			return nil
+		}
+		return s.Index(s.Len() - 1).Interface()
 	}
-	return v.Index(0).Interface()
+	return nil
 }
 
-func last(slice any) any {
-	v := reflect.ValueOf(slice)
-	if v.Kind() != reflect.Slice && v.Kind() != reflect.Array {
-		return nil
+func andLogic(values ...any) bool {
+	for _, v := range values {
+		if !isTruthy(v) {
+			return false
+		}
 	}
-	if v.Len() == 0 {
-		return nil
+	return true
+}
+
+func orLogic(values ...any) bool {
+	return slices.ContainsFunc(values, isTruthy)
+}
+
+func isTruthy(v any) bool {
+	if v == nil {
+		return false
 	}
-	return v.Index(v.Len() - 1).Interface()
+	switch val := v.(type) {
+	case bool:
+		return val
+	case int:
+		return val != 0
+	case string:
+		return val != ""
+	case []any:
+		return len(val) > 0
+	default:
+		return true
+	}
 }
 
-func equal(a, b any) bool {
-	return reflect.DeepEqual(a, b)
+func contains(haystack, needle any) bool {
+	switch h := haystack.(type) {
+	case string:
+		n := fmt.Sprintf("%v", needle)
+		return strings.Contains(h, n)
+	case []any:
+		for _, item := range h {
+			if eq(item, needle) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
-func notEqual(a, b any) bool {
-	return !reflect.DeepEqual(a, b)
+func addNumbers(a, b any) any {
+	switch a := a.(type) {
+	case int:
+		switch b := b.(type) {
+		case int:
+			return a + b
+		case float64:
+			return float64(a) + b
+		}
+	case float64:
+		switch b := b.(type) {
+		case int:
+			return a + float64(b)
+		case float64:
+			return a + b
+		}
+	}
+	return 0
 }
 
-func contains(s, substr string) bool {
-	return strings.Contains(s, substr)
+func parseDate(layout, value string) time.Time {
+	t, _ := time.Parse(layout, value)
+	return t
 }
 
-func and(a, b bool) bool {
-	return a && b
+func pluralize(singular string, count any) string {
+	var c int
+	switch v := count.(type) {
+	case int:
+		c = v
+	case int64:
+		c = int(v)
+	default:
+		return singular
+	}
+
+	if c == 1 {
+		return singular
+	}
+	return singular + "s" // Simple pluralization, extend for irregular forms
 }
 
-func or(a, b bool) bool {
-	return a || b
+func createDictionary(values ...any) (map[string]any, error) {
+	if len(values)%2 != 0 {
+		return nil, fmt.Errorf("invalid number of arguments for dict")
+	}
+
+	dict := make(map[string]any)
+	for i := 0; i < len(values); i += 2 {
+		key, ok := values[i].(string)
+		if !ok {
+			return nil, fmt.Errorf("dict keys must be strings")
+		}
+		dict[key] = values[i+1]
+	}
+	return dict, nil
 }
 
-func add(a, b int) int {
-	return a + b
+func (g *Generator) renderMarkdown(input string) template.HTML {
+	var buf bytes.Buffer
+
+	md := g.parser.GetMarkdownProcessor()
+
+	if err := md.Convert([]byte(input), &buf); err != nil {
+		return template.HTML("")
+	}
+	return template.HTML(buf.String())
+}
+
+func where(sections []any, field string, value any) []any {
+	var result []any
+	for _, s := range sections {
+		sectionMap, ok := s.(map[string]any)
+		if !ok {
+			continue
+		}
+
+		fieldValue, exists := sectionMap[field]
+		if exists && fmt.Sprintf("%v", fieldValue) == fmt.Sprintf("%v", value) {
+			result = append(result, s)
+		}
+	}
+	return result
 }

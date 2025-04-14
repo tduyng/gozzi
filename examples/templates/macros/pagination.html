@@ -1,0 +1,23 @@
+<div class="pagination">
+    {{ if .Page.Config.extra.show_ended_words }}
+    <hr />
+    {{ .Site.Config.extra.ended_words }} {{ end }}
+
+    <div class="pagination__buttons">
+        {{ with .Page.Higher }}
+        <span class="button previous">
+            <a href="{{ .Permalink }}">
+                <span class="button__icon">←</span>
+                <span class="button__text">{{ .Config.title }}</span>
+            </a>
+        </span>
+        {{ end }} {{ with .Page.Lower }}
+        <span class="button next">
+            <a href="{{ .Permalink }}">
+                <span class="button__text">{{ .Config.title }}</span>
+                <span class="button__icon">→</span>
+            </a>
+        </span>
+        {{ end }}
+    </div>
+</div>

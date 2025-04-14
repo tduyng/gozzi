@@ -1,0 +1,20 @@
+{{ if .Page.Config.extra_toc }}
+<nav>
+    <ul>
+        {{ range $h2 := .Page.Toc }}
+        <li>
+            <a class="h2" href="#{{ $h2.ID }}">{{ $h2.Title }}</a>
+            {{ if $h2.Children }}
+            <ul>
+                {{ range $h2.Children }}
+                <li>
+                    <a class="h3" href="#{{ .ID }}">{{ .Title }}</a>
+                </li>
+                {{ end }}
+            </ul>
+            {{ end }}
+        </li>
+        {{ end }}
+    </ul>
+</nav>
+{{ end }}

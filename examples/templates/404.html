@@ -1,0 +1,34 @@
+<!doctype html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="color-scheme" content="dark" />
+        <meta http-equiv="x-ua-compatible" content="ie=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="base" content="{{.Site.BaseURL}}" />
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="robots" content="noindex, follow" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png" />
+        <meta property="og:title" content="Page not found" />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="{{.Site.Config.title}}" />
+        <meta name="description" content="{{.Site.Config.Description}}" />
+        <meta property="og:description" content="{{.Site.Config.Description}}" />
+        <link rel="stylesheet" href="/css/main.css" />
+    </head>
+    <body class="not-found">
+        <div class="wrapper">
+            <p class="error">
+                <span>404</span>
+                <span>Not Found</span>
+            </p>
+            <a class="instant" href="/">« back to home »</a>
+        </div>
+    </body>
+</html>

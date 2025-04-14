@@ -1,0 +1,69 @@
+<div class="sharing-buttons">
+    <h3>Share this post:</h3>
+    <ul class="sharing-list" id="right">
+        <li>
+            <a
+                href="https://news.ycombinator.com/submitlink?u={{ .Page.URL }}&t={{ .Page.Config.title }}"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <img src="/icon/hacker-news.svg" alt="Share on Hacker News" class="sharing-icon" />
+            </a>
+        </li>
+        <li>
+            <a
+                href="https://www.reddit.com/submit?url={{ .Page.URL }}&title={{ .Page.Config.title }}"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <img src="/icon/reddit.svg" alt="Share on Reddit" class="sharing-icon" />
+            </a>
+        </li>
+
+        <li>
+            <a
+                href="https://mastodon.social/share?url={{ .Page.URL }}&text={{ .Page.Config.title }}"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <img src="/icon/mastodon.svg" alt="Share on Mastodon" class="sharing-icon" />
+            </a>
+        </li>
+
+        <li>
+            <a
+                href="https://x.com/intent/tweet?url={{ .Page.URL }}&text={{ .Page.Config.title }}"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <img src="/icon/x.svg" alt="Share on Twitter" class="sharing-icon" />
+            </a>
+        </li>
+
+        <li>
+            <a
+                href="https://www.facebook.com/sharer/sharer.php?u={{ .Page.URL }}"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <img src="/icon/facebook.svg" alt="Share on Facebook" class="sharing-icon" />
+            </a>
+        </li>
+
+        <li>
+            <a
+                href="https://www.linkedin.com/shareArticle?mini=true&url={{ .Page.URL }}&title={{ .Page.Config.title }}"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <img src="/icon/linkedin.svg" alt="Share on LinkedIn" class="sharing-icon" />
+            </a>
+        </li>
+
+        <li>
+            <a href="mailto:?subject={{ .Page.Config.title }}&body={{ .Page.URL }}">
+                <img src="/icon/email.svg" alt="Share via Email" class="sharing-icon" />
+            </a>
+        </li>
+    </ul>
+</div>

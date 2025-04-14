@@ -1,0 +1,34 @@
+<head>
+    <meta charset="utf-8" />
+    <meta name="color-scheme" content="dark" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="base" content="{{.Site.Config.base_url }}" />
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="robots" content="index, nofollow" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png" />
+    <meta
+        property="og:title"
+        content="{{ priority .Page.Config.title .Section.Config.title .Site.Config.title }}"
+    />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="{{.Site.Config.title }}" />
+    {{ $description := priority .Page.Config.description .Section.Config.description
+    .Site.Config.description }}
+    <meta name="description" content="{{ $description }}" />
+    <meta property="og:description" content="{{ $description }}" />
+    {{if .Page.Config.img }}
+    <meta property="og:image" content="{{.Page.Config.img}}" />
+    <meta property="og:image:width" content="1500" />
+    <meta property="og:image:height" content="750" />
+    <meta name="twitter:image" content="{{ .Page.Config.img }}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    {{ end }}
+
+    <link rel="stylesheet" href="/css/main.css" />
+</head>

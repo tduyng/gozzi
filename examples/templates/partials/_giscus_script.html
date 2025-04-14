@@ -1,0 +1,22 @@
+{{ if .Section.Config.extra.comment }}
+<div class="giscus"></div>
+
+<script
+    src="https://giscus.app/client.js"
+    data-repo="tduyng/tduyng.github.io"
+    data-repo-id="MDEwOlJlcG9zaXRvcnkyNjAzNTM0NzM="
+    data-category="General"
+    data-category-id="DIC_kwDOD4Stwc4CfSpo"
+    data-mapping="specific"
+    data-term="{{ .Page.Slug }}"
+    data-strict="1"
+    data-reactions-enabled="1"
+    data-emit-metadata="1"
+    data-input-position="bottom"
+    data-theme="dark_dimmed"
+    data-lang="en"
+    data-loading="lazy"
+    crossorigin="anonymous"
+    async
+></script>
+{{ end }}

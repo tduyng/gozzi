@@ -1,0 +1,47 @@
+<header class="blur">
+    <div id="header-wrapper">
+        <nav>
+            <a class="instant" href="/">{{ .Site.Config.extra.id }}</a>
+            <button id="toggler" class="separator" aria-label="toggle expand">
+                {{ .Site.Config.extra.nav_separator }}
+            </button>
+            <span class="wrap left fold">{{ .Site.Config.extra.nav_wrapper_left }}</span>
+
+            {{ $sections := .Site.config.extra.sections }} {{ $currentPath := default "" .Page.Path
+            }} {{ range $index, $section := .Site.Config.extra.sections }} {{ $shouldShow :=
+            contains $currentPath $section.path }}
+            <a class="instant {{ if not $shouldShow }}fold{{ end }}" href="{{ $section.path }}">
+                {{ $section.name }}
+            </a>
+
+            {{ if lt $index (sub (len $.Site.Config.extra.sections) 1) }}
+            <span class="wrap-separator fold">{{ $.Site.Config.extra.nav_wrapper_separator }}</span>
+            {{ end }} {{ end }}
+
+            <span class="wrap right fold">{{ .Site.Config.extra.nav_wrapper_right }}</span>
+        </nav>
+        <div id="btns">
+            <a id="rss-btn" class="svg-icon" href="/atom.xml" aria-label="rss feed">
+                {{ load "static/icon/rss.svg" }}
+            </a>
+            <button id="toc-toggle" aria-label="table of content">
+                {{ load "static/icon/toc.svg" }}
+            </button>
+        </div>
+    </div>
+</header>
+
+<dialog id="rss-mask">
+    <div>
+        <a href="{{ .Site.FeedURL }}">{{ .Site.FeedURL }}</a>
+        <button
+            autofocus
+            aria-label="copy"
+            data-link="{{ .Site.FeedURL }}"
+            data-copy-icon="{{ .Site.FeedURL }}"
+            data-check-icon="{{ .Site.FeedURL }}"
+        >
+            {{ load "static/icon/rss.svg" }}
+        </button>
+    </div>
+</dialog>

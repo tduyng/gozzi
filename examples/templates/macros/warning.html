@@ -1,0 +1,9 @@
+<blockquote class="callout warning">
+    {{ $icon := load "static/icon/warning.svg" }}
+    <div class="icon">{{ $icon }}</div>
+    <div class="content">
+        {{ if .Title }}
+        <p><strong>{{ .Title }}</strong></p>
+        {{ end }} {{ .Content }}
+    </div>
+</blockquote>

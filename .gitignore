@@ -44,5 +44,4 @@ debug
 # Project-specific build output
 /dist/
 public
-examples
 examples/gozzi

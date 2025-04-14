@@ -1,0 +1,9 @@
+{{ if .Page.Config.extra.copy }} {{ $copy_icon := load "static/icon/copy.svg" }} {{ $check_icon :=
+load "static/icon/check.svg"}}
+<div
+    id="copy-cfg"
+    style="display: none"
+    data-copy-icon="{{ $copy_icon }}"
+    data-check-icon="{{ $check_icon }}"
+></div>
+{{ end }}

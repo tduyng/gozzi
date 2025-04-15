@@ -1112,6 +1112,16 @@ footer {
     font-size: 0.85em;
 }
 
+.copyright a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.copyright a:hover,
+.copyright a:focus-visible { 
+  text-decoration: underline; 
+}
+
 .footer-menu {
     display: flex;
     flex-wrap: wrap;

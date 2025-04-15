@@ -54,7 +54,7 @@
                     {{ .Page.Content }}
                     <hr />
                     <section class="home-layout-list">
-                        <h2>Here are my latest posts:</h2>
+                        <h2>Here are the latest posts:</h2>
                         {{ $blog_section := get_section "blog" }}
                         <div class="post-list">
                             {{ range limit 10 (reverse $blog_section.Children) }}

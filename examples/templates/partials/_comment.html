@@ -1,3 +1,5 @@
+{{ $show_comment := priority .Page.Config.extra.comment .Site.Config.extra.comment }} {{ if
+$show_comment }}
 <script
     src="https://giscus.app/client.js"
     data-repo="tduyng/tduyng.github.io"
@@ -16,3 +18,4 @@
     crossorigin="anonymous"
     async
 ></script>
+{{ end }}

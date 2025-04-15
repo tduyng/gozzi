@@ -1,6 +1,6 @@
 +++
 title = "Blog"
-description = "Z blog site."
+description = "Duy NG blog"
 template = "blog.html"
 
 [extra]

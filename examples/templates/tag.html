@@ -1,0 +1,29 @@
+<!doctype html>
+
+<html lang="{{ priority .Page.Config.lang .Section.Config.lang .Site.Config.lang }}">
+    {{ template "partials/_head.html" . }}
+    <body class="tag-single">
+        {{ template "partials/_header.html" . }}
+        <div id="wrapper">
+            <main class="layout-list">
+                <div class="title">
+                    <span># {{ .Page.Tag }}</span>
+                    <a class="instant" href="/tags">All Tags</a>
+                </div>
+                <div class="post-list">
+                    {{ range .Page.Pages }}
+                    <a
+                        class="post instant {{ if .Config.extra.featured }}featured{{ end }}"
+                        href="{{ .Permalink }}"
+                    >
+                        <span>{{ .Config.title }}</span>
+                        <span class="date">{{ .Config.date | date }}</span>
+                    </a>
+                    {{ end }}
+                </div>
+            </main>
+            {{ template "partials/_footer.html" . }}
+        </div>
+        {{ template "partials/_scripts.html" . }}
+    </body>
+</html>

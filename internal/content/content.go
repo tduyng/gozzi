@@ -37,7 +37,7 @@ var (
 )
 
 func NewContentNode(path string, parent *Node) *Node {
-	slug := GenerateSlug(path, parent)
+	slug := GenerateSlug(path, nil)
 	return &Node{
 		Path:     path,
 		Slug:     slug,
@@ -73,9 +73,10 @@ func GenerateSlug(path string, parent *Node) string {
 	slug = multiDashRe.ReplaceAllString(slug, "-")
 	slug = strings.Trim(slug, "-")
 
-	if slug == "" {
-		return "untitled"
+	if parent != nil && parent.Slug != "" {
+		return filepath.Join(parent.Slug, slug)
 	}
+
 	return slug
 }
 

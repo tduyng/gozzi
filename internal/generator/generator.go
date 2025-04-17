@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"encoding/xml"
 	"fmt"
 	"html/template"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -59,7 +61,7 @@ func loadTemplatesWithFuncs(funcMap template.FuncMap) (*template.Template, error
 			return err
 		}
 
-		if info.IsDir() || filepath.Ext(path) != ".html" {
+		if info.IsDir() {
 			return nil
 		}
 
@@ -169,7 +171,6 @@ func (g *Generator) generateSection(node *content.Node) error {
 func (g *Generator) generatePage(node *content.Node) error {
 	outputPath := filepath.Join(
 		g.site.OutputDir,
-		node.Parent.Slug,
 		node.Slug,
 		"index.html",
 	)
@@ -292,6 +293,11 @@ func (g *Generator) renderTemplate(node *content.Node, outputPath string, data a
 	defer g.mu.Unlock()
 	var tpl *template.Template
 
+	contentType := "text/html"
+	if strings.HasSuffix(outputPath, ".xml") {
+		contentType = "application/xml"
+	}
+
 	if node != nil {
 		for _, tplName := range node.TemplateChain() {
 			tpl = g.templ.Lookup(tplName)
@@ -314,6 +320,15 @@ func (g *Generator) renderTemplate(node *content.Node, outputPath string, data a
 		return fmt.Errorf("no template found for path: %s", outputPath)
 	}
 
+	if contentType == "application/xml" {
+		tpl = tpl.Funcs(template.FuncMap{
+			"safe": func(s string) template.HTML {
+				return template.HTML(s) // Only use for pre-escaped XML
+			},
+			"escape": xmlEscape,
+		})
+	}
+
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return fmt.Errorf("create output dir: %w", err)
 	}
@@ -330,6 +345,12 @@ func (g *Generator) renderTemplate(node *content.Node, outputPath string, data a
 	return nil
 }
 
+func xmlEscape(s string) string {
+	var b bytes.Buffer
+	xml.EscapeText(&b, []byte(s))
+	return b.String()
+}
+
 func (g *Generator) copyPageAssets(node *content.Node) error {
 	assets := node.Config["assets"].(string)
 	if _, err := os.Stat(assets); os.IsNotExist(err) {
@@ -338,7 +359,6 @@ func (g *Generator) copyPageAssets(node *content.Node) error {
 
 	dest := filepath.Join(
 		g.site.OutputDir,
-		node.Parent.Slug,
 		node.Slug,
 		filepath.Base(assets),
 	)
@@ -413,13 +433,8 @@ func copyDir(src, dst string) error {
 }
 
 func (g *Generator) buildPermalink(node *content.Node) string {
-	parts := []string{}
-	for n := node; n != nil; n = n.Parent {
-		if n.Slug != "/" {
-			parts = append([]string{n.Slug}, parts...)
-		}
-	}
-	return path.Join("/", path.Join(parts...)) + "/"
+	slug := strings.Trim(node.Slug, "/")
+	return "/" + slug + "/"
 }
 
 func (g *Generator) buildURL(node *content.Node) string {

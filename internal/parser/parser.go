@@ -97,15 +97,16 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	}
 	sectionConfig := frontMatter.ToConfig()
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, nil)
+	slug := content.GenerateSlug(path, nil)
 	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
-	mergedConfig["img_url"] = p.resolveImgURL(frontMatter, path)
+	mergedConfig["img_url"] = p.resolveImgURL(frontMatter, slug)
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	node := p.GetOrCreateSection(dir)
 	node.Type = content.NodeTypeSection
-	node.Config = sectionConfig
+	node.Config = mergedConfig
 	node.Content = template.HTML(buf.String())
 	wordCount, readTime := calculateReadStats(buf.String())
 	node.WordCount = wordCount
@@ -162,8 +163,6 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	}
 
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, pageConfig.ToConfig())
-	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
-	mergedConfig["img_url"] = p.resolveImgURL(pageConfig, path)
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -171,6 +170,8 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	parent := p.GetOrCreateSection(filepath.Dir(dir))
 	slug := content.GenerateSlug(path, parent)
 	wordCount, readTime := calculateReadStats(buf.String())
+	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
+	mergedConfig["img_url"] = p.resolveImgURL(pageConfig, slug)
 
 	pageNode := &content.Node{
 		Path:      strings.TrimSuffix(path, "content/"),
@@ -193,7 +194,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	return nil
 }
 
-func (p *ContentParser) resolveImgURL(fm *config.FrontMatter, path string) string {
+func (p *ContentParser) resolveImgURL(fm *config.FrontMatter, slug string) string {
 	img := ""
 	if fm.Extra != nil {
 		if val, ok := fm.Extra["img"]; ok {
@@ -212,8 +213,7 @@ func (p *ContentParser) resolveImgURL(fm *config.FrontMatter, path string) strin
 		return baseURL + img
 	}
 
-	mdDir := filepath.Dir(path)
-	return baseURL + filepath.Join("/", mdDir, img)
+	return baseURL + filepath.Join("/", slug, img)
 }
 
 func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {

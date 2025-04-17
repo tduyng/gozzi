@@ -8,7 +8,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"sync"
+	"time"
 
 	"github.com/tduyng/gozzi/internal/config"
 	"github.com/tduyng/gozzi/internal/content"
@@ -116,6 +118,10 @@ func (g *Generator) Generate(contentRoot *content.Node) error {
 		return fmt.Errorf("failed to generate 404 page: %w", err)
 	}
 
+	if err := g.generateTagPages(); err != nil {
+		return fmt.Errorf("failed to generate tag pages: %w", err)
+	}
+
 	return g.copyStaticAssets()
 }
 
@@ -187,13 +193,110 @@ func (g *Generator) generatePage(node *content.Node) error {
 	return g.renderTemplate(node, outputPath, data)
 }
 
-func (g *Generator) renderTemplate(node *content.Node, outputPath string, data any) error {
+func (g *Generator) generateTagPages() error {
+	tagsTemplateExists := g.hasTemplate("tags.html")
+	tagTemplateExists := g.hasTemplate("tag.html")
+
+	if !tagsTemplateExists && !tagTemplateExists {
+		return nil
+	}
+
+	tagsDir := filepath.Join(g.site.OutputDir, "tags")
+	if err := os.MkdirAll(tagsDir, 0755); err != nil {
+		return err
+	}
+
+	if tagsTemplateExists {
+		if err := g.generateTagsIndex(); err != nil {
+			return err
+		}
+	}
+
+	if tagTemplateExists {
+		for tag, pages := range g.parser.Tags {
+			if err := g.generateTagPage(tag, pages); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (g *Generator) generateTagsIndex() error {
+	tags := make([]map[string]any, 0, len(g.parser.Tags))
+	for tag, entry := range g.parser.Tags {
+		tags = append(tags, map[string]any{
+			"Name":      tag,
+			"Count":     entry.Count,
+			"Permalink": g.buildTagPermalink(tag),
+		})
+	}
+
+	sort.Slice(tags, func(i, j int) bool {
+		return tags[i]["Name"].(string) < tags[j]["Name"].(string)
+	})
+
+	data := map[string]any{
+		"Site": map[string]any{
+			"Config": g.site.ToConfig(),
+		},
+		"Page": map[string]any{
+			"Title": "Tags",
+			"Tags":  tags,
+			"Path":  "/tags",
+		},
+	}
+
+	return g.renderTemplate(nil,
+		filepath.Join(g.site.OutputDir, "tags", "index.html"),
+		data, "tags.html")
+}
+
+func (g *Generator) generateTagPage(tag string, entry *parser.TagEntry) error {
+	sortedPages := make([]*content.Node, len(entry.Pages))
+	copy(sortedPages, entry.Pages)
+	sort.Slice(sortedPages, func(i, j int) bool {
+		return sortedPages[i].Config["date"].(time.Time).After(
+			sortedPages[j].Config["date"].(time.Time))
+	})
+
+	data := map[string]any{
+		"Site": map[string]any{
+			"Config": g.site.ToConfig(),
+		},
+		"Page": map[string]any{
+			"Title":     fmt.Sprintf("Tag: %s", tag),
+			"Tag":       tag,
+			"Pages":     sortedPages,
+			"Permalink": g.buildTagPermalink(tag),
+		},
+	}
+
+	outputPath := filepath.Join(
+		g.site.OutputDir,
+		"tags",
+		urlize(tag),
+		"index.html",
+	)
+
+	return g.renderTemplate(nil, outputPath, data, "tag.html")
+}
+
+func (g *Generator) renderTemplate(node *content.Node, outputPath string, data any, templateNames ...string) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	var tpl *template.Template
 
 	if node != nil {
 		for _, tplName := range node.TemplateChain() {
+			tpl = g.templ.Lookup(tplName)
+			if tpl != nil {
+				break
+			}
+		}
+	} else if len(templateNames) > 0 {
+		for _, tplName := range templateNames {
 			tpl = g.templ.Lookup(tplName)
 			if tpl != nil {
 				break
@@ -337,4 +440,14 @@ func (g *Generator) generate404Page() error {
 	}
 
 	return g.renderTemplate(nil, outputPath, data)
+}
+
+func (g *Generator) buildTagPermalink(tag string) string {
+	return path.Join("/tags", urlize(tag)) + "/"
+}
+
+func (g *Generator) hasTemplate(name string) bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.templ.Lookup(name) != nil
 }

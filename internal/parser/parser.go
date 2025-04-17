@@ -24,14 +24,22 @@ import (
 type ContentParser struct {
 	Site       *config.Site
 	ContentMap map[string]*content.Node
+	Tags       map[string]*TagEntry
 	mu         sync.Mutex
 	md         goldmark.Markdown
+}
+
+type TagEntry struct {
+	Pages []*content.Node
+	Count int
+	Seen  map[string]struct{} // Track page paths
 }
 
 func NewParser(cfg *config.Site) *ContentParser {
 	return &ContentParser{
 		Site:       cfg,
 		ContentMap: make(map[string]*content.Node),
+		Tags:       make(map[string]*TagEntry),
 		md: goldmark.New(
 			goldmark.WithExtensions(
 				extension.GFM,
@@ -177,6 +185,11 @@ func (p *ContentParser) parsePage(path, dir string) error {
 
 	parent.Children = append(parent.Children, pageNode)
 
+	// handle tags
+	if len(pageConfig.Tags) > 0 {
+		p.parseTags(pageConfig, pageNode)
+	}
+
 	return nil
 }
 
@@ -254,4 +267,35 @@ func calculateReadStats(content string) (int, int) {
 
 func (p *ContentParser) GetMarkdownProcessor() goldmark.Markdown {
 	return p.md
+}
+
+func (p *ContentParser) parseTags(pageConfig *config.FrontMatter, pageNode *content.Node) {
+	uniqueTags := make(map[string]bool)
+	for _, rawTag := range pageConfig.Tags {
+		tag := strings.ToLower(strings.TrimSpace(rawTag))
+		if tag == "" {
+			continue
+		}
+
+		if _, exists := uniqueTags[tag]; exists {
+			continue
+		}
+		uniqueTags[tag] = true
+
+		// Get or create tag entry
+		entry, exists := p.Tags[tag]
+		if !exists {
+			entry = &TagEntry{
+				Seen: make(map[string]struct{}),
+			}
+			p.Tags[tag] = entry
+		}
+
+		// Add page if not already present
+		if _, exists := entry.Seen[pageNode.Path]; !exists {
+			entry.Pages = append(entry.Pages, pageNode)
+			entry.Seen[pageNode.Path] = struct{}{}
+			entry.Count = len(entry.Pages)
+		}
+	}
 }

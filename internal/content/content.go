@@ -37,7 +37,7 @@ var (
 )
 
 func NewContentNode(path string, parent *Node) *Node {
-	slug := GenerateSlug(path, nil)
+	slug := GenerateSlug(path, parent)
 	return &Node{
 		Path:     path,
 		Slug:     slug,

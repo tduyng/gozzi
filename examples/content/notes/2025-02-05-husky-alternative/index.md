@@ -2,6 +2,7 @@
 title = "[Note] You don't need husky"
 date = 2025-02-05
 template = "note.html"
+generate_feed = true
 
 [extra]
 comment = true

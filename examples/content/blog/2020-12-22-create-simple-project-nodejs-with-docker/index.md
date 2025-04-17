@@ -4,6 +4,7 @@ description = "Learn to build a basic web application using Node.js and Docker, 
 template = "post.html"
 date = 2020-12-22
 tags = ["docker", "nodejs", "javascript"]
+generate_feed = false
 
 [extra]
 comment = false

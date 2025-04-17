@@ -4,6 +4,7 @@ description = "Trying to Decide Between Rails 5 and Rails 6? Let's Compare!"
 template = "post.html"
 date = 2020-07-05
 tags = ["ruby", "rails"]
+generate_feed = false
 
 [extra]
 comment = false

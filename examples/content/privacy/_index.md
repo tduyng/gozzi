@@ -3,7 +3,7 @@ title = "Privacy Policy"
 description = "Duy NG blog's privacy policy"
 template = "prose.html"
 insert_anchor_links = "none"
-generate_feeds = false
+generate_feed = false
 
 [extra]
 lang = 'en'

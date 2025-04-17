@@ -2,6 +2,7 @@
 title = "[Note] Git Checkout vs. Git Switch"
 date = 2025-01-15T20:00:00
 template = "note.html"
+generate_feed = true
 
 [extra]
 comment = true

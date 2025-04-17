@@ -106,10 +106,6 @@ func mergeFrontMatter(merged, frontMatter map[string]any) map[string]any {
 		merged["template"] = frontMatter["template"]
 	}
 
-	if frontMatter["generate_feed"].(bool) {
-		merged["generate_feed"] = frontMatter["generate_feed"]
-	}
-
 	if frontMatter["img"] != "" {
 		merged["img"] = frontMatter["img"]
 	}
@@ -118,17 +114,24 @@ func mergeFrontMatter(merged, frontMatter map[string]any) map[string]any {
 		merged["lang"] = frontMatter["lang"]
 	}
 
-	if frontMatter["featured"].(bool) {
-		merged["featured"] = frontMatter["featured"]
-	}
-
-	if frontMatter["draft"].(bool) {
-		merged["draft"] = frontMatter["draft"].(bool)
-	}
-
 	merged["tags"] = frontMatter["tags"]
-	merged["date"] = frontMatter["date"]
-	merged["updated"] = frontMatter["updated"]
+
+	if date, ok := frontMatter["date"].(time.Time); ok && !date.IsZero() {
+		merged["date"] = date
+	}
+
+	if updated, ok := frontMatter["updated"].(time.Time); ok && !updated.IsZero() {
+		merged["updated"] = updated
+	}
+
+	boolFields := []string{"generate_feed", "draft", "featured"}
+	for _, field := range boolFields {
+		if val, exists := frontMatter[field]; exists {
+			if b, ok := val.(bool); ok {
+				merged[field] = b
+			}
+		}
+	}
 
 	merged["extra"] = MergeExtra(merged, frontMatter["extra"].(map[string]any))
 	return merged
@@ -153,6 +156,15 @@ func MergeExtra(base map[string]any, extra map[string]any) map[string]any {
 		base[k] = v
 	}
 	return base
+}
+
+func GetBool(m map[string]any, key string) bool {
+	if val, exists := m[key]; exists {
+		if b, ok := val.(bool); ok {
+			return b
+		}
+	}
+	return false
 }
 
 func mergeMapsDeep(base, override map[string]any) map[string]any {

@@ -2,6 +2,7 @@
 title = "[Note] Ingore all .DS_store files globally"
 date = 2025-01-14
 template = "note.html"
+generate_feed = true
 
 [extra]
 comment = true

@@ -4,6 +4,7 @@ description = "When you need to use multiple versions of Rails on your computer,
 template = "post.html"
 date = 2020-06-28
 tags = ["ruby", "rails"]
+generate_feed = false
 
 [extra]
 comment = false

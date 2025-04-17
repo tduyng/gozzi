@@ -4,6 +4,7 @@ description = "Explore an easy way to support dual package TypeScript NPM librar
 template = "post.html"
 date = 2024-11-13
 updated = 2024-11-19
+generate_feed = true
 tags = ["esm", "dual-package", "typescript", "commonjs"]
 
 [extra]

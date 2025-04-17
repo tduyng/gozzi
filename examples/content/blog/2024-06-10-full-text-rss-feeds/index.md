@@ -3,6 +3,7 @@ title = "My blog now offers full-text RSS feeds"
 description = "Explore the reasons behind this decision"
 template = "post.html"
 date = 2024-06-10
+generate_feed = true
 tags = ["blog", "full-text", "rss"]
 
 [extra]

@@ -3,6 +3,7 @@ title = "Essential tsconfig.json options you should use"
 description = "A guide to essential tsconfig.json options for boosting TypeScript code safety, performance, and reliability."
 template = "post.html"
 date = 2024-11-11
+generate_feed = true
 tags = ["typescript", "tsconfig", "best-practices"]
 
 [extra]

@@ -2,6 +2,7 @@
 title = "[Note] Returning to Neovim for Coding"
 date = 2025-01-03T15:00:00
 template = "note.html"
+generate_feed = true
 
 [extra]
 comment = true

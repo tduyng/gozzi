@@ -4,6 +4,7 @@ description = "Dive into fun coding challenges in Ruby. Get practical tips and s
 template = "post.html"
 date = 2020-04-07
 tags = ["ruby", "algorithms"]
+generate_feed = false
 
 [extra]
 comment = false

@@ -4,6 +4,7 @@ description = "I share my journey from being a BIM engineer to becoming a full-t
 template = "post.html"
 date = 2021-05-01
 tags = ["career", "journey"]
+generate_feed = true
 
 [extra]
 comment = false

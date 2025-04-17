@@ -4,6 +4,7 @@ description = "Discover how to configure ESLint and Prettier within your React a
 template = "post.html"
 date = 2020-12-17
 tags = ["eslint", "prettier"]
+generate_feed = false
 
 [extra]
 comment = false

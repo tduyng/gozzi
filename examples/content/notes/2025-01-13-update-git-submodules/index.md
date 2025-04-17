@@ -2,6 +2,7 @@
 title = "[Note] Update all Git submodules to latest commit"
 date = 2025-01-13
 template = "note.html"
+generate_feed = true
 
 [extra]
 comment = true

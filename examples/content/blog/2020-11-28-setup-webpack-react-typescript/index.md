@@ -4,6 +4,7 @@ description = "Learn the essentials of setting up Webpack with React and TypeScr
 template = "post.html"
 date = 2020-11-28
 tags = ["webpack", "react", "typescript"]
+generate_feed = false
 
 [extra]
 comment = false

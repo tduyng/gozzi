@@ -4,6 +4,7 @@ description = "Learn how to build your own personal website using Jekyll and Git
 template = "post.html"
 date = 2020-05-25
 tags = ["blog", "static-site-generator", "free", "web-development"]
+generate_feed = true
 
 [extra]
 comment = false

@@ -5,6 +5,7 @@ template = "post.html"
 date = 2024-05-13
 updated = 2024-05-21
 tags = ["github-action", "profile", "readme", "dynamic", "python"]
+generate_feed = true
 
 [extra]
 comment = true

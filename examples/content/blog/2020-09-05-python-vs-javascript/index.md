@@ -4,6 +4,7 @@ description = "Discover the key differences and unique syntax nuances between Py
 template = "post.html"
 date = 2020-09-05
 tags = ["python", "javascript"]
+generate_feed = false
 
 [extra]
 comment = false

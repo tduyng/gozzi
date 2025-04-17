@@ -4,6 +4,7 @@ description = "Discover why I switched my website and blog from Jekyll to Zola."
 template = "post.html"
 date = 2024-05-11
 tags = ["blog", "static-site-generator"]
+generate_feed = true
 
 [extra]
 comment = false

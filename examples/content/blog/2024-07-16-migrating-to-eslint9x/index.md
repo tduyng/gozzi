@@ -4,6 +4,7 @@ description = "In this article, I share some experiences of migrating to ESLint 
 template = "post.html"
 date = 2024-07-16
 updated = 2025-03-11
+generate_feed = true
 tags = ["eslint", "typescript", "migration", "nodejs"]
 
 [extra]

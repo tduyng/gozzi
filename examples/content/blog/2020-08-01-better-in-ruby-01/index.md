@@ -4,6 +4,7 @@ description = "Hidden Ruby gems: uncovering little known tips."
 template = "post.html"
 date = 2020-08-01
 tags = ["ruby"]
+generate_feed = false
 
 [extra]
 comment = false

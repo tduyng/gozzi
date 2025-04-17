@@ -2,6 +2,7 @@
 title = "[Note] First attempt at migrating from Homebrew to Nix with Nix Home Manager"
 date = 2025-01-10T20:09:30
 template = "note.html"
+generate_feed = true
 
 [extra]
 comment = true

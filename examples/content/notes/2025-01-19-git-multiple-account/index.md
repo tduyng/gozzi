@@ -2,6 +2,7 @@
 title = "[Note] Managing multiple Git accounts"
 date = 2025-01-19
 template = "note.html"
+generate_feed = true
 
 [extra]
 comment = true

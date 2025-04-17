@@ -5,15 +5,8 @@ description = "Software Engineer"
 language = "en"
 output_dir = "public"
 
-[markdown]
-highlight_code = true
-highlight_theme = "ayu-dark"
-external_links_no_follow = true
-external_links_no_referrer = true
-
 #=========================================================================================
 [extra]
-
 name = "Duy NG"
 id = "tduyng"
 bio = "Software Engineer"

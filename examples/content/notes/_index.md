@@ -1,7 +1,7 @@
 +++
 title = "Note"
 template = "notes.html"
-generate_feeds = false
+generate_feed = true
 
 [extra]
 lang = "en"

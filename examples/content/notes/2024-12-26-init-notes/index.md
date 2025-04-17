@@ -2,6 +2,7 @@
 title = "[Note] I’ve started implementing short notes on my website"
 date = 2024-12-26T08:09:00
 template = "note.html"
+generate_feed = true
 +++
 
 # I’ve started implementing notes on my website

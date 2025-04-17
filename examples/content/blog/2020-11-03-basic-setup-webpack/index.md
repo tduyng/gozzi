@@ -4,6 +4,7 @@ description = "Learn the fundamental steps for setting up Webpack to optimize an
 template = "post.html"
 date = 2020-11-03
 tags = ["webpack"]
+generate_feed = false
 
 [extra]
 comment = false

@@ -4,6 +4,7 @@ description = "Learn how to make your GitHub profile dynamic using Bun and TypeS
 template = "post.html"
 date = 2024-05-15
 tags = ["github", "readme", "typescript"]
+generate_feed = true
 
 [extra]
 comment = true

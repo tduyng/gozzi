@@ -5,6 +5,7 @@ template = "post.html"
 date = 2024-05-23
 updated = 2024-05-23
 tags = ["performance", "rust", "webp", "image-conversion", "cli"]
+generate_feed = true
 
 [extra]
 comment = true

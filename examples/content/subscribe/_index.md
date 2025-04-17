@@ -3,7 +3,7 @@ title = "Subscribe"
 description = "How to subscribe to my RSS feed?"
 template = "prose.html"
 insert_anchor_links = "none"
-generate_feeds = false
+generate_feed = false
 
 [extra]
 lang = 'en'

@@ -2,6 +2,7 @@
 title = "[Note] Different ways to batch update Nodejs dependencies" 
 date = 2025-02-23
 template = "note.html"
+generate_feed = true
 
 [extra]
 comment = true

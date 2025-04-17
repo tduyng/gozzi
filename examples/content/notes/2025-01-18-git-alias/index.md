@@ -2,6 +2,7 @@
 title = "[Note] Git aliases"
 date = 2025-01-18
 template = "note.html"
+generate_feed = true
 
 [extra]
 comment = true

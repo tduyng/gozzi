@@ -3,6 +3,7 @@ title = "Scripting tools - A Node.js friendly alternative to makefile"
 description = "Using execa and commander is an alternative that can be considered for replacing makefile in a Node.js project"
 template = "post.html"
 date = 2025-01-29
+generate_feed = true
 tags = ["scripting", "makefile", "nodejs", "typescript", "shell"]
 
 [extra]
@@ -609,7 +610,7 @@ For example, `child_process` is already wrapped by the libraries like `zx`, `exe
   - `./scripts/lint.js lint` (if you’ve added the appropriate shebang at the top of the JS file: `#!/usr/bin/env node`)
   - Or, if you add the script to `package.json`, you can use your package manager: `npm run lint`, `pnpm run lint`, etc.
 
-                    While this works, it’s not as flexible as using `make lint`, and adding many commands to `package.json` can make it longer and more verbose.
+                        While this works, it’s not as flexible as using `make lint`, and adding many commands to `package.json` can make it longer and more verbose.
 
 - _JavaScript code is more verbose, bigger code base_
 

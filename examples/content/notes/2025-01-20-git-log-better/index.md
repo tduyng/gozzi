@@ -2,6 +2,7 @@
 title = "[Note] Better Git log"
 date = 2025-01-20
 template = "note.html"
+generate_feed = true
 
 [extra]
 comment = true

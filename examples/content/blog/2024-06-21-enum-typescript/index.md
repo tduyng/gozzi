@@ -4,6 +4,7 @@ description = "Discover the pitfalls of using Enums in TypeScript and explore a 
 template = "post.html"
 date = 2024-06-21
 updated = 2024-06-24
+generate_feed = true
 tags = ["typescript", "enum", "best-practices"]
 
 [extra]

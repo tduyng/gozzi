@@ -2,7 +2,7 @@
 title = "About"
 description = "Duy NG blog's website about"
 template = "prose.html"
-generate_feeds = false
+generate_feed = false
 
 [extra]
 lang = 'en'

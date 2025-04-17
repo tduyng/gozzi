@@ -4,6 +4,7 @@ description = "How I move from VsCode to Neovim with full IDE features and what 
 template = "post.html"
 date = 2025-01-29
 draft = true
+generate_feed = false
 tags = ["neovim", "ide", "vscode"]
 
 [extra]

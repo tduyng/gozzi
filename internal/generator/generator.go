@@ -2,7 +2,6 @@ package generator
 
 import (
 	"bytes"
-	"encoding/xml"
 	"fmt"
 	"html/template"
 	"io"
@@ -128,6 +127,14 @@ func (g *Generator) Generate(contentRoot *content.Node) error {
 		return fmt.Errorf("failed to generate robots.txt: %w", err)
 	}
 
+	if err := g.generateAtomFeed(); err != nil {
+		return fmt.Errorf("failed to generate Atom feed: %w", err)
+	}
+
+	if err := g.generateSitemap(); err != nil {
+		return fmt.Errorf("failed to generate sitemap: %w", err)
+	}
+
 	return g.copyStaticAssets()
 }
 
@@ -231,10 +238,12 @@ func (g *Generator) generateTagPages() error {
 func (g *Generator) generateTagsIndex() error {
 	tags := make([]map[string]any, 0, len(g.parser.Tags))
 	for tag, entry := range g.parser.Tags {
+		permalink := g.buildTagPermalink(tag)
 		tags = append(tags, map[string]any{
 			"Name":      tag,
 			"Count":     entry.Count,
-			"Permalink": g.buildTagPermalink(tag),
+			"Permalink": permalink,
+			"URL":       g.buildTagURL(permalink),
 		})
 	}
 
@@ -293,11 +302,6 @@ func (g *Generator) renderTemplate(node *content.Node, outputPath string, data a
 	defer g.mu.Unlock()
 	var tpl *template.Template
 
-	contentType := "text/html"
-	if strings.HasSuffix(outputPath, ".xml") {
-		contentType = "application/xml"
-	}
-
 	if node != nil {
 		for _, tplName := range node.TemplateChain() {
 			tpl = g.templ.Lookup(tplName)
@@ -320,15 +324,6 @@ func (g *Generator) renderTemplate(node *content.Node, outputPath string, data a
 		return fmt.Errorf("no template found for path: %s", outputPath)
 	}
 
-	if contentType == "application/xml" {
-		tpl = tpl.Funcs(template.FuncMap{
-			"safe": func(s string) template.HTML {
-				return template.HTML(s) // Only use for pre-escaped XML
-			},
-			"escape": xmlEscape,
-		})
-	}
-
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return fmt.Errorf("create output dir: %w", err)
 	}
@@ -343,12 +338,6 @@ func (g *Generator) renderTemplate(node *content.Node, outputPath string, data a
 	}
 
 	return nil
-}
-
-func xmlEscape(s string) string {
-	var b bytes.Buffer
-	xml.EscapeText(&b, []byte(s))
-	return b.String()
 }
 
 func (g *Generator) copyPageAssets(node *content.Node) error {
@@ -434,11 +423,14 @@ func copyDir(src, dst string) error {
 
 func (g *Generator) buildPermalink(node *content.Node) string {
 	slug := strings.Trim(node.Slug, "/")
+	if slug == "" {
+		return "/"
+	}
 	return "/" + slug + "/"
 }
 
 func (g *Generator) buildURL(node *content.Node) string {
-	return path.Join(g.site.BaseURL, node.Permalink) + "/"
+	return g.site.BaseURL + node.Permalink
 }
 
 func (g *Generator) generate404Page() error {
@@ -463,6 +455,10 @@ func (g *Generator) generate404Page() error {
 
 func (g *Generator) buildTagPermalink(tag string) string {
 	return path.Join("/tags", urlize(tag)) + "/"
+}
+
+func (g *Generator) buildTagURL(tagLink string) string {
+	return g.site.BaseURL + tagLink
 }
 
 func (g *Generator) hasTemplate(name string) bool {

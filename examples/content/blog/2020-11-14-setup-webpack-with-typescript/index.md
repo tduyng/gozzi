@@ -4,6 +4,7 @@ description = "Discover how to configure Webpack with TypeScript to enhance your
 template = "post.html"
 date = 2020-11-14
 tags = ["webpack", "typescript"]
+generate_feed = false
 
 [extra]
 comment = false
@@ -295,19 +296,19 @@ module.exports = (env, agrv) => {
   - `output.path`: the absolute path to the directory after build. For the absolute path, we usually use `path.resolve()` or `path.join()` in combination with the global variable `__dirname`.
   - `output.publicPath`: the relative path from the `index.html` file pointing to the files in the **dist** directory after build.
 
-            For example: in the file `loadImage.js`, we import logo, the logo variable will be become: `output.publicPath + 'src/logo.png`. If after the build, we run the `index.html` file in a different location not in **the public directory**, we will accidentally make the logo variable wrong.
+                For example: in the file `loadImage.js`, we import logo, the logo variable will be become: `output.publicPath + 'src/logo.png`. If after the build, we run the `index.html` file in a different location not in **the public directory**, we will accidentally make the logo variable wrong.
 
   - `output.filename`: filename of js bundle after build.
 
-            Here we use `[hash:6]` means the bundle will add 6 random characters to the bundle file in each build (ex: `bundle.bbc536.js`).
+                Here we use `[hash:6]` means the bundle will add 6 random characters to the bundle file in each build (ex: `bundle.bbc536.js`).
 
-            This is aimed at restricting your browser to cache Javascript when you update a new Javascript version for your website.
+                This is aimed at restricting your browser to cache Javascript when you update a new Javascript version for your website.
 
-            But we have a problem. Each time of build, we will have a new bundle file. So do we need edit the src of script import in the `public/index.html` file?
+                But we have a problem. Each time of build, we will have a new bundle file. So do we need edit the src of script import in the `public/index.html` file?
 
-            We don't. Because we use the plugin `HtmlWebpackPlugin`. It will help use create a new `index.html` file from the original html file.
+                We don't. Because we use the plugin `HtmlWebpackPlugin`. It will help use create a new `index.html` file from the original html file.
 
-            This new `html` file will use the template as the `public/index.html` and automatically build to `dist/src/index.html` and import new `bundle.....js` file.
+                This new `html` file will use the template as the `public/index.html` and automatically build to `dist/src/index.html` and import new `bundle.....js` file.
 
   - `output.environment`: By default, webpack will generate code using the ES6 syntax. If you don't want this, you can modify the target build by yourself in the `output.environment`
     - **arrowFunction**: support arrow function.

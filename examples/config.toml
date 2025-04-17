@@ -1,5 +1,5 @@
-base_url = "http://localhost:1313"
-feed_url = "http://localhost:1313/atom.xml"
+base_url = "https://tduyng.com"
+feed_url = "https://tduyng/atom.xml"
 title = "Duy NG"
 description = "Software Engineer"
 language = "en"

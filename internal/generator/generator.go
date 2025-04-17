@@ -122,6 +122,10 @@ func (g *Generator) Generate(contentRoot *content.Node) error {
 		return fmt.Errorf("failed to generate tag pages: %w", err)
 	}
 
+	if err := g.generateRobotsTxt(); err != nil {
+		return fmt.Errorf("failed to generate robots.txt: %w", err)
+	}
+
 	return g.copyStaticAssets()
 }
 
@@ -450,4 +454,17 @@ func (g *Generator) hasTemplate(name string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return g.templ.Lookup(name) != nil
+}
+
+func (g *Generator) generateRobotsTxt() error {
+	content := fmt.Sprintf(`User-agent: *
+Allow: /
+Sitemap: %s/sitemap.xml
+`, g.site.BaseURL)
+
+	return os.WriteFile(
+		filepath.Join(g.site.OutputDir, "robots.txt"),
+		[]byte(content),
+		0644,
+	)
 }

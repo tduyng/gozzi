@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/tduyng/gozzi/internal/config"
 	"github.com/tduyng/gozzi/internal/generator"
@@ -34,9 +35,12 @@ func main() {
 
 	switch os.Args[1] {
 	case "build":
+		startTime := time.Now()
 		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
 			log.Fatal(err)
 		}
+		ms := time.Since(startTime).Milliseconds()
+		log.Printf("Build done in %dms", ms)
 	case "serve":
 		srv, _ := server.NewDevServer(site, gen, contentParser)
 		srv.Start(1313)

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -95,13 +96,20 @@ func (g *Generator) Generate(contentRoot *content.Node) error {
 		return fmt.Errorf("failed to clean output: %w", err)
 	}
 
+	sem := make(chan struct{}, runtime.NumCPU()*2)
 	var wg sync.WaitGroup
 	errChan := make(chan error, 100)
 
 	g.walkNodes(contentRoot, func(n *content.Node) {
 		wg.Add(1)
+		sem <- struct{}{}
+
 		go func(node *content.Node) {
-			defer wg.Done()
+			defer func() {
+				<-sem
+				wg.Done()
+			}()
+
 			if err := g.processNode(node); err != nil {
 				errChan <- err
 			}

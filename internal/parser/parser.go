@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -30,6 +31,7 @@ type ContentParser struct {
 	Tags       map[string]*TagEntry
 	mu         sync.Mutex
 	md         goldmark.Markdown
+	workerPool chan struct{}
 }
 
 type TagEntry struct {
@@ -43,6 +45,7 @@ func NewParser(cfg *config.Site) *ContentParser {
 		Site:       cfg,
 		ContentMap: make(map[string]*content.Node),
 		Tags:       make(map[string]*TagEntry),
+		workerPool: make(chan struct{}, runtime.NumCPU()*2),
 		md: goldmark.New(
 			goldmark.WithExtensions(
 				extension.GFM,
@@ -70,32 +73,55 @@ func (p *ContentParser) Parse(rootDir string) error {
 	p.ContentMap = make(map[string]*content.Node) // Reset ContentMap
 	p.mu.Unlock()
 
-	return filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
+	var wg sync.WaitGroup
+	fileChan := make(chan string, 100)
+
+	go func() {
+		filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil || info.IsDir() {
+				return nil
+			}
+			if filepath.Base(path) == "_index.md" || filepath.Ext(path) == ".md" {
+				fileChan <- path
+			}
 			return nil
-		}
+		})
+		close(fileChan)
+	}()
 
-		relPath, _ := filepath.Rel(rootDir, path)
-		dir := filepath.Dir(relPath)
+	for path := range fileChan {
+		wg.Add(1)
+		p.workerPool <- struct{}{}
 
-		switch {
-		case filepath.Base(path) == "_index.md":
-			return p.parseSection(path, dir)
-		case filepath.Ext(path) == ".md":
-			return p.parsePage(path, dir)
-		}
+		go func(path string) {
+			defer func() {
+				<-p.workerPool
+				wg.Done()
+			}()
 
-		return nil
-	})
+			relPath, _ := filepath.Rel(rootDir, path)
+			dir := filepath.Dir(relPath)
+
+			switch {
+			case filepath.Base(path) == "_index.md":
+				p.parseSection(path, dir)
+			case filepath.Ext(path) == ".md":
+				p.parsePage(path, dir)
+			}
+		}(path)
+	}
+
+	wg.Wait()
+	return nil
 }
 
 func (p *ContentParser) parseSection(path, dir string) error {
-	mkdown, err := os.ReadFile(path)
+	mdContent, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
 
-	frontMatter, contentPart, err := config.LoadFrontMatter(mkdown)
+	frontMatter, contentPart, err := config.LoadFrontMatter(mdContent)
 	if err != nil || frontMatter.Draft {
 		return err
 	}
@@ -157,12 +183,12 @@ func (p *ContentParser) parseSection(path, dir string) error {
 }
 
 func (p *ContentParser) parsePage(path, dir string) error {
-	mkdownContent, err := os.ReadFile(path)
+	mdContent, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
 
-	pageConfig, contentPart, err := config.LoadFrontMatter(mkdownContent)
+	pageConfig, contentPart, err := config.LoadFrontMatter(mdContent)
 	if err != nil || pageConfig.Draft {
 		return err
 	}

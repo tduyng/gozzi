@@ -22,6 +22,7 @@ import (
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
+	"go.abhg.dev/goldmark/mermaid"
 )
 
 type ContentParser struct {
@@ -51,6 +52,7 @@ func NewParser(cfg *config.Site) *ContentParser {
 					highlight.WithGuessLanguage(true),
 					highlight.WithStyle("dracula"),
 				),
+				&mermaid.Extender{},
 			),
 			goldmark.WithParserOptions(
 				parser.WithAutoHeadingID(),

@@ -41,7 +41,6 @@ func (g *Generator) CreateFuncMap() template.FuncMap {
 		"ne":          ne,
 		"now":         time.Now,
 		"or":          orLogic,
-		"pagination":  g.renderPagination,
 		"pluralize":   pluralize,
 		"priority":    priority,
 		"replace":     strings.ReplaceAll,
@@ -54,6 +53,8 @@ func (g *Generator) CreateFuncMap() template.FuncMap {
 		"upper":       strings.ToUpper,
 		"urlize":      urlize,
 		"where":       where,
+		// macros
+		"pagination": g.renderPagination,
 	}
 }
 

@@ -9,13 +9,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/tduyng/gozzi/internal/config"
 	"github.com/tduyng/gozzi/internal/content"
+	"github.com/tduyng/gozzi/internal/paginate"
 	"github.com/yuin/goldmark"
 	highlight "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/extension"
@@ -112,6 +111,9 @@ func (p *ContentParser) Parse(rootDir string) error {
 	}
 
 	wg.Wait()
+
+	paginator := paginate.New(p.ContentMap)
+	paginator.BuildLinks()
 	return nil
 }
 
@@ -155,29 +157,6 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	node.ReadTime = readTime
 	node.Path = strings.TrimPrefix(path, "content/")
 	node.Toc = toc
-
-	var pages []*content.Node
-	for _, child := range node.Children {
-		if child.Type == content.NodeTypePage {
-			pages = append(pages, child)
-		}
-	}
-
-	sort.SliceStable(pages, func(i, j int) bool {
-		dateI := pages[i].Config["date"].(time.Time)
-		dateJ := pages[j].Config["date"].(time.Time)
-		return dateI.After(dateJ)
-	})
-
-	for i := range pages {
-		if i > 0 {
-			pages[i].Higher = pages[i-1] // Older post
-		}
-		if i < len(pages)-1 {
-			pages[i].Lower = pages[i+1] // Newer post
-		}
-		pages[i].Parent = node
-	}
 
 	return nil
 }

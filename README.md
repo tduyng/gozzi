@@ -20,3 +20,4 @@ TODO:
 - [ ] Fix copy button for code block
 - [x] Fix comments
 - [ ] Support shortcode: warning, info, important, details...
+- [ ] Fix zoom image

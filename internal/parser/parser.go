@@ -53,6 +53,7 @@ func NewParser(cfg *config.Site) *ContentParser {
 					highlight.WithStyle("dracula"),
 				),
 				&mermaid.Extender{},
+				NewMathExtension(),
 			),
 			goldmark.WithParserOptions(
 				parser.WithAutoHeadingID(),

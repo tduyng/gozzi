@@ -1,5 +1,4 @@
-{{ $show_comment := priority .Page.Config.extra.comment .Site.Config.extra.comment }} {{ if
-$show_comment }}
+{{ if .Page.Config.extra.comment }}
 <script
     src="https://giscus.app/client.js"
     data-repo="tduyng/tduyng.github.io"
@@ -7,7 +6,7 @@ $show_comment }}
     data-category="General"
     data-category-id="DIC_kwDOD4Stwc4CfSpo"
     data-mapping="specific"
-    data-term="{{ .Page.slug }}"
+    data-term="{{ .Page.Slug }}"
     data-strict="1"
     data-reactions-enabled="1"
     data-emit-metadata="1"

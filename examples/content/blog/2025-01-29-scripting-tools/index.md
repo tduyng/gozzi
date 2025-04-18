@@ -9,6 +9,8 @@ tags = ["scripting", "makefile", "nodejs", "typescript", "shell"]
 [extra]
 comment = true
 reaction = true
+toc = true
+copy = true
 show_ended_words = true
 img = "img/makefile.webp"
 
@@ -610,7 +612,7 @@ For example, `child_process` is already wrapped by the libraries like `zx`, `exe
   - `./scripts/lint.js lint` (if you’ve added the appropriate shebang at the top of the JS file: `#!/usr/bin/env node`)
   - Or, if you add the script to `package.json`, you can use your package manager: `npm run lint`, `pnpm run lint`, etc.
 
-                        While this works, it’s not as flexible as using `make lint`, and adding many commands to `package.json` can make it longer and more verbose.
+                            While this works, it’s not as flexible as using `make lint`, and adding many commands to `package.json` can make it longer and more verbose.
 
 - _JavaScript code is more verbose, bigger code base_
 

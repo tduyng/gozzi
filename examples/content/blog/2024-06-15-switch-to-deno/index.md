@@ -9,6 +9,8 @@ tags = ["deno", "nodejs", "production"]
 [extra]
 comment = false
 reaction = true
+toc = true
+copy = true
 img = "img/switch-deno.webp"
 +++
 

@@ -9,6 +9,8 @@ generate_feed = false
 [extra]
 comment = false
 reaction = true
+toc = true
+copy = true
 img = "/img/post-cover.webp"
 outdate_alert = true
 outdate_alert_days = 365

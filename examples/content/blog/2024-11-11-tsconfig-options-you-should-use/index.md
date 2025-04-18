@@ -9,6 +9,8 @@ tags = ["typescript", "tsconfig", "best-practices"]
 [extra]
 comment = true
 reaction = true
+toc = true
+copy = true
 featured = true
 show_ended_words = true
 img = "img/tsconfig.webp"

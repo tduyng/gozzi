@@ -9,6 +9,8 @@ generate_feed = false
 [extra]
 comment = false
 reaction = true
+toc = true
+copy = true
 img = "/img/post-cover.webp"
 +++
 
@@ -250,24 +252,24 @@ Make sure you have docker & docker-compose installed in your machine:
 
   - Build images:
 
-                        ```bash
-                        docker-compose build
-                        ```
+                            ```bash
+                            docker-compose build
+                            ```
 
-                        When you use docker-compose to build the image, the image name is always going to be `<project>_<service>`, where `<service>` in this example is node-redis-app_node-app.
+                            When you use docker-compose to build the image, the image name is always going to be `<project>_<service>`, where `<service>` in this example is node-redis-app_node-app.
 
   - Run containers with docker-compose
 
-                    ```bash
-                    docker-compose up # all services declared in docker-compose.yml will be started
-                    docker-compose up -d #detach mode
-                    ```
+                        ```bash
+                        docker-compose up # all services declared in docker-compose.yml will be started
+                        docker-compose up -d #detach mode
+                        ```
 
   - Stop containers with docker-compose
 
-                    ```bash
-                    docker-compose down # Stop all containers declared in docker-compose.yml file
-                    ```
+                        ```bash
+                        docker-compose down # Stop all containers declared in docker-compose.yml file
+                        ```
 
 That's it. Test the code on your machine and check it in then [localhost8080](http://localhost:8080) to see the result.
 

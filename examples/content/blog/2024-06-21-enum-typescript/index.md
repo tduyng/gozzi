@@ -10,6 +10,8 @@ tags = ["typescript", "enum", "best-practices"]
 [extra]
 comment = true
 reaction = true
+toc = true
+copy = true
 show_ended_words = true
 img = "img/enum.webp"
 +++

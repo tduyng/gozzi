@@ -10,6 +10,8 @@ tags = ["esm", "dual-package", "typescript", "commonjs"]
 [extra]
 comment = true
 reaction = true
+toc = true
+copy = true
 img = "img/dual-package.webp"
 show_ended_words = true
 +++

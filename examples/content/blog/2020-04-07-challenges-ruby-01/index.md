@@ -7,6 +7,8 @@ tags = ["ruby", "algorithms"]
 generate_feed = false
 
 [extra]
+toc = true
+copy = true
 comment = false
 reaction = true
 img = "/img/post-cover.webp"

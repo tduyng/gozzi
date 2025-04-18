@@ -2,17 +2,20 @@
 
 TODO:
 
-- [ ] Generate feeds
-- [ ] Generate robots.txt
-- [ ] Generate sitemap.xml
-- [ ] Handle better html template + config
-- [ ] Create .GetURL func for html template, support cache
-- [ ] Copy correctly images from child folder
+- [x] Generate feeds
+- [x] Generate robots.txt
+- [x] Generate sitemap.xml
+- [x] Handle better html template + config
+- [x] Copy correctly images from child folder
 - [ ] Support toc
-- [ ] Support tags
-- [ ] Support notes page
+- [x] Support tags
+- [x] Support notes page
 - [ ] Fix correctly fold nav
-- [ ] Check Seo
+- [x] Check Seo
 - [ ] Support --draft cli options for serve
 - [ ] Clean unnescessary config and go code
 - [ ] Faster build and reload
+- [ ] Fix outlert
+- [ ] Simplify some design of website
+- [ ] Fix copy button for code block
+- [x] Fix comments

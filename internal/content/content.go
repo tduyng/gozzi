@@ -28,6 +28,7 @@ type Node struct {
 	Higher    *Node
 	WordCount int
 	ReadTime  int
+	Toc       []map[string]any
 }
 
 var (
@@ -61,6 +62,7 @@ func (node *Node) ToMap() map[string]any {
 		"Lower":     node.Lower,
 		"WordCount": node.WordCount,
 		"ReadTime":  node.ReadTime,
+		"Toc":       node.Toc,
 	}
 }
 

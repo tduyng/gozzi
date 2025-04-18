@@ -9,6 +9,8 @@ generate_feed = true
 [extra]
 comment = false
 reaction = true
+toc = true
+copy = true
 img = "img/social_card.webp"
 +++
 

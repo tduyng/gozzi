@@ -9,6 +9,8 @@ tags = ["blog", "full-text", "rss"]
 [extra]
 comment = false
 reaction = true
+toc = true
+copy = true
 img = "/img/post-cover.webp"
 +++
 

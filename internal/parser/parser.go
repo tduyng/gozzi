@@ -121,6 +121,9 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	node.Type = content.NodeTypeSection
 	node.Config = mergedConfig
 	node.Content = template.HTML(htmlBuf.String())
+	node.Permalink = buildPermalink(slug)
+	node.URL = buildURL(p.Site.BaseURL, node.Permalink)
+
 	wordCount, readTime := calculateReadStats(string(contentPart))
 	node.WordCount = wordCount
 	node.ReadTime = readTime
@@ -185,6 +188,8 @@ func (p *ContentParser) parsePage(path, dir string) error {
 
 	parent := p.GetOrCreateSection(filepath.Dir(dir))
 	slug := content.GenerateSlug(path, parent)
+	permalink := buildPermalink(slug)
+
 	wordCount, readTime := calculateReadStats(string(contentPart))
 	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
 	mergedConfig["img_url"] = p.resolveImgURL(pageConfig, slug)
@@ -192,6 +197,8 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	pageNode := &content.Node{
 		Path:      strings.TrimSuffix(path, "content/"),
 		Slug:      slug,
+		Permalink: permalink,
+		URL:       buildURL(p.Site.BaseURL, permalink),
 		Type:      content.NodeTypePage,
 		Parent:    parent,
 		Config:    mergedConfig,
@@ -315,4 +322,16 @@ func (p *ContentParser) parseTags(pageConfig *config.FrontMatter, pageNode *cont
 			entry.Count = len(entry.Pages)
 		}
 	}
+}
+
+func buildPermalink(slug string) string {
+	permalink := strings.Trim(slug, "/")
+	if permalink == "" {
+		return "/"
+	}
+	return "/" + permalink + "/"
+}
+
+func buildURL(baseURL, permalink string) string {
+	return baseURL + permalink
 }

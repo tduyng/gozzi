@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -158,18 +157,6 @@ func (g *Generator) processNode(node *content.Node) error {
 
 func (g *Generator) generateSection(node *content.Node) error {
 	outputPath := filepath.Join(g.site.OutputDir, node.Slug, "index.html")
-
-	node.Permalink = g.buildPermalink(node)
-	node.URL = g.buildURL(node)
-
-	if node.Higher != nil {
-		node.Higher.URL = g.buildURL(node.Higher)
-		node.Higher.Permalink = g.buildPermalink(node.Higher)
-	}
-	if node.Lower != nil {
-		node.Lower.URL = g.buildURL(node.Lower)
-		node.Lower.Permalink = g.buildPermalink(node.Lower)
-	}
 	nodeMap := node.ToMap()
 
 	data := map[string]any{
@@ -195,10 +182,6 @@ func (g *Generator) generatePage(node *content.Node) error {
 			return err
 		}
 	}
-	node.Permalink = g.buildPermalink(node)
-	node.URL = g.buildURL(node)
-	node.Parent.Permalink = g.buildPermalink(node.Parent)
-	node.Parent.URL = g.buildURL(node.Parent)
 	nodeMap := node.ToMap()
 	parentMap := node.Parent.ToMap()
 
@@ -427,18 +410,6 @@ func copyDir(src, dst string) error {
 
 		return copyFile(path, target)
 	})
-}
-
-func (g *Generator) buildPermalink(node *content.Node) string {
-	slug := strings.Trim(node.Slug, "/")
-	if slug == "" {
-		return "/"
-	}
-	return "/" + slug + "/"
-}
-
-func (g *Generator) buildURL(node *content.Node) string {
-	return g.site.BaseURL + node.Permalink
 }
 
 func (g *Generator) generate404Page() error {

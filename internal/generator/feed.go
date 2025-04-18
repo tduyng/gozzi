@@ -98,7 +98,7 @@ func (g *Generator) generateSitemap() error {
 
 	// Content pages
 	g.walkNodes(g.parser.ContentMap["."], func(n *content.Node) {
-		if n.Config["draft"].(bool) {
+		if config.GetBool(n.Config, "draft") {
 			return
 		}
 

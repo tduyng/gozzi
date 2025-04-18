@@ -17,7 +17,6 @@ import (
 	"github.com/tduyng/gozzi/internal/content"
 	"github.com/yuin/goldmark"
 	highlight "github.com/yuin/goldmark-highlighting/v2"
-	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
@@ -54,6 +53,7 @@ func NewParser(cfg *config.Site) *ContentParser {
 				),
 				&mermaid.Extender{},
 				NewMathExtension(),
+				NewTocExtension(),
 			),
 			goldmark.WithParserOptions(
 				parser.WithAutoHeadingID(),
@@ -100,10 +100,10 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		return err
 	}
 
-	doc := p.md.Parser().Parse(text.NewReader(contentPart))
-	toc := p.collectHeadings(doc, contentPart)
+	pc := parser.NewContext()
+	doc := p.md.Parser().Parse(text.NewReader(contentPart), parser.WithContext(pc))
+	toc, _ := pc.Get(0).([]map[string]any)
 
-	// Render HTML
 	var htmlBuf bytes.Buffer
 	if err := p.md.Renderer().Render(&htmlBuf, contentPart, doc); err != nil {
 		return fmt.Errorf("markdown rendering failed: %w", err)
@@ -134,14 +134,12 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		}
 	}
 
-	// Sort pages by date (newest first)
 	sort.SliceStable(pages, func(i, j int) bool {
 		dateI := pages[i].Config["date"].(time.Time)
 		dateJ := pages[j].Config["date"].(time.Time)
 		return dateI.After(dateJ)
 	})
 
-	// Set pagination links
 	for i := range pages {
 		if i > 0 {
 			pages[i].Higher = pages[i-1] // Older post
@@ -166,10 +164,10 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		return err
 	}
 
-	doc := p.md.Parser().Parse(text.NewReader(contentPart))
-	toc := p.collectHeadings(doc, contentPart)
+	pc := parser.NewContext()
+	doc := p.md.Parser().Parse(text.NewReader(contentPart), parser.WithContext(pc))
+	toc, _ := pc.Get(0).([]map[string]any)
 
-	// Render HTML
 	var htmlBuf bytes.Buffer
 	if err := p.md.Renderer().Render(&htmlBuf, contentPart, doc); err != nil {
 		return fmt.Errorf("markdown rendering failed: %w", err)
@@ -317,64 +315,4 @@ func (p *ContentParser) parseTags(pageConfig *config.FrontMatter, pageNode *cont
 			entry.Count = len(entry.Pages)
 		}
 	}
-}
-
-func (p *ContentParser) collectHeadings(doc ast.Node, source []byte) []map[string]any {
-	var entries []map[string]any
-	var currentH2 map[string]any
-
-	ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
-		if !entering {
-			return ast.WalkContinue, nil
-		}
-
-		if heading, ok := n.(*ast.Heading); ok {
-			level := heading.Level
-
-			// Extract heading text
-			var textBuf strings.Builder
-			for child := heading.FirstChild(); child != nil; child = child.NextSibling() {
-				switch node := child.(type) {
-				case *ast.Text:
-					textBuf.Write(node.Value(source))
-				case *ast.String:
-					textBuf.Write(node.Value)
-				}
-			}
-			title := strings.TrimSpace(textBuf.String())
-
-			// Proper ID extraction
-			id := ""
-			if attr, exists := heading.AttributeString("id"); exists {
-				switch v := attr.(type) {
-				case []byte:
-					id = string(v) // Convert byte slice to string
-				case string:
-					id = v
-				default:
-					id = fmt.Sprintf("%v", v)
-				}
-			}
-
-			// Build TOC structure
-			if level == 2 {
-				currentH2 = map[string]any{
-					"ID":       id,
-					"Title":    title,
-					"Children": []map[string]any{},
-				}
-				entries = append(entries, currentH2)
-			} else if level == 3 && currentH2 != nil {
-				child := map[string]any{
-					"ID":    id,
-					"Title": title,
-				}
-				currentH2["Children"] = append(currentH2["Children"].([]map[string]any), child)
-			}
-		}
-
-		return ast.WalkContinue, nil
-	})
-
-	return entries
 }

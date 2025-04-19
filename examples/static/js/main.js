@@ -122,7 +122,7 @@ function enableTocIndicate() {
                     activated = target
                 }
             }),
-        { rootMargin: '-9% 0px -90% 0px' }
+        { rootMargin: '-9% 0px -90% 0px' },
     )
     headers.forEach((header) => observer.observe(header))
 }
@@ -147,6 +147,8 @@ function addCopyBtns() {
     const cfg = document.querySelector('#copy-cfg')
     if (!cfg) return
     const copyIcon = cfg.dataset.copyIcon
+    console.log('copyIcon', copyIcon)
+    console.log('dataset', cfg.dataset)
     const checkIcon = cfg.dataset.checkIcon
     document.querySelectorAll('pre').forEach((block) => {
         if (block.classList.contains('mermaid')) return
@@ -209,7 +211,7 @@ function addFootnoteBacklink() {
                         .getBoundingClientRect().top +
                     window.scrollY -
                     50,
-            })
+            }),
         )
         footnote.appendChild(backlink)
     })
@@ -217,7 +219,7 @@ function addFootnoteBacklink() {
 
 function enableImgLightense() {
     window.addEventListener('load', () =>
-        Lightense('.prose img', { background: 'rgba(43, 43, 43, 0.19)' })
+        Lightense('.prose img', { background: 'rgba(43, 43, 43, 0.19)' }),
     )
 }
 

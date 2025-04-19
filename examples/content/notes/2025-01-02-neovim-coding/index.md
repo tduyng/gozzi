@@ -6,6 +6,7 @@ generate_feed = true
 
 [extra]
 comment = true
+copy = true
 +++
 
 # Returning to Neovim for coding

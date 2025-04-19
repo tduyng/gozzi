@@ -6,6 +6,7 @@ generate_feed = true
 
 [extra]
 comment = true
+copy = true
 +++
 
 # Run a command if there are unstaged changes

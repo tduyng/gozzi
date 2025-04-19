@@ -6,6 +6,7 @@ generate_feed = true
 
 [extra]
 comment = true
+copy = true
 +++
 
 # Managing multiple Git accounts

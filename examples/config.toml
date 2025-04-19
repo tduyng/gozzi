@@ -28,7 +28,7 @@ footer_menu = [
   { name = "contact", path = "/contact", is_external = false },
   { name = "privacy", path = "/privacy", is_external = false },
 ]
-nav_separator = "::"
+nav_separator = "☰"
 nav_wrapper_left = "["
 nav_wrapper_right = "]"
 nav_wrapper_separator = ","

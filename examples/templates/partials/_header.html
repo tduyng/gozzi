@@ -1,17 +1,18 @@
+{{ $feed_url := .Site.Config.feed_url }}
 <header class="blur">
     <div id="header-wrapper">
         <nav>
             <a class="instant" href="/">{{ .Site.Config.extra.id }}</a>
 
-            {{ if .Page.Path }}
+            {{ if ne .Page.Path "" }}
             <button id="toggler" class="separator" aria-label="toggle expand">
                 {{ .Site.Config.extra.nav_separator }}
             </button>
             <span class="wrap left fold">{{ .Site.Config.extra.nav_wrapper_left }}</span>
 
-            {{ $sections := .Site.config.extra.sections }} {{ $currentPath := default .Page.Path ""
-            }} {{ range $index, $section := .Site.Config.extra.sections }} {{ $shouldShow :=
-            contains $currentPath $section.path }}
+            {{ $sections := .Site.config.extra.sections }} {{ $currentPath := .Page.Path }} {{ range
+            $index, $section := .Site.Config.extra.sections }} {{ $shouldShow := contains
+            $currentPath $section.path }}
             <a class="instant {{ if not $shouldShow }}fold{{ end }}" href="{{ $section.path }}">
                 {{ $section.name }}
             </a>
@@ -23,28 +24,29 @@
             <span class="wrap right fold">{{ .Site.Config.extra.nav_wrapper_right }}</span>
             {{ end }}
         </nav>
-        <div id="btns">
-            <a id="rss-btn" class="svg-icon" href="/atom.xml" aria-label="rss feed">
-                {{ load "static/icon/rss.svg" }}
-            </a>
-            <button id="toc-toggle" aria-label="table of content">
-                {{ load "static/icon/toc.svg" }}
-            </button>
-        </div>
+        <!-- <div id="btns"> -->
+        <!--     <a id="rss-btn" class="svg-icon" href="{{ $feed_url }}" aria-label="rss feed"> -->
+        <!--         {{ load "static/icon/rss.svg" }} -->
+        <!--     </a> -->
+        <!--     <button id="toc-toggle" aria-label="table of content"> -->
+        <!--         {{ load "static/icon/toc.svg" }} -->
+        <!--     </button> -->
+        <!-- </div> -->
     </div>
 </header>
 
-<dialog id="rss-mask">
-    <div>
-        <a href="{{ .Site.FeedURL }}">{{ .Site.FeedURL }}</a>
-        <button
-            autofocus
-            aria-label="copy"
-            data-link="{{ .Site.FeedURL }}"
-            data-copy-icon="{{ .Site.FeedURL }}"
-            data-check-icon="{{ .Site.FeedURL }}"
-        >
-            {{ load "static/icon/rss.svg" }}
-        </button>
-    </div>
-</dialog>
+<!-- <dialog id="rss-mask"> -->
+<!--     <div> -->
+<!--         {{ $copy_icon := load "static/icon/copy.svg" }}  -->
+<!--         <a href="{{ $feed_url }}">{{ $feed_url }}</a> -->
+<!--         <button -->
+<!--             autofocus -->
+<!--             aria-label="copy" -->
+<!--             data-link="{{ $feed_url }}" -->
+<!--             data-copy-icon="{{ load_attribute "static/icon/copy.svg" }}" -->
+<!--             data-check-icon="{{ load_attribute "static/icon/check.svg" }}" -->
+<!--         > -->
+<!--             {{ $copy_icon }} -->
+<!--         </button> -->
+<!--     </div> -->
+<!-- </dialog> -->

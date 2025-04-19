@@ -6,6 +6,7 @@ generate_feed = true
 
 [extra]
 comment = true
+copy = true
 +++
 
 # Git Checkout vs. Git Switch
@@ -58,12 +59,12 @@ comment = true
 
 - `git checkout`:
 
-  - Use for restoring files from a specific commit or branch.
-  - Still works for switching branches, but `git switch` is preferred.
+    - Use for restoring files from a specific commit or branch.
+    - Still works for switching branches, but `git switch` is preferred.
 
 - `git switch`:
-  - Use for switching branches or creating new branches.
-  - Cleaner and more focused than `git checkout`.
+    - Use for switching branches or creating new branches.
+    - Cleaner and more focused than `git checkout`.
 
 ## Pro tips
 

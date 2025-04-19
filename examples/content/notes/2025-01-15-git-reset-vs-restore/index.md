@@ -6,6 +6,7 @@ generate_feed = true
 
 [extra]
 comment = true
+copy = true
 +++
 
 # Git Reset vs. Git Restore
@@ -66,12 +67,12 @@ comment = true
 
 - `git reset`:
 
-  - Move branch pointers or undo commits.
-  - Unstage changes (though `git restore --staged` is more intuitive).
+    - Move branch pointers or undo commits.
+    - Unstage changes (though `git restore --staged` is more intuitive).
 
 - `git restore`:
-  - Discard changes in the working directory.
-  - Unstage changes (modern alternative to `git reset HEAD <file>`).
+    - Discard changes in the working directory.
+    - Unstage changes (modern alternative to `git reset HEAD <file>`).
 
 ## Pro tips
 

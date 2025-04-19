@@ -69,7 +69,7 @@ func headingID(h *ast.Heading, source []byte) string {
 	if id, ok := h.AttributeString("id"); ok {
 		return string(id.([]byte))
 	}
-	return util.BytesToReadOnlyString(h.Text(source))
+	return util.BytesToReadOnlyString(h.Lines().Value(source))
 }
 
 func headingText(h *ast.Heading, source []byte) string {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -19,33 +20,96 @@ var (
 )
 
 func main() {
-	if len(os.Args) >= 2 && (os.Args[1] == "version" || os.Args[1] == "-v" || os.Args[1] == "--version") {
+	// Handle global flags
+	flag.Usage = printUsage
+	showVersion := flag.Bool("version", false, "Show version information")
+	showHelp := flag.Bool("help", false, "Show help information")
+
+	// Parse global flags
+	flag.Parse()
+
+	// Handle global flags
+	if *showVersion {
 		printVersion()
-		os.Exit(0)
+		return
+	}
+	if *showHelp {
+		printUsage()
+		return
 	}
 
-	if len(os.Args) < 2 {
+	// Get subcommand
+	args := flag.Args()
+	if len(args) < 1 {
 		printUsage()
 		os.Exit(1)
 	}
 
-	switch os.Args[1] {
+	// Handle subcommands
+	switch args[0] {
 	case "build":
-		startTime := time.Now()
-		_, contentParser, gen := initApp("config.toml", "content")
-		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
-			log.Fatal(err)
-		}
-		ms := time.Since(startTime).Milliseconds()
-		log.Printf("Build done in %dms", ms)
+		handleBuildCommand(args[1:])
 	case "serve":
-		site, contentParser, gen := initApp("config.toml", "content")
-		srv, _ := server.NewDevServer(site, gen, contentParser)
-		srv.Start(1313)
+		handleServeCommand(args[1:])
+	case "help":
+		handleHelpCommand(args[1:])
+	case "version":
+		printVersion()
 	default:
 		printUsage()
 		os.Exit(1)
 	}
+}
+
+func handleBuildCommand(args []string) {
+	fs := flag.NewFlagSet("build", flag.ExitOnError)
+	configPath := fs.String("config", "config.toml", "Path to config file")
+	contentDir := fs.String("content", "content", "Content directory")
+	fs.Usage = func() { buildUsage() }
+
+	if err := fs.Parse(args); err != nil {
+		log.Fatal(err)
+	}
+
+	startTime := time.Now()
+	_, contentParser, gen := initApp(*configPath, *contentDir)
+
+	if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Build done in %dms", time.Since(startTime).Milliseconds())
+}
+
+func handleServeCommand(args []string) {
+	fs := flag.NewFlagSet("serve", flag.ExitOnError)
+	configPath := fs.String("config", "config.toml", "Path to config file")
+	contentDir := fs.String("content", "content", "Content directory")
+	port := fs.Int("port", 1313, "Port to listen on")
+	fs.Usage = func() { serveUsage() }
+
+	if err := fs.Parse(args); err != nil {
+		log.Fatal(err)
+	}
+
+	site, contentParser, gen := initApp(*configPath, *contentDir)
+
+	srv, _ := server.NewDevServer(site, gen, contentParser)
+	srv.Start(*port)
+}
+
+func handleHelpCommand(args []string) {
+	if len(args) > 0 {
+		switch args[0] {
+		case "build":
+			buildUsage()
+		case "serve":
+			serveUsage()
+		default:
+			printUsage()
+		}
+		return
+	}
+	printUsage()
 }
 
 func printVersion() {
@@ -60,8 +124,27 @@ func printUsage() {
 Commands:
   build    Generate static site
   serve    Start development server
-  help     Show all comamnds
-  version  Show gozzi build version`)
+  help     Show help information
+  version  Show version information
+
+Use "gozzi help <command>" for more information about a command`)
+}
+
+func buildUsage() {
+	fmt.Println(`Usage: gozzi build [options]
+
+Options:
+  --config string  Path to config file (default "config.toml")
+  --content string Content directory (default "content")`)
+}
+
+func serveUsage() {
+	fmt.Println(`Usage: gozzi serve [options]
+
+Options:
+  --config string  Path to config file (default "config.toml")
+  --content string Content directory (default "content")
+  --port int       Port to listen on (default 1313)`)
 }
 
 func initApp(configPath, contentDir string) (*config.Site, *parser.ContentParser, *generator.Generator) {

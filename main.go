@@ -60,9 +60,8 @@ func printUsage() {
 Commands:
   build    Generate static site
   serve    Start development server
-
-Options:
-  -v, --version  Show version information`)
+  help     Show all comamnds
+  version  Show gozzi build version`)
 }
 
 func initApp(configPath, contentDir string) (*config.Site, *parser.ContentParser, *generator.Generator) {

@@ -1,84 +1,23 @@
-MAIN_PACKAGE = .
-BIN_NAME = gozzi
-INSTALL_PATH = /usr/local/bin
+VERSION ?= v0.0.1-dev
+BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)
 
-# ==================================================================================== #
-# HELPERS
-# ==================================================================================== #
-
-help:
-	@echo 'Usage:'
-	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
-
-confirm:
-	@echo -n 'Are you sure? [y/N] ' && read ans && [ $${ans:-N} = y ]
-
-no-dirty:
-	@test -z "$(shell git status --porcelain)"
-
-.PHONY: help confirm no-dirty
-
-# ==================================================================================== #
-# QUALITY CONTROL
-# ==================================================================================== #
-
-## audit: run quality control checks
-audit: test
-	go mod tidy -diff
-	go mod verify
-	test -z "$(shell gofmt -l .)" 
-	go vet ./...
-	go run honnef.co/go/tools/cmd/staticcheck@latest -checks=all,-ST1000,-U1000 ./...
-	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
-
-## test: run all tests
-test:
-	go test -v -race -buildvcs ./...
-
-## coverage: run all tests and display coverage
-coverage:
-	go test -v -race -buildvcs -coverprofile=/tmp/coverage.out ./...
-	go tool cover -html=/tmp/coverage.out
-
-.PHONY: audit test coverage
-# ==================================================================================== #
-# DEVELOPMENT
-# ==================================================================================== #
-
-## tidy: tidy modfiles and format .go files
-tidy:
-	go mod tidy -v
-	go fmt ./...
-
-install:
-	go build -o $(BIN_NAME) $(MAIN_PACKAGE)
-	mv $(BIN_NAME) $(INSTALL_PATH)
-
-uninstall:
-	rm -f $(INSTALL_PATH)/$(BIN_NAME)
-
+## build: Build the application
 build:
-	go build -o $(BIN_NAME) ./cmd/gozzi
+	@go build -ldflags "\
+		-X 'main.version=$(VERSION)' \
+		-X 'main.buildTime=$(BUILD_TIME)' \
+		-X 'main.commit=$(GIT_COMMIT)'" \
+		-o gozzi main.go
 
-## run: run the  application
-run: build
-	/tmp/bin/${BIN_NAME}
+## install: Install system-wide
+install: build
+	@mv gozzi $(shell go env GOPATH)/bin
 
-## run-live: run the application with reloading on file changes
-run-live:
-	go run github.com/cosmtrek/air@v1.43.0 \
-		--build.cmd "make build" --build.bin "/tmp/bin/${BIN_NAME}" --build.delay "100" \
-		--build.exclude_dir "" \
-		--build.include_ext "go, tpl, tmpl, html, css, scss, js, ts, sql, jpeg, jpg, gif, png, bmp, svg, webp, ico" \
-		--misc.clean_on_exit "true"
+## tag: Create new version tag
+tag:
+	@echo "Creating tag $(VERSION)"
+	@git tag -a $(VERSION) -m "Release $(VERSION)"
+	@git push origin $(VERSION)
 
-.PHONY: tidy build run run-live install uninstall
-# ==================================================================================== #
-# OPERATIONS
-# ==================================================================================== #
-## deploy: deploy the application to production
-deploy: confirm audit no-dirty
-	GOOS=linux GOARCH=amd64 go build -ldflags='-s' -o=/tmp/bin/linux_amd64/${BIN_NAME} ${MAIN_PACKAGE}
-	upx -5 /tmp/bin/linux_amd64/${BIN_NAME}
-
-.PHONY: deploy
+.PHONY: build install tag

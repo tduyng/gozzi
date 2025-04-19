@@ -27,6 +27,7 @@ footer_menu = [
   { name = "subscribe", path = "/subscribe", is_external = false },
   { name = "contact", path = "/contact", is_external = false },
   { name = "privacy", path = "/privacy", is_external = false },
+  { name = "rss", path = "/atom.xml", is_external = false },
 ]
 nav_separator = "☰"
 nav_wrapper_left = "["
@@ -45,7 +46,7 @@ reaction_align = "right" # "left" | "center" | "right"
 reaction_endpoint = "https://reaction.tienduy-nguyen-dev.workers.dev"
 display_tags = true # Whether to display tags on post pages by default
 truncate_summary = false # Whether to truncate the summary of a post by default
-footer_copyright = "©2020-2025 Duy NG"
+footer_copyright = "©2025 Duy NG"
 outdate_alert = false # Whether to show outdate alert by default
 outdate_alert_days = 365 # How many days will a post be outdated by default
 outdate_alert_text_before = "This article was last updated "

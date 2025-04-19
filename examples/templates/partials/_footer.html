@@ -1,10 +1,8 @@
 <footer>
     <div class="footer-menu">
-        <a class="instant fold" href="/tags">tags</a>
-        <a class="instant fold" href="/subscribe">subscribe</a>
-        <a class="instant fold" href="/contact">contact</a>
-        <a class="fold" href="/atom.xml">rss</a>
-        <a class="fold" href="/privacy">privacy</a>
+        {{ range .Site.Config.extra.footer_menu }}
+        <a class="instant fold" href="{{.path}}">{{.name}}</a>
+        {{ end }}
     </div>
     <div class="copyright">
         {{ .Site.Config.extra.footer_copyright }}

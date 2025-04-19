@@ -20,3 +20,4 @@ TODO:
 - [x] Fix comments
 - [ ] Support shortcode: warning, info, important, details...
 - [x] Fix zoom image
+- [ ] config.toml did not reload

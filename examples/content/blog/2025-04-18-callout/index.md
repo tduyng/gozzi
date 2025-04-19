@@ -5,6 +5,7 @@ template = "post.html"
 date = 2025-04-18
 generate_feed = true
 tags = ["callout"]
+draft = true
 
 [extra]
 comment = true

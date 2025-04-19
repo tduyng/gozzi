@@ -25,16 +25,22 @@ func (p *Paginator) BuildLinks() {
 
 func (p *Paginator) processSection(section *content.Node) {
 	var pages []*content.Node
+	var otherNodes []*content.Node
+
 	for _, child := range section.Children {
 		if child.Type == content.NodeTypePage {
 			pages = append(pages, child)
+		} else {
+			otherNodes = append(otherNodes, child)
 		}
 	}
 
 	sort.SliceStable(pages, func(i, j int) bool {
-		return pages[i].Config["date"].(time.Time).After(
-			pages[j].Config["date"].(time.Time))
+		dateI := pages[i].Config["date"].(time.Time)
+		dateJ := pages[j].Config["date"].(time.Time)
+		return dateI.Before(dateJ)
 	})
+	section.Children = append(pages, otherNodes...)
 
 	for i := range pages {
 		if i > 0 {

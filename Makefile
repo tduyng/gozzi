@@ -1,5 +1,6 @@
-main_package_path = ./cmd/gozzi
-binary_name = gozzi
+MAIN_PACKAGE = .
+BIN_NAME = gozzi
+INSTALL_PATH = /usr/local/bin
 
 # ==================================================================================== #
 # HELPERS
@@ -49,37 +50,35 @@ tidy:
 	go mod tidy -v
 	go fmt ./...
 
-## build: build the application
+install:
+	go build -o $(BIN_NAME) $(MAIN_PACKAGE)
+	mv $(BIN_NAME) $(INSTALL_PATH)
+
+uninstall:
+	rm -f $(INSTALL_PATH)/$(BIN_NAME)
+
 build:
-	# Include additional build steps, like TypeScript, SCSS or Tailwind compilation here...
-	go build -o=/tmp/bin/${binary_name} ${main_package_path}
+	go build -o $(BIN_NAME) ./cmd/gozzi
 
 ## run: run the  application
 run: build
-	/tmp/bin/${binary_name}
+	/tmp/bin/${BIN_NAME}
 
 ## run-live: run the application with reloading on file changes
 run-live:
 	go run github.com/cosmtrek/air@v1.43.0 \
-		--build.cmd "make build" --build.bin "/tmp/bin/${binary_name}" --build.delay "100" \
+		--build.cmd "make build" --build.bin "/tmp/bin/${BIN_NAME}" --build.delay "100" \
 		--build.exclude_dir "" \
 		--build.include_ext "go, tpl, tmpl, html, css, scss, js, ts, sql, jpeg, jpg, gif, png, bmp, svg, webp, ico" \
 		--misc.clean_on_exit "true"
 
-
-.PHONY: tidy build run run-live
+.PHONY: tidy build run run-live install uninstall
 # ==================================================================================== #
 # OPERATIONS
 # ==================================================================================== #
-
-## push: push changes to the remote Git repository
-push: confirm audit no-dirty
-	git push
-
 ## deploy: deploy the application to production
 deploy: confirm audit no-dirty
-	GOOS=linux GOARCH=amd64 go build -ldflags='-s' -o=/tmp/bin/linux_amd64/${binary_name} ${main_package_path}
-	upx -5 /tmp/bin/linux_amd64/${binary_name}
+	GOOS=linux GOARCH=amd64 go build -ldflags='-s' -o=/tmp/bin/linux_amd64/${BIN_NAME} ${MAIN_PACKAGE}
+	upx -5 /tmp/bin/linux_amd64/${BIN_NAME}
 
-
-.PHONY: push deploy
+.PHONY: deploy

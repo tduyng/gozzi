@@ -1,0 +1,11 @@
+{{ if .Page.Config.extra.outdate_alert }}
+<blockquote
+    id="outdate_alert"
+    class="callout caution hidden"
+    data-days="{{ .Page.Config.extra.outdate_alert_days }}"
+    data-alert-text-before="{{ .Site.Config.extra.outdate_alert_text_before }}"
+    data-alert-text-after="{{ .Site.Config.extra.outdate_alert_text_after }}"
+>
+    <div class="content"></div>
+</blockquote>
+{{ end }}

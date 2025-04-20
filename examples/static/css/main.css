@@ -41,6 +41,7 @@
   --callout-important-color: #9776cd;
   --callout-warning-color: #ad7a52;
   --callout-caution-color: #d06161;
+  --callout-alert-color: #d06161;
 
   --inline-code-bg-color: var(--primary-pale-color);
   --block-code-border-color: var(--bg-color);
@@ -411,62 +412,67 @@ body::-webkit-scrollbar {
         }
     }
 
-    .callout {
-        line-height: inherit;
-        margin: 1.25em 0;
-        border: 1.5px solid var(--primary-color);
-        border-radius: var(--callout-border-radius);
-        padding: 6px 12px;
+     .callout {
+      margin: 1.5em 0;
+
+      .icon {
+        height: 1.75em;
         display: flex;
-        gap: 12px;
+        align-items: center;
+      }
 
-        .icon {
-            height: 1.75em;
-            display: flex;
-            align-items: center;
+      p {
+        margin: 0;
+        + p {
+          margin: 1em 0;
         }
+      }
 
+      &.has-title {
+        padding-left: 1em;
+        .title {
+          display: flex;
+          align-items: center;
+          gap: 0.5em;
+          margin-bottom: 0.5em;
+        }
+      }
+
+      &.no-title {
+        padding-left: 0;
+        border: none;
+        display: flex;
+        align-items: start;
+        gap: 0.75em;
         .content {
-            max-width: calc(100% - 32px);
-
-            p {
-                margin: 0;
-
-                + p {
-                    margin: 0.2em 0 0.5em;
-                }
-            }
+          max-width: calc(100% - 30px);
         }
-    }
+      }
 
-    callout.note {
+      &.note {
         color: var(--callout-note-color);
         border-color: var(--callout-note-color);
-    }
+      }
 
-    callout.important {
-        color: var(--callout-important-color);
-        border-color: var(--callout-important-color);
-    }
-
-    callout.warning {
-        color: var(--callout-warning-color);
-        border-color: var(--callout-warning-color);
-    }
-
-    callout.alert {
-        color: var(--callout-alert-color);
-        border-color: var(--callout-alert-color);
-    }
-
-    callout.question {
-        color: var(--callout-question-color);
-        border-color: var(--callout-question-color);
-    }
-
-    callout.tip {
+      &.tip {
         color: var(--callout-tip-color);
         border-color: var(--callout-tip-color);
+      }
+
+      &.important {
+        color: var(--callout-important-color);
+        border-color: var(--callout-important-color);
+      }
+
+      &.warning {
+        color: var(--callout-warning-color);
+        border-color: var(--callout-warning-color);
+      }
+
+      &.caution {
+        color: var(--callout-caution-color);
+        border-color: var(--callout-caution-color);
+      }
     }
 
     .quote {
@@ -1318,8 +1324,12 @@ body.post {
             }
         }
 
-        #outdate_alert.hidden {
+        
+        #outdate_alert {
+          font-style: italic;
+          &.hidden {
             display: none;
+          }
         }
 
         h3 {

@@ -21,9 +21,12 @@
                         <h1>{{ .Page.Config.title }}</h1>
                         <div id="post-info">
                             <div id="date">
-                                <span id="publish">Published: {{ .Page.Config.date | date }}</span>
+                                <span id="publish">{{ date .Page.Config.date "Jan 2, 2006" }}</span>
                                 {{ if not .Page.Config.updated.IsZero }}
-                                <span id="updated">Updated: {{ .Page.Config.updated | date }}</span>
+                                <span>Last update:</span>
+                                <span id="updated"
+                                    >{{ date .Page.Config.updated "Jan 2, 2006" }}</span
+                                >
                                 {{ end }}
                             </div>
 
@@ -37,19 +40,8 @@
                             {{ end }}
                         </div>
 
-                        {{ if .Page.Config.extra.outdate_alert }}
-                        <templatequote
-                            id="outdate_alert"
-                            class="callout caution hidden"
-                            data-days="{{ .Page.Config.extra.outdate_alert_days }}"
-                            data-alert-text-before="{{ .Site.Config.extra.outdate_alert_text_before }}"
-                            data-alert-text-after="{{ .Site.Config.extra.outdate_alert_text_after }}"
-                        >
-                            {{ $icon := load "static/icon/alert.svg" }}
-                            <div class="icon">{{ $icon }}</div>
-                            <div class="content"></div>
-                        </templatequote>
-                        {{ end }} {{ .Page.Content }} {{ pagination .}}
+                        {{ template "partials/_outdate.html" . }} {{ .Page.Content }} {{ pagination
+                        .}}
                     </article>
                     {{ template "partials/_sharing.html" . }} {{ template "partials/_reaction.html"
                     . }} {{ template "partials/_giscus_script.html" . }}

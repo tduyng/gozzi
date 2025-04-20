@@ -147,8 +147,6 @@ function addCopyBtns() {
     const cfg = document.querySelector('#copy-cfg')
     if (!cfg) return
     const copyIcon = cfg.dataset.copyIcon
-    console.log('copyIcon', copyIcon)
-    console.log('dataset', cfg.dataset)
     const checkIcon = cfg.dataset.checkIcon
     document.querySelectorAll('pre').forEach((block) => {
         if (block.classList.contains('mermaid')) return

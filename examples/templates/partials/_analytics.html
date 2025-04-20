@@ -1,3 +1,4 @@
+{{ if .Site.Config.extra.enable_analytics }}
 <script
     async
     defer
@@ -5,3 +6,4 @@
     src="https://cloud.umami.is/script.js"
     data-do-not-track="true"
 ></script>
+{{ end }}

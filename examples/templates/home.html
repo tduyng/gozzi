@@ -64,7 +64,9 @@
                                         <div class="title">
                                             <a href="{{ .Permalink }}">{{ .Config.title }}</a>
                                         </div>
-                                        <span class="date">{{ .Config.date | date }}</span>
+                                        <span class="date"
+                                            >{{ date .Config.date "Jan 2, 2006" }}</span
+                                        >
                                     </div>
                                     <p class="description">{{ .Config.description }}</p>
                                 </div>

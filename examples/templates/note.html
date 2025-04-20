@@ -15,7 +15,7 @@
                 {{ .Page.Content }}
                 <p class="timestamp">
                     <a href="{{ .Page.Permalink }}"
-                        >{{ .Page.Config.date | date }}</a
+                        >{{ date .Page.Config.date "Jan 2, 2006" }}</a
                     >
                 </p>
             </div>

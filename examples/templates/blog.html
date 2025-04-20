@@ -16,7 +16,7 @@
                         href="{{ .Permalink }}"
                     >
                         <span>{{ .Config.title }}</span>
-                        <span class="date">{{ .Config.date | date }}</span>
+                        <span class="date">{{ date .Config.date "Jan 2, 2006" }}</span>
                     </a>
 
                     {{ end }}

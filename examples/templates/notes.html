@@ -18,7 +18,9 @@
                                 <div class="thought-content">
                                     {{ .Content }}
                                     <p class="timestamp">
-                                        <a href="{{ .Permalink }}">→ {{ .Config.date | date }}</a>
+                                        <a href="{{ .Permalink }}"
+                                            >→ {{ date .Config.date "Jan 2, 2006" }}</a
+                                        >
                                     </p>
                                 </div>
                             </div>

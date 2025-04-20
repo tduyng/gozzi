@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"crypto/md5"
 	"fmt"
 	"io"
 	"log"
@@ -20,36 +21,37 @@ import (
 )
 
 type DevServer struct {
-	site    *config.Site
-	gen     *generator.Generator
-	parser  *parser.ContentParser
-	watcher *fsnotify.Watcher
-	clients map[chan string]struct{}
-	mu      sync.Mutex
+	configPath     string
+	contentDir     string
+	site           *config.Site
+	gen            *generator.Generator
+	parser         *parser.ContentParser
+	watcher        *fsnotify.Watcher
+	clients        map[chan string]struct{}
+	mu             sync.Mutex
+	lastConfigHash string
 }
 
-func NewDevServer(site *config.Site, gen *generator.Generator, parser *parser.ContentParser) (*DevServer, error) {
+func NewDevServer(configPath, contentDir string, site *config.Site, gen *generator.Generator, parser *parser.ContentParser) (*DevServer, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create watcher: %w", err)
 	}
 
 	return &DevServer{
-		site:    site,
-		gen:     gen,
-		parser:  parser,
-		watcher: watcher,
-		clients: make(map[chan string]struct{}),
+		configPath: configPath,
+		contentDir: contentDir,
+		site:       site,
+		gen:        gen,
+		parser:     parser,
+		watcher:    watcher,
+		clients:    make(map[chan string]struct{}),
 	}, nil
 }
 
 func (s *DevServer) Start(port int) {
-	// Initial build
-	if err := s.parser.Parse("content"); err != nil {
-		log.Fatalf("Initial content parse failed: %v", err)
-	}
-	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
-		log.Fatalf("Initial build failed: %v", err)
+	if err := s.initialize(); err != nil {
+		log.Fatal(err)
 	}
 
 	go s.watchChanges()
@@ -63,6 +65,13 @@ func (s *DevServer) Start(port int) {
 
 	log.Printf("Server listening on http://localhost:%d", port)
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), mux))
+}
+
+func (s *DevServer) initialize() error {
+	if err := s.parser.Parse(s.contentDir); err != nil {
+		return fmt.Errorf("initial content parse failed: %w", err)
+	}
+	return s.gen.Generate(s.parser.ContentMap["."])
 }
 
 type fileHandler struct {
@@ -184,22 +193,28 @@ func (s *DevServer) notifyClients() {
 
 func (s *DevServer) watchChanges() {
 	defer s.watcher.Close()
+	debounceDuration := 500 * time.Millisecond
+	var (
+		debounceTimer   *time.Timer
+		lastRebuildTime time.Time
+	)
 
 	paths := []string{
-		"content",
+		filepath.Dir(s.configPath),
+		s.contentDir,
 		"templates",
 		"static",
-		"config.toml",
 	}
 
 	for _, path := range paths {
-		if err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
-			if !info.IsDir() {
+		err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+			if err != nil || !info.IsDir() || s.shouldIgnore(p) {
 				return nil
 			}
 			return s.watcher.Add(p)
-		}); err != nil {
-			log.Printf("Error watching path %q: %v", path, err)
+		})
+		if err != nil {
+			log.Printf("Error watching %s: %v", path, err)
 		}
 	}
 
@@ -208,58 +223,114 @@ func (s *DevServer) watchChanges() {
 
 	for {
 		select {
+
 		case event, ok := <-s.watcher.Events:
-			if !ok {
-				return
-			}
-			if s.isRelevantChange(event) {
-				debounce.Reset(500 * time.Millisecond)
+			if !ok || !s.isRelevantChange(event) {
+				continue
 			}
 
+			// Reset timer on each relevant event
+			if debounceTimer != nil {
+				debounceTimer.Stop()
+			}
+			debounceTimer = time.AfterFunc(debounceDuration, func() {
+				// Only rebuild if enough time passed since last
+				if time.Since(lastRebuildTime) > debounceDuration {
+					s.triggerRebuild()
+					lastRebuildTime = time.Now()
+				}
+			})
 		case err, ok := <-s.watcher.Errors:
 			if !ok {
 				return
 			}
 			log.Printf("Watcher error: %v", err)
-
-		case <-debounce.C:
-			startTime := time.Now()
-			log.Println("Detected change, rebuilding...")
-			if err := s.gen.ReloadTemplates(); err != nil {
-				log.Printf("Failed to reload templates: %v", err)
-			}
-			if err := s.parser.Parse("content"); err != nil {
-				log.Printf("Content parse error: %v", err)
-			}
-			if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
-				log.Printf("Build error: %v", err)
-			}
-			s.notifyClients()
-			ms := time.Since(startTime).Milliseconds()
-			log.Printf("Build done in %dms", ms)
 		}
 	}
 }
 
+func (s *DevServer) shouldIgnore(path string) bool {
+	absOutput, _ := filepath.Abs(s.site.OutputDir)
+	absPath, _ := filepath.Abs(path)
+
+	return strings.HasPrefix(absPath, absOutput) ||
+		strings.Contains(path, "/.") || // Unix hidden
+		strings.Contains(path, "\\.") // Windows hidden
+}
+
 func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
-	if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
-		return false
-	}
-
-	ext := filepath.Ext(event.Name)
-	dir := filepath.Dir(event.Name)
-
-	if dir == "templates" && ext == ".html" {
+	// Handle config file using base name match
+	base := filepath.Base(event.Name)
+	if base == "config.toml" {
 		return true
 	}
 
+	// Check valid extensions
+	ext := filepath.Ext(event.Name)
 	relevant := map[string]bool{
 		".md":   true,
 		".html": true,
-		".toml": true,
 		".css":  true,
 		".js":   true,
-		"":      true, // Directories
 	}
 	return relevant[ext]
+}
+
+func (s *DevServer) triggerRebuild() {
+	start := time.Now()
+
+	if err := s.reloadConfig(); err != nil {
+		log.Printf("Config reload error: %v", err)
+	}
+
+	if err := s.gen.ReloadTemplates(); err != nil {
+		log.Printf("Template reload error: %v", err)
+	}
+
+	if err := s.parser.Parse(s.contentDir); err != nil {
+		log.Printf("Content parse error: %v", err)
+	}
+
+	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
+		log.Printf("Build error: %v", err)
+	}
+
+	s.notifyClients()
+	log.Printf("Change detected, build done in %dms", time.Since(start).Milliseconds())
+}
+
+func (s *DevServer) reloadConfig() error {
+	content, err := os.ReadFile(s.configPath)
+	if err != nil {
+		return fmt.Errorf("config read failed: %w", err)
+	}
+
+	newHash := fmt.Sprintf("%x", md5.Sum(content))
+	if newHash == s.lastConfigHash {
+		return nil
+	}
+
+	newSite, err := config.LoadSite(s.configPath)
+	if err != nil {
+		return fmt.Errorf("config reload failed: %w", err)
+	}
+
+	newSite.OutputDir = s.site.OutputDir // Maintain output directory
+
+	newParser := parser.NewParser(newSite)
+	if err := newParser.Parse(s.contentDir); err != nil {
+		return fmt.Errorf("content re-parse failed: %w", err)
+	}
+
+	newGen, err := generator.NewGenerator(newSite, newParser)
+	if err != nil {
+		return fmt.Errorf("generator recreation failed: %w", err)
+	}
+
+	s.site = newSite
+	s.parser = newParser
+	s.gen = newGen
+	s.lastConfigHash = newHash
+
+	return nil
 }

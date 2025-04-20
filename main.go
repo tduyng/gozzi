@@ -92,8 +92,16 @@ func handleServeCommand(args []string) {
 	}
 
 	site, contentParser, gen := initApp(*configPath, *contentDir)
-
-	srv, _ := server.NewDevServer(site, gen, contentParser)
+	srv, err := server.NewDevServer(
+		*configPath,
+		*contentDir,
+		site,
+		gen,
+		contentParser,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 	srv.Start(*port)
 }
 

@@ -1,6 +1,8 @@
-BIN_NAME     := gozzi
 VERSION_FILE := VERSION
-VER          ?= $(shell cat $(VERSION_FILE) 2>/dev/null || echo "")
+CHANGELOG    := CHANGELOG.md
+
+BIN_NAME     := gozzi
+VER          ?= $(shell cat $(VERSION_FILE) 2>/dev/null || echo "0.0.0")
 DEV_VERSION  := $(shell git describe --tags --always | sed 's/^v//')
 BUILD_TIME   := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 GIT_COMMIT   := $(shell git rev-parse --short HEAD)
@@ -52,20 +54,47 @@ install-dev: build-dev
 clean:
 	@rm -rf dist/ $(BIN_NAME) coverage.out
 
+
+.PHONY: changelog
+changelog:
+	@echo "→ Generating changelog with git‑cliff…"
+	@if [ ! -f cliff.toml ]; then \
+	  echo "Error: missing cliff.toml"; exit 1; \
+	fi
+	@git cliff --config cliff.toml --latest --strip header \
+	          --output $(CHANGELOG)
+	@echo "Changelog written to $(CHANGELOG)"
+
+.PHONY: bump-version
+bump-version:
+  @PART=${PART:-patch}; \
+	if [ ! -f VERSION ]; then \
+	  echo "0.0.0" > VERSION; \
+	fi; \
+	OLD_VER=$$(cat VERSION); \
+	IFS='.' read -r MAJOR MINOR PATCH <<< "$$OLD_VER"; \
+	case "$$PART" in \
+	  major) MAJOR=$$((MAJOR + 1)); MINOR=0; PATCH=0 ;; \
+	  minor) MINOR=$$((MINOR + 1)); PATCH=0 ;; \
+	  patch) PATCH=$$((PATCH + 1)) ;; \
+	  *) echo "Invalid PART: $$PART. Use 'major', 'minor', or 'patch'."; exit 1 ;; \
+	esac; \
+	NEW_VER="$$MAJOR.$$MINOR.$$PATCH"; \
+	echo "$$NEW_VER" > VERSION; \
+	echo "Version bumped from $$OLD_VER to $$NEW_VER"
+
 ## tag: Create new version tag (format: vX.Y.Z)
 .PHONY: tag
-tag:
-	@if [ -z "$(VER)" ]; then \
-	  echo "Usage: make tag VER=x.y.z"; \
-	  exit 1; \
-	fi
-	@echo "Bumping version to v$(VER)..."
-	@echo "$(VER)" > $(VERSION_FILE)
+tag: bump-version
 	@git switch main
 	@git add $(VERSION_FILE)
 	@GIT_COMMIT_MSG="chore: bump version to v$(VER)" ; \
 	 git commit -m "$$GIT_COMMIT_MSG"
 	@git tag -a v$(VER) -m "Release v$(VER)"
+	@make changelog
+	@git add $(CHANGELOG)
+	@GIT_COMMIT_MSG="chore: update changelog for v$(VER)" ; \
+	 git commit -m "$$GIT_COMMIT_MSG"
 	@git push origin main
 	@git push origin v$(VER)
 	

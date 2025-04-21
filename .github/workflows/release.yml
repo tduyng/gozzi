@@ -1,19 +1,20 @@
 name: Release
 
 on:
-  push:
-    tags:
-      # vx.x.x-dev doesn't trigger build
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+-pre*'
+  workflow_dispatch:
+    inputs:
+      strategy:
+        description: Valid semver number <x.x.x> or strategy <patch, minor, major>
+        default: 'patch'
+        required: false
 
 permissions:
   contents: write
 
 jobs:
   release:
-    needs: bump-and-tag
     runs-on: ubuntu-22.04
+    if: ${{ github.actor == 'tduyng' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,10 +24,15 @@ jobs:
         with:
           go-version: '1.24'
 
+      - name: Run make tag
+        env:
+          PART: ${{ github.event.inputs.strategy || 'patch' }}
+        run: make tag
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           version: '~> v2'
-          args: release --clean
+          args: release --clean --release-notes CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

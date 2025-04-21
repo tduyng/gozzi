@@ -1,12 +1,12 @@
-# ==================================================================================== #
-# BUILD SETTINGS
-# ==================================================================================== #
+VERSION_FILE := VERSION
+CHANGELOG    := CHANGELOG.md
 
-BIN_NAME := gozzi
-VERSION  := $(shell git describe --tags --always | sed 's/^v//')
-BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-GIT_COMMIT := $(shell git rev-parse --short HEAD)
-LD_FLAGS := -ldflags "\
+BIN_NAME     := gozzi
+VER          ?= $(shell cat $(VERSION_FILE) 2>/dev/null || echo "0.0.0")
+DEV_VERSION  := $(shell git describe --tags --always | sed 's/^v//')
+BUILD_TIME   := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+GIT_COMMIT   := $(shell git rev-parse --short HEAD)
+LD_FLAGS     := -ldflags "\
     -X 'main.version=$(VERSION)' \
     -X 'main.buildTime=$(BUILD_TIME)' \
     -X 'main.commit=$(GIT_COMMIT)' \
@@ -38,45 +38,68 @@ check-tools:
 # ==================================================================================== #
 
 ## build: Build development binary
-.PHONY: build
-build: check-tools
-	@echo "Building $(BIN_NAME) version $(VERSION)..."
+.PHONY: build-dev
+build-dev: check-tools
+	@echo "Building $(BIN_NAME) version $(DEV_VERSION)..."
 	@go build -tags=development -v $(LD_FLAGS) -o $(BIN_NAME) main.go
 
 ## install: Install system-wide
-.PHONY: install
-install: build
+.PHONY: install-dev
+install-dev: build-dev
 	@echo "Installing to $(shell go env GOPATH)/bin..."
 	@mv $(BIN_NAME) $(shell go env GOPATH)/bin
-
-## release: Build production binaries for multiple platforms
-.PHONY: release
-release: check-tools audit
-	@echo "Building release binaries for version $(VERSION)..."
-	@for os in darwin linux windows; do \
-		for arch in amd64 arm64; do \
-			[ "$$os" = "windows" ] && ext=.exe || ext=; \
-			GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 \
-			go build -tags=production -trimpath $(LD_FLAGS) \
-			-o dist/$(BIN_NAME)-$$os-$$arch$$ext ./cmd/$(BIN_NAME); \
-			upx -5 dist/$(BIN_NAME)-$$os-$$arch$$ext; \
-		done; \
-	done
 
 ## clean: Remove build artifacts
 .PHONY: clean
 clean:
 	@rm -rf dist/ $(BIN_NAME) coverage.out
 
-# ==================================================================================== #
-# VERSIONING
-# ==================================================================================== #
+
+.PHONY: changelog
+changelog:
+	@echo "→ Generating changelog with git‑cliff…"
+	@if [ ! -f cliff.toml ]; then \
+	  echo "Error: missing cliff.toml"; exit 1; \
+	fi
+	@git cliff --config cliff.toml --latest --strip header \
+	          --output $(CHANGELOG)
+	@echo "Changelog written to $(CHANGELOG)"
+
+.PHONY: bump-version
+bump-version:
+  @PART=${PART:-patch}; \
+	if [ ! -f VERSION ]; then \
+	  echo "0.0.0" > VERSION; \
+	fi; \
+	OLD_VER=$$(cat VERSION); \
+	IFS='.' read -r MAJOR MINOR PATCH <<< "$$OLD_VER"; \
+	case "$$PART" in \
+	  major) MAJOR=$$((MAJOR + 1)); MINOR=0; PATCH=0 ;; \
+	  minor) MINOR=$$((MINOR + 1)); PATCH=0 ;; \
+	  patch) PATCH=$$((PATCH + 1)) ;; \
+	  *) echo "Invalid PART: $$PART. Use 'major', 'minor', or 'patch'."; exit 1 ;; \
+	esac; \
+	NEW_VER="$$MAJOR.$$MINOR.$$PATCH"; \
+	echo "$$NEW_VER" > VERSION; \
+	echo "Version bumped from $$OLD_VER to $$NEW_VER"
 
 ## tag: Create new version tag (format: vX.Y.Z)
 .PHONY: tag
-tag: audit
-	@echo "Validating version format..."
-	@echo $(VERSION) | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$$' || (echo "Invalid version format. Use semantic versioning (vX.Y.Z)" && exit 1)
-	@echo "Creating tag $(VERSION)..."
-	@git tag -a $(VERSION) -m "Release $(VERSION)"
-	@git push origin $(VERSION)
+tag: bump-version
+	@git switch main
+	@git add $(VERSION_FILE)
+	@GIT_COMMIT_MSG="chore: bump version to v$(VER)" ; \
+	 git commit -m "$$GIT_COMMIT_MSG"
+	@git tag -a v$(VER) -m "Release v$(VER)"
+	@make changelog
+	@git add $(CHANGELOG)
+	@GIT_COMMIT_MSG="chore: update changelog for v$(VER)" ; \
+	 git commit -m "$$GIT_COMMIT_MSG"
+	@git push origin main
+	@git push origin v$(VER)
+	
+## release: Build production binaries for multiple platforms
+.PHONY: release
+release: check-tools audit
+	@echo "Building release binaries for version $(VER)..."
+	@goreleaser release --clean

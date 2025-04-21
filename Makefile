@@ -6,7 +6,7 @@ DEV_VERSION  := $(shell git describe --tags --always | sed 's/^v//')
 BUILD_TIME   := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 GIT_COMMIT   := $(shell git rev-parse --short HEAD)
 LD_FLAGS     := -ldflags "\
-    -X 'main.version=$(VERSION)' \
+    -X 'main.version=$(DEV_VERSION)' \
     -X 'main.buildTime=$(BUILD_TIME)' \
     -X 'main.commit=$(GIT_COMMIT)' \
     -w -s"

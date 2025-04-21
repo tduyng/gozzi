@@ -1,12 +1,10 @@
-# ==================================================================================== #
-# BUILD SETTINGS
-# ==================================================================================== #
-
-BIN_NAME := gozzi
-VERSION  := $(shell git describe --tags --always | sed 's/^v//')
-BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-GIT_COMMIT := $(shell git rev-parse --short HEAD)
-LD_FLAGS := -ldflags "\
+BIN_NAME     := gozzi
+VERSION_FILE := VERSION
+VER          ?= $(shell cat $(VERSION_FILE) 2>/dev/null || echo "")
+DEV_VERSION  := $(shell git describe --tags --always | sed 's/^v//')
+BUILD_TIME   := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+GIT_COMMIT   := $(shell git rev-parse --short HEAD)
+LD_FLAGS     := -ldflags "\
     -X 'main.version=$(VERSION)' \
     -X 'main.buildTime=$(BUILD_TIME)' \
     -X 'main.commit=$(GIT_COMMIT)' \
@@ -38,45 +36,41 @@ check-tools:
 # ==================================================================================== #
 
 ## build: Build development binary
-.PHONY: build
-build: check-tools
-	@echo "Building $(BIN_NAME) version $(VERSION)..."
+.PHONY: build-dev
+build-dev: check-tools
+	@echo "Building $(BIN_NAME) version $(DEV_VERSION)..."
 	@go build -tags=development -v $(LD_FLAGS) -o $(BIN_NAME) main.go
 
 ## install: Install system-wide
-.PHONY: install
-install: build
+.PHONY: install-dev
+install-dev: build-dev
 	@echo "Installing to $(shell go env GOPATH)/bin..."
 	@mv $(BIN_NAME) $(shell go env GOPATH)/bin
-
-## release: Build production binaries for multiple platforms
-.PHONY: release
-release: check-tools audit
-	@echo "Building release binaries for version $(VERSION)..."
-	@for os in darwin linux windows; do \
-		for arch in amd64 arm64; do \
-			[ "$$os" = "windows" ] && ext=.exe || ext=; \
-			GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 \
-			go build -tags=production -trimpath $(LD_FLAGS) \
-			-o dist/$(BIN_NAME)-$$os-$$arch$$ext ./cmd/$(BIN_NAME); \
-			upx -5 dist/$(BIN_NAME)-$$os-$$arch$$ext; \
-		done; \
-	done
 
 ## clean: Remove build artifacts
 .PHONY: clean
 clean:
 	@rm -rf dist/ $(BIN_NAME) coverage.out
 
-# ==================================================================================== #
-# VERSIONING
-# ==================================================================================== #
-
 ## tag: Create new version tag (format: vX.Y.Z)
 .PHONY: tag
-tag: audit
-	@echo "Validating version format..."
-	@echo $(VERSION) | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$$' || (echo "Invalid version format. Use semantic versioning (vX.Y.Z)" && exit 1)
-	@echo "Creating tag $(VERSION)..."
-	@git tag -a $(VERSION) -m "Release $(VERSION)"
-	@git push origin $(VERSION)
+tag:
+	@if [ -z "$(VER)" ]; then \
+	  echo "Usage: make tag VER=x.y.z"; \
+	  exit 1; \
+	fi
+	@echo "Bumping version to v$(VER)..."
+	@echo "$(VER)" > $(VERSION_FILE)
+	@git switch main
+	@git add $(VERSION_FILE)
+	@GIT_COMMIT_MSG="chore: bump version to v$(VER)" ; \
+	 git commit -m "$$GIT_COMMIT_MSG"
+	@git tag -a v$(VER) -m "Release v$(VER)"
+	@git push origin main
+	@git push origin v$(VER)
+	
+## release: Build production binaries for multiple platforms
+.PHONY: release
+release: check-tools audit
+	@echo "Building release binaries for version $(VER)..."
+	@goreleaser release --clean

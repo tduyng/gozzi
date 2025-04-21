@@ -86,7 +86,6 @@ bump-version:
 ## tag: Create new version tag (format: vX.Y.Z)
 .PHONY: tag
 tag: bump-version
-	@git switch main
 	@git add $(VERSION_FILE)
 	@GIT_COMMIT_MSG="chore: bump version to v$(VER)" ; \
 	 git commit -m "$$GIT_COMMIT_MSG"
@@ -95,7 +94,7 @@ tag: bump-version
 	@git add $(CHANGELOG)
 	@GIT_COMMIT_MSG="chore: update changelog for v$(VER)" ; \
 	 git commit -m "$$GIT_COMMIT_MSG"
-	@git push origin main
+	@git push
 	@git push origin v$(VER)
 	
 ## release: Build production binaries for multiple platforms

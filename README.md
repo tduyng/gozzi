@@ -7,6 +7,8 @@
 
 **Gozzi** started as a learning project to understand modern static site generators. What began as "let's see how Hugo, Zola works" became my daily driver for [tduyng.com](https://tduyng.com)
 
+> 📖 Documentation: Full guides on installation, configuration, content structure, templates, helper functions, features, and CLI usage live in the docs/ folder.
+
 ## What it does
 
 Gozzi addresses practical needs for my website:

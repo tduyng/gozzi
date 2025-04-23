@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/tduyng/gozzi/internal/config"
@@ -14,9 +15,9 @@ import (
 )
 
 var (
-	version   = "dev"     // Set during build
-	buildTime = "unknown" // Set during build
-	commit    = "HEAD"    // Set during build
+	version   string
+	buildTime string
+	commit    string
 )
 
 func main() {
@@ -121,9 +122,17 @@ func handleHelpCommand(args []string) {
 }
 
 func printVersion() {
-	fmt.Printf("gozzi version %s\n", version)
-	fmt.Printf("Build time:    %s\n", buildTime)
-	fmt.Printf("Git commit:    %s\n", commit)
+	if version == "" {
+		if info, ok := debug.ReadBuildInfo(); ok {
+			if v := info.Main.Version; v != "" && v != "(devel)" {
+				fmt.Printf("gozzi version %s\n", v)
+			}
+		}
+	} else {
+		fmt.Printf("gozzi version %s\n", version)
+		fmt.Printf("Build time:   %s\n", buildTime)
+		fmt.Printf("Git commit:   %s\n", commit)
+	}
 }
 
 func printUsage() {

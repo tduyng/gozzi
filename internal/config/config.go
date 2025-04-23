@@ -61,6 +61,18 @@ func (site *Site) ToConfig() map[string]any {
 		siteConfig["generate_feed"] = site.GenerateFeed
 		siteConfig["extra"] = MergeExtra(make(map[string]any), site.Extra)
 	}
+	if site.OutputDir == "" {
+		siteConfig["output_dir"] = "public"
+	}
+
+	if site.Lang == "" {
+		siteConfig["lang"] = "en"
+	}
+
+	if site.FeedURL == "" {
+		siteConfig["feed_url"] = site.BaseURL + "/atom.xml"
+	}
+
 	return siteConfig
 }
 

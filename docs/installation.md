@@ -62,7 +62,7 @@ To compile and install directly from the latest source:
 ```sh
 git clone https://github.com/tduyng/gozzi.git
 cd gozzi
-make install
+make install-dev
 ```
 
 The make install target builds the binary and places it into `$(go env GOPATH)/bin`.

@@ -150,7 +150,7 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	node.Config = mergedConfig
 	node.Content = template.HTML(htmlBuf.String())
 	node.Permalink = buildPermalink(slug)
-	node.URL = buildURL(p.Site.BaseURL, node.Permalink)
+	node.URL = buildURL(p.Site.BaseURL, slug)
 
 	wordCount, readTime := calculateReadStats(string(contentPart))
 	node.WordCount = wordCount
@@ -203,7 +203,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		Path:      strings.TrimSuffix(path, "content/"),
 		Slug:      slug,
 		Permalink: permalink,
-		URL:       buildURL(p.Site.BaseURL, permalink),
+		URL:       buildURL(p.Site.BaseURL, slug),
 		Type:      content.NodeTypePage,
 		Parent:    parent,
 		Config:    mergedConfig,
@@ -331,12 +331,12 @@ func (p *ContentParser) parseTags(pageConfig *config.FrontMatter, pageNode *cont
 
 func buildPermalink(slug string) string {
 	permalink := strings.Trim(slug, "/")
-	if permalink == "" {
+	if permalink == "" || permalink == "index" {
 		return "/"
 	}
 	return "/" + permalink + "/"
 }
 
-func buildURL(baseURL, permalink string) string {
-	return baseURL + permalink
+func buildURL(baseURL, slug string) string {
+	return baseURL + "/" + slug
 }

@@ -60,7 +60,7 @@ changelog:
 	@if [ ! -f cliff.toml ]; then \
 	  echo "Error: missing cliff.toml"; exit 1; \
 	fi
-	@git cliff --config cliff.toml --latest --output $(CHANGELOG)
+	@git cliff --latest --prepend $(CHANGELOG)
 	@echo "Changelog written to $(CHANGELOG)"
 
 .PHONY: bump-version

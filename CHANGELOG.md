@@ -1,5 +1,11 @@
 # What's changed
 
+## [0.0.4](https://github.com/tduyng/gozzi/compare/v0.0.3..v0.0.4) - 2025-05-06
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Set dynamic release version name - ([55baba5](https://github.com/tduyng/gozzi/commit/55baba58d7db0c84eb55fbb5c8efb937e61b0243))
+
 ## [0.03](https://github.com/tduyng/gozzi/compare/v0.0.3..v0.03) - 2025-05-06
 
 ### ⚙️ Miscellaneous Tasks

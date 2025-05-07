@@ -61,6 +61,7 @@ changelog:
 	  echo "Error: missing cliff.toml"; exit 1; \
 	fi
 	@git cliff --latest --prepend $(CHANGELOG)
+	@git cliff --latest --strip all --output LATEST_CHANGELOG.md
 	@echo "Changelog written to $(CHANGELOG)"
 
 .PHONY: bump-version
@@ -77,7 +78,7 @@ bump-version:
 tag: bump-version
 	@git tag -a v$(VER) -m "Release v$(VER)"
 	@make changelog
-	@git add $(CHANGELOG) $(VERSION_FILE)
+	@git add .
 	@GIT_COMMIT_MSG="chore: bump version to v$(VER)" ; \
 	 git commit -m "$$GIT_COMMIT_MSG"
 	@git tag -d v$(VER)

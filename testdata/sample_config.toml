@@ -1,0 +1,19 @@
+# ABOUTME: Sample TOML configuration file for testing config loading and parsing
+# ABOUTME: Contains all possible configuration options with various data types
+
+base_url = "https://example.com"
+feed_url = "https://example.com/feed.xml"
+title = "Test Site"
+description = "A test site for unit testing"
+theme = "default"
+img = "/images/default.jpg"
+language = "en"
+output_dir = "public"
+generate_feed = true
+
+[extra]
+author = "Test Author"
+social = { twitter = "@test", github = "test" }
+custom_field = "custom_value"
+numbers = [1, 2, 3]
+nested = { deep = { value = "nested test" } }

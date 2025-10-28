@@ -145,7 +145,20 @@ func mergeFrontMatter(merged, frontMatter map[string]any) map[string]any {
 		}
 	}
 
-	merged["extra"] = MergeExtra(merged, frontMatter["extra"].(map[string]any))
+	// Handle extra field merging
+	if frontMatterExtra, exists := frontMatter["extra"]; exists {
+		if extraMap, ok := frontMatterExtra.(map[string]any); ok {
+			if existingExtra, hasExtra := merged["extra"]; hasExtra {
+				if existingExtraMap, ok := existingExtra.(map[string]any); ok {
+					merged["extra"] = MergeExtra(existingExtraMap, extraMap)
+				} else {
+					merged["extra"] = extraMap
+				}
+			} else {
+				merged["extra"] = extraMap
+			}
+		}
+	}
 	return merged
 }
 

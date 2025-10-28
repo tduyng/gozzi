@@ -12,9 +12,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tduyng/gozzi/internal/config"
-	"github.com/tduyng/gozzi/internal/content"
-	"github.com/tduyng/gozzi/internal/paginate"
+	"github.com/tduyng/gozzi/app/config"
+	"github.com/tduyng/gozzi/app/content"
+	"github.com/tduyng/gozzi/app/paginate"
 	"github.com/yuin/goldmark"
 	highlight "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/extension"

@@ -4,7 +4,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/tduyng/gozzi/internal/content"
+	"github.com/tduyng/gozzi/app/content"
 )
 
 type Paginator struct {

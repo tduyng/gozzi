@@ -8,10 +8,10 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/tduyng/gozzi/internal/config"
-	"github.com/tduyng/gozzi/internal/generator"
-	"github.com/tduyng/gozzi/internal/parser"
-	"github.com/tduyng/gozzi/internal/server"
+	"github.com/tduyng/gozzi/app/config"
+	"github.com/tduyng/gozzi/app/generator"
+	"github.com/tduyng/gozzi/app/parser"
+	"github.com/tduyng/gozzi/app/server"
 )
 
 var (

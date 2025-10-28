@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tduyng/gozzi/internal/content"
+	"github.com/tduyng/gozzi/app/content"
 )
 
 func (g *Generator) CreateFuncMap() template.FuncMap {

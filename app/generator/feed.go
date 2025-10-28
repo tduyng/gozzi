@@ -7,9 +7,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/tduyng/gozzi/internal/config"
-	"github.com/tduyng/gozzi/internal/content"
-	"github.com/tduyng/gozzi/internal/xmlfeed"
+	"github.com/tduyng/gozzi/app/config"
+	"github.com/tduyng/gozzi/app/content"
+	"github.com/tduyng/gozzi/app/xmlfeed"
 )
 
 const (

@@ -332,7 +332,16 @@ func (g *Generator) renderTemplate(node *content.Node, outputPath string, data a
 }
 
 func (g *Generator) copyPageAssets(node *content.Node) error {
-	assets := node.Config["assets"].(string)
+	assetsValue, exists := node.Config["assets"]
+	if !exists {
+		return nil // No assets to copy
+	}
+
+	assets, ok := assetsValue.(string)
+	if !ok {
+		return nil // Assets value is not a string
+	}
+
 	if _, err := os.Stat(assets); os.IsNotExist(err) {
 		return nil // Skip missing assets
 	}

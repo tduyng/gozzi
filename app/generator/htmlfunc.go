@@ -111,7 +111,7 @@ func (g *Generator) assetPath(relPath string, context any) string {
 		if !strings.HasSuffix(pagePath, "/") {
 			pagePath += "/"
 		}
-		return baseURL + pagePath + relPath
+		return baseURL + "/" + pagePath + relPath
 	}
 	return baseURL + "/" + relPath
 }

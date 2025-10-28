@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- **Go 1.24+** is required. If Go is not installed on your machine, follow the official guide: [https://go.dev/doc/install](https://go.dev/doc/install)
+- **Go 1.25+** is required. If Go is not installed on your machine, follow the official guide: [https://go.dev/doc/install](https://go.dev/doc/install)
 - Ensure your **GOPATH** and **PATH** include the Go bin directory:
     - Zsh (`~/.zshrc`):
 
@@ -171,7 +171,7 @@ mv gozzi ~/.local/bin/  # Make sure ~/.local/bin is in PATH
 ```
 
 ### Go version issues
-Make sure you have Go 1.24+ installed:
+Make sure you have Go 1.25+ installed:
 ```sh
 go version
 ```

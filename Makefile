@@ -11,6 +11,9 @@ LD_FLAGS     := -ldflags "\
     -X 'main.commit=$(GIT_COMMIT)' \
     -w -s"
 GO_FILES := $(shell find . -type f -name '*.go' -not -path "./vendor/*")
+GREEN := \033[0;32m
+YELLOW := \033[1;33m
+RESET := \033[0m
 
 # ==================================================================================== #
 # QUALITY CONTROL
@@ -49,9 +52,42 @@ install-dev: build-dev
 	@mv $(BIN_NAME) $(shell go env GOPATH)/bin
 
 ## clean: Remove build artifacts
-.PHONY: clean
+.PHONY: test coverage lint fmt vet tidy clean
 clean:
-	@rm -rf dist/ $(BIN_NAME) coverage.out
+	@rm -rf dist/ $(BIN_NAME) coverage/
+
+test: ## Run all Go tests
+	@echo "${GREEN}Running tests...${RESET}"
+	@go test ./...
+
+# Run tests with line-by-line HTML coverage
+coverage: ## Generate HTML coverage report
+	@echo "${YELLOW}Generating coverage report...${RESET}"
+	@mkdir -p coverage
+	@go test -coverprofile=coverage/coverage.out ./...
+	@go tool cover -html=coverage/coverage.out -o coverage/index.html
+	@echo "${GREEN}Coverage report generated at coverage/index.html${RESET}"
+
+# Run linter (requires golangci-lint)
+lint: ## Run linter
+	@echo "${YELLOW}Running linter...${RESET}"
+	@golangci-lint run
+
+# Format code with gofmt
+fmt: ## Format code
+	@echo "${YELLOW}Formatting code...${RESET}"
+	@go fmt ./...
+
+# Run go vet for static analysis
+vet: ## Run go vet
+	@echo "${YELLOW}Running go vet...${RESET}"
+	@go vet ./...
+
+
+# Update dependencies
+tidy: ## Update go.mod and go.sum
+	@echo "${YELLOW}Tidying modules...${RESET}"
+	@go mod tidy
 
 
 .PHONY: changelog

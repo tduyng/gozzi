@@ -1,6 +1,3 @@
-// ABOUTME: Comprehensive test suite for the generator package covering static site generation, template rendering, and asset management
-// ABOUTME: Tests Generator creation, template processing, file generation, and various utility functions
-
 package generator
 
 import (

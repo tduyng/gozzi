@@ -1,6 +1,3 @@
-// ABOUTME: Comprehensive test suite for template functions in htmlfunc.go covering all custom template helpers
-// ABOUTME: Tests template functions for string manipulation, date formatting, logic operations, and content processing
-
 package generator
 
 import (

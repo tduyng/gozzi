@@ -88,7 +88,7 @@ func (frontMatter *FrontMatter) ToConfig() map[string]any {
 	config["tags"] = frontMatter.Tags
 	config["date"] = frontMatter.Date
 	config["updated"] = frontMatter.Updated
-	config["extra"] = MergeExtra(config, frontMatter.Extra)
+	config["extra"] = MergeExtra(make(map[string]any), frontMatter.Extra)
 	return config
 }
 

@@ -272,6 +272,136 @@ func TestSiteToConfig(t *testing.T) {
 	}
 }
 
+func TestFrontMatterToConfig(t *testing.T) {
+	tests := []struct {
+		name        string
+		frontMatter *FrontMatter
+		expect      map[string]any
+	}{
+		{
+			name: "complete_front_matter",
+			frontMatter: &FrontMatter{
+				Title:        "Test Post",
+				Description:  "A test post description",
+				Template:     "post.html",
+				GenerateFeed: true,
+				Lang:         "en",
+				Featured:     true,
+				Draft:        false,
+				Tags:         []string{"golang", "testing"},
+				Date:         parseTime(t, "2024-01-15T10:30:00Z"),
+				Updated:      parseTime(t, "2024-01-16T12:00:00Z"),
+				Extra: map[string]any{
+					"author":   "Test Author",
+					"category": "technical",
+				},
+			},
+			expect: map[string]any{
+				"title":         "Test Post",
+				"description":   "A test post description",
+				"template":      "post.html",
+				"generate_feed": true,
+				"lang":          "en",
+				"featured":      true,
+				"draft":         false,
+				"tags":          []string{"golang", "testing"},
+				"date":          parseTime(t, "2024-01-15T10:30:00Z"),
+				"updated":       parseTime(t, "2024-01-16T12:00:00Z"),
+				"extra": map[string]any{
+					"author":   "Test Author",
+					"category": "technical",
+				},
+			},
+		},
+		{
+			name: "minimal_front_matter",
+			frontMatter: &FrontMatter{
+				Title: "Simple Post",
+			},
+			expect: map[string]any{
+				"title":         "Simple Post",
+				"description":   "",
+				"template":      "",
+				"generate_feed": false,
+				"lang":          "",
+				"featured":      false,
+				"draft":         false,
+				"tags":          []string(nil),
+				"date":          time.Time{},
+				"updated":       time.Time{},
+				"extra":         map[string]any{},
+			},
+		},
+		{
+			name: "draft_post",
+			frontMatter: &FrontMatter{
+				Title: "Draft Post",
+				Draft: true,
+				Tags:  []string{"draft", "wip"},
+			},
+			expect: map[string]any{
+				"title":         "Draft Post",
+				"description":   "",
+				"template":      "",
+				"generate_feed": false,
+				"lang":          "",
+				"featured":      false,
+				"draft":         true,
+				"tags":          []string{"draft", "wip"},
+				"date":          time.Time{},
+				"updated":       time.Time{},
+				"extra":         map[string]any{},
+			},
+		},
+		{
+			name: "featured_post_with_extra",
+			frontMatter: &FrontMatter{
+				Title:    "Featured Article",
+				Featured: true,
+				Extra: map[string]any{
+					"reading_time": 5,
+					"series":       "Go Testing",
+					"nested": map[string]any{
+						"level1": "value1",
+					},
+				},
+			},
+			expect: map[string]any{
+				"title":         "Featured Article",
+				"description":   "",
+				"template":      "",
+				"generate_feed": false,
+				"lang":          "",
+				"featured":      true,
+				"draft":         false,
+				"tags":          []string(nil),
+				"date":          time.Time{},
+				"updated":       time.Time{},
+				"extra": map[string]any{
+					"reading_time": 5,
+					"series":       "Go Testing",
+					"nested": map[string]any{
+						"level1": "value1",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := tt.frontMatter.ToConfig()
+
+			for key, expectedValue := range tt.expect {
+				assert.Equal(t, expectedValue, config[key], "key: %s", key)
+			}
+
+			// Verify all expected keys are present
+			assert.Len(t, config, len(tt.expect), "config should have all expected keys")
+		})
+	}
+}
+
 func TestMergeConfigs(t *testing.T) {
 	siteConfig := map[string]any{
 		"base_url":      "https://example.com",

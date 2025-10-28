@@ -9,13 +9,58 @@ import (
 
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
-	"github.com/tduyng/gozzi/app/xmlfeed"
 )
 
 const (
 	atomXSL    = `<?xml-stylesheet type="text/xsl" href="/atom.xsl"?>`
 	sitemapXSL = `<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>`
 )
+
+type AtomFeed struct {
+	XMLName xml.Name    `xml:"http://www.w3.org/2005/Atom feed"`
+	Title   string      `xml:"title"`
+	ID      string      `xml:"id"`
+	Updated string      `xml:"updated"`
+	Author  *AtomAuthor `xml:"author,omitempty"`
+	Links   []AtomLink  `xml:"link"`
+	Entries []AtomEntry `xml:"entry"`
+}
+
+type AtomAuthor struct {
+	Name  string `xml:"name"`
+	Email string `xml:"email,omitempty"`
+}
+
+type AtomLink struct {
+	Rel  string `xml:"rel,attr,omitempty"`
+	Href string `xml:"href,attr"`
+}
+
+type AtomEntry struct {
+	Title     string `xml:"title"`
+	ID        string `xml:"id"`
+	Updated   string `xml:"updated"`
+	Published string `xml:"published"`
+	Summary   string `xml:"summary,omitempty"`
+	Content   struct {
+		Type string `xml:"type,attr"`
+		Data string `xml:",cdata"`
+	} `xml:"content"`
+	Links      []AtomLink `xml:"link"`
+	Categories []string   `xml:"category,omitempty"`
+}
+
+type Sitemap struct {
+	XMLName xml.Name     `xml:"http://www.sitemaps.org/schemas/sitemap/0.9 urlset"`
+	URLs    []SitemapURL `xml:"url"`
+}
+
+type SitemapURL struct {
+	Loc        string `xml:"loc"`
+	LastMod    string `xml:"lastmod,omitempty"`
+	ChangeFreq string `xml:"changefreq,omitempty"`
+	Priority   string `xml:"priority,omitempty"`
+}
 
 func (g *Generator) generateAtomFeed() error {
 	var entries []*content.Node
@@ -40,11 +85,11 @@ func (g *Generator) generateAtomFeed() error {
 		entries = entries[:100]
 	}
 
-	feed := xmlfeed.AtomFeed{
+	feed := AtomFeed{
 		Title:   g.site.Title,
 		ID:      g.site.BaseURL,
 		Updated: time.Now().UTC().Format(time.RFC3339),
-		Links: []xmlfeed.AtomLink{
+		Links: []AtomLink{
 			{Rel: "self", Href: g.site.BaseURL + "/atom.xml"},
 			{Href: g.site.BaseURL},
 		},
@@ -52,7 +97,7 @@ func (g *Generator) generateAtomFeed() error {
 
 	if g.site.Extra["author"] != nil {
 		author := g.site.Extra["author"].(map[string]any)
-		feed.Author = &xmlfeed.AtomAuthor{
+		feed.Author = &AtomAuthor{
 			Name:  author["name"].(string),
 			Email: author["email"].(string),
 		}
@@ -70,7 +115,7 @@ func (g *Generator) generateAtomFeed() error {
 			categories = tags
 		}
 
-		feed.Entries = append(feed.Entries, xmlfeed.AtomEntry{
+		feed.Entries = append(feed.Entries, AtomEntry{
 			Title:     entry.Config["title"].(string),
 			ID:        entry.Permalink,
 			Published: date.Format(time.RFC3339),
@@ -83,7 +128,7 @@ func (g *Generator) generateAtomFeed() error {
 				Type: "html",
 				Data: string(entry.Content),
 			},
-			Links: []xmlfeed.AtomLink{
+			Links: []AtomLink{
 				{Href: entry.Permalink},
 			},
 			Categories: categories,
@@ -94,7 +139,7 @@ func (g *Generator) generateAtomFeed() error {
 }
 
 func (g *Generator) generateSitemap() error {
-	var urls []xmlfeed.SitemapURL
+	var urls []SitemapURL
 
 	// Content pages
 	g.walkNodes(g.parser.ContentMap["."], func(n *content.Node) {
@@ -104,7 +149,7 @@ func (g *Generator) generateSitemap() error {
 
 		lastMod := getLastMod(n)
 
-		url := xmlfeed.SitemapURL{
+		url := SitemapURL{
 			Loc:     n.URL,
 			LastMod: lastMod,
 		}
@@ -128,7 +173,7 @@ func (g *Generator) generateSitemap() error {
 	if g.hasTemplate("tags.html") {
 		for tag := range g.parser.Tags {
 			loc := g.buildTagURL(g.buildTagPermalink(tag))
-			urls = append(urls, xmlfeed.SitemapURL{
+			urls = append(urls, SitemapURL{
 				Loc:        loc,
 				ChangeFreq: "monthly",
 				Priority:   "0.4",
@@ -136,7 +181,7 @@ func (g *Generator) generateSitemap() error {
 		}
 	}
 
-	return g.writeXMLFile("sitemap.xml", sitemapXSL, xmlfeed.Sitemap{URLs: urls})
+	return g.writeXMLFile("sitemap.xml", sitemapXSL, Sitemap{URLs: urls})
 }
 
 func (g *Generator) writeXMLFile(name string, xslHeader string, data any) error {

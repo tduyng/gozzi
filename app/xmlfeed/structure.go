@@ -9,7 +9,7 @@ type AtomFeed struct {
 	Title   string      `xml:"title"`
 	ID      string      `xml:"id"`
 	Updated string      `xml:"updated"`
-	Author  AtomAuthor  `xml:"author,omitempty"`
+	Author  *AtomAuthor `xml:"author,omitempty"`
 	Links   []AtomLink  `xml:"link"`
 	Entries []AtomEntry `xml:"entry"`
 }

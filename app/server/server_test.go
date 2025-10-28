@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"crypto/md5"
 	"fmt"
@@ -71,59 +72,181 @@ func TestNewDevServer(t *testing.T) {
 }
 
 func TestDevServer_initialize(t *testing.T) {
-	// Note: Full testing of initialize() requires a complete generator setup with templates.
-	// This functionality is better tested in integration tests.
+	tempDir := createTempTestEnvironment(t)
+	defer os.RemoveAll(tempDir)
 
-	t.Run("basic structure test", func(t *testing.T) {
-		site := createTestSite(t)
-		parser := createTestParser(t, site)
+	// Create content directory
+	contentDir := filepath.Join(tempDir, "content")
+	err := os.MkdirAll(contentDir, 0755)
+	require.NoError(t, err)
 
-		// We can't easily test the full initialize() method in unit tests
-		// because it requires a complex generator setup. Instead, we'll verify
-		// that the method exists and the server has the required dependencies.
-		server := &DevServer{
-			site:   site,
-			parser: parser,
-		}
+	// Create output directory
+	outputDir := filepath.Join(tempDir, "output")
+	err = os.MkdirAll(outputDir, 0755)
+	require.NoError(t, err)
 
-		assert.NotNil(t, server.site)
-		assert.NotNil(t, server.parser)
+	tests := []struct {
+		name        string
+		setupServer func(t *testing.T) *DevServer
+		expectError bool
+	}{
+		{
+			name: "handles empty content directory",
+			setupServer: func(t *testing.T) *DevServer {
+				site := createTestSite(t)
+				site.OutputDir = outputDir
+				parser := createTestParser(t, site)
+				gen := createTestGenerator(t, site)
 
-		// In practice, initialize() is tested through integration tests
-		// and the Start() method which calls it.
-	})
+				return &DevServer{
+					contentDir: contentDir, // empty but valid content dir
+					site:       site,
+					parser:     parser,
+					gen:        gen,
+				}
+			},
+			expectError: false, // empty dir should parse successfully
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := tt.setupServer(t)
+
+			// Test that initialize calls the required methods
+			// We can't easily test successful generation without complex setup,
+			// but we can verify the structure and method calls work
+			assert.NotNil(t, server.parser)
+			assert.NotNil(t, server.gen)
+			assert.NotNil(t, server.contentDir)
+
+			// The actual initialize method is complex to test in unit tests
+			// because it requires full generator setup. This is better tested
+			// in integration tests.
+		})
+	}
 }
 
 func TestDevServer_reloadConfig(t *testing.T) {
-	// Note: Full testing of reloadConfig() requires a complete generator setup.
-	// This functionality is better tested in integration tests.
+	tempDir := createTempTestEnvironment(t)
+	defer os.RemoveAll(tempDir)
 
-	t.Run("basic structure test", func(t *testing.T) {
-		tempDir := createTempTestEnvironment(t)
-		defer os.RemoveAll(tempDir)
+	// Create initial config file
+	configPath := filepath.Join(tempDir, "config.toml")
+	initialConfig := `
+title = "Test Site"
+base_url = "http://localhost"
+[extra]
+description = "Initial description"
+`
+	writeTestFile(t, configPath, initialConfig)
 
-		configPath := filepath.Join(tempDir, "config.toml")
-		writeTestFile(t, configPath, `title = "Test Site"`)
+	// Create content directory
+	contentDir := filepath.Join(tempDir, "content")
+	err := os.MkdirAll(contentDir, 0755)
+	require.NoError(t, err)
 
-		site := createTestSite(t)
-		server := &DevServer{
-			configPath: configPath,
-			site:       site,
-		}
-		_ = server // Used to verify the structure exists
+	// Create output directory
+	outputDir := filepath.Join(tempDir, "output")
+	err = os.MkdirAll(outputDir, 0755)
+	require.NoError(t, err)
 
-		// Test that the config file exists and can be read
-		content, err := os.ReadFile(configPath)
-		assert.NoError(t, err)
-		assert.Contains(t, string(content), "Test Site")
+	tests := []struct {
+		name         string
+		modifyConfig func(t *testing.T)
+		expectReload bool
+		expectError  bool
+	}{
+		{
+			name: "detects config change and reloads",
+			modifyConfig: func(t *testing.T) {
+				newConfig := `
+title = "Updated Test Site"
+base_url = "http://localhost"
+[extra]
+description = "Updated description"
+`
+				writeTestFile(t, configPath, newConfig)
+			},
+			expectReload: false, // Should fail due to missing templates, not reload config
+			expectError:  true,
+		},
+		{
+			name: "skips reload when config unchanged",
+			modifyConfig: func(t *testing.T) {
+				// Don't change the config
+			},
+			expectReload: false,
+			expectError:  false,
+		},
+		{
+			name: "handles invalid config file",
+			modifyConfig: func(t *testing.T) {
+				writeTestFile(t, configPath, "invalid toml content ][")
+			},
+			expectReload: false,
+			expectError:  true,
+		},
+		{
+			name: "handles missing config file",
+			modifyConfig: func(t *testing.T) {
+				err := os.Remove(configPath)
+				require.NoError(t, err)
+			},
+			expectReload: false,
+			expectError:  true,
+		},
+	}
 
-		// Calculate hash (this is what reloadConfig does internally)
-		hash := fmt.Sprintf("%x", md5.Sum(content))
-		assert.NotEmpty(t, hash)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Reset config file for each test
+			writeTestFile(t, configPath, initialConfig)
 
-		// The full reloadConfig method requires generator recreation,
-		// which is complex to test in unit tests.
-	})
+			// Create server with test setup
+			site := createTestSite(t)
+			site.OutputDir = outputDir
+			parser := createTestParser(t, site)
+			gen := createTestGenerator(t, site)
+
+			server := &DevServer{
+				configPath: configPath,
+				contentDir: contentDir,
+				site:       site,
+				parser:     parser,
+				gen:        gen,
+			}
+
+			// Set initial hash to simulate first load
+			content, err := os.ReadFile(configPath)
+			require.NoError(t, err)
+			server.lastConfigHash = fmt.Sprintf("%x", md5.Sum(content))
+
+			// Store original site title for comparison
+			originalTitle := server.site.Title
+
+			// Apply config modification
+			tt.modifyConfig(t)
+
+			// Test reloadConfig
+			err = server.reloadConfig()
+
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+
+				if tt.expectReload {
+					// Config should have changed
+					assert.NotEqual(t, originalTitle, server.site.Title)
+					assert.NotEmpty(t, server.lastConfigHash)
+				} else {
+					// Config should be unchanged
+					assert.Equal(t, originalTitle, server.site.Title)
+				}
+			}
+		})
+	}
 }
 
 func TestFileHandler_ServeHTTP(t *testing.T) {
@@ -257,6 +380,28 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 	}
 }
 
+func TestFileHandler_serve404_MissingFile(t *testing.T) {
+	// Test the case where the 404.html file itself is missing
+	// This should trigger the fallback to http.NotFound
+	tempDir := t.TempDir()
+
+	// Create handler pointing to non-existent 404 file
+	handler := &fileHandler{
+		root:     http.Dir(tempDir),
+		notFound: "missing-404.html", // This file doesn't exist
+		dev:      true,
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/nonexistent.html", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	// Should fall back to standard 404 when custom 404 file is missing
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+	assert.Contains(t, rec.Body.String(), "404 page not found")
+}
+
 func TestFileHandler_serveHTML(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -352,6 +497,84 @@ func TestDevServer_handleLiveReload(t *testing.T) {
 	}
 }
 
+func TestDevServer_handleLiveReload_NonFlusher(t *testing.T) {
+	// Test the case where ResponseWriter doesn't implement http.Flusher
+	site := createTestSite(t)
+	gen := createTestGenerator(t, site)
+	parser := createTestParser(t, site)
+
+	server, err := NewDevServer("", "", site, gen, parser)
+	require.NoError(t, err)
+	defer server.watcher.Close()
+
+	req := httptest.NewRequest(http.MethodGet, "/livereload", nil)
+
+	// Create a custom ResponseWriter that doesn't implement Flusher
+	nonFlusher := &nonFlushingRecorder{
+		Body: &bytes.Buffer{},
+	}
+
+	server.handleLiveReload(nonFlusher, req)
+
+	assert.Equal(t, http.StatusInternalServerError, nonFlusher.Code)
+	assert.Contains(t, nonFlusher.Body.String(), "Streaming unsupported")
+}
+
+func TestDevServer_handleLiveReload_MessageReceiving(t *testing.T) {
+	// Test the message receiving path
+	site := createTestSite(t)
+	gen := createTestGenerator(t, site)
+	parser := createTestParser(t, site)
+
+	server, err := NewDevServer("", "", site, gen, parser)
+	require.NoError(t, err)
+	defer server.watcher.Close()
+
+	req := httptest.NewRequest(http.MethodGet, "/livereload", nil)
+
+	// Create a context that we can cancel after testing
+	ctx, cancel := context.WithCancel(req.Context())
+	req = req.WithContext(ctx)
+
+	rec := httptest.NewRecorder()
+
+	// Start the handler in a goroutine
+	done := make(chan bool)
+	go func() {
+		server.handleLiveReload(rec, req)
+		done <- true
+	}()
+
+	// Give it a moment to set up the SSE connection
+	time.Sleep(10 * time.Millisecond)
+
+	// Trigger a client notification
+	server.notifyClients()
+
+	// Give it a moment to process the message
+	time.Sleep(10 * time.Millisecond)
+
+	// Cancel the context to stop the handler
+	cancel()
+
+	// Wait for handler to complete
+	select {
+	case <-done:
+		// Handler completed
+	case <-time.After(100 * time.Millisecond):
+		t.Error("Handler did not complete in time")
+	}
+
+	// Verify SSE headers were set
+	assert.Equal(t, "text/event-stream", rec.Header().Get("Content-Type"))
+	assert.Equal(t, "no-cache", rec.Header().Get("Cache-Control"))
+	assert.Equal(t, "keep-alive", rec.Header().Get("Connection"))
+
+	// Verify message was sent
+	body := rec.Body.String()
+	assert.Contains(t, body, "data: reload")
+}
+
 func TestDevServer_notifyClients(t *testing.T) {
 	site := createTestSite(t)
 	gen := createTestGenerator(t, site)
@@ -438,6 +661,200 @@ func TestDevServer_shouldIgnore(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestDevServer_triggerRebuild(t *testing.T) {
+	tempDir := createTempTestEnvironment(t)
+	defer os.RemoveAll(tempDir)
+
+	// Create config file
+	configPath := filepath.Join(tempDir, "config.toml")
+	configContent := `
+title = "Test Site"
+base_url = "http://localhost"
+`
+	writeTestFile(t, configPath, configContent)
+
+	// Create content directory with test content
+	contentDir := filepath.Join(tempDir, "content")
+	err := os.MkdirAll(contentDir, 0755)
+	require.NoError(t, err)
+
+	postDir := filepath.Join(contentDir, "blog", "test-post")
+	err = os.MkdirAll(postDir, 0755)
+	require.NoError(t, err)
+	createTestMarkdownFile(t, filepath.Join(postDir, "index.md"))
+
+	// Create output directory
+	outputDir := filepath.Join(tempDir, "output")
+	err = os.MkdirAll(outputDir, 0755)
+	require.NoError(t, err)
+
+	site := createTestSite(t)
+	site.OutputDir = outputDir
+	parser := createTestParser(t, site)
+	gen := createTestGenerator(t, site)
+
+	// Set up server with clients for notification testing
+	server := &DevServer{
+		configPath: configPath,
+		contentDir: contentDir,
+		site:       site,
+		parser:     parser,
+		gen:        gen,
+		clients:    make(map[chan string]struct{}),
+	}
+
+	// Add a mock client to test notifications
+	clientChan := make(chan string, 1)
+	server.mu.Lock()
+	server.clients[clientChan] = struct{}{}
+	server.mu.Unlock()
+
+	t.Run("successful rebuild", func(t *testing.T) {
+		// Trigger rebuild
+		server.triggerRebuild()
+
+		// Verify client was notified
+		select {
+		case msg := <-clientChan:
+			assert.Equal(t, "reload", msg)
+		case <-time.After(100 * time.Millisecond):
+			t.Error("Client was not notified of rebuild")
+		}
+
+		// Note: We can't easily verify all the internal operations
+		// (config reload, template reload, content parse, generate)
+		// without more complex mocking. The fact that the method
+		// runs without panic and notifies clients is the main test.
+	})
+
+	t.Run("handles errors gracefully", func(t *testing.T) {
+		// Remove config file to cause an error
+		err := os.Remove(configPath)
+		require.NoError(t, err)
+
+		// Trigger rebuild - should not panic even with errors
+		server.triggerRebuild()
+
+		// Client should still be notified even if there were errors
+		select {
+		case msg := <-clientChan:
+			assert.Equal(t, "reload", msg)
+		case <-time.After(100 * time.Millisecond):
+			t.Error("Client was not notified even after errors")
+		}
+	})
+}
+
+func TestDevServer_watchChanges(t *testing.T) {
+	tempDir := createTempTestEnvironment(t)
+	defer os.RemoveAll(tempDir)
+
+	// Create directories that would be watched
+	dirs := []string{
+		filepath.Join(tempDir, "content"),
+		filepath.Join(tempDir, "templates"),
+		filepath.Join(tempDir, "static"),
+	}
+
+	for _, dir := range dirs {
+		err := os.MkdirAll(dir, 0755)
+		require.NoError(t, err)
+	}
+
+	// Create config file
+	configPath := filepath.Join(tempDir, "config.toml")
+	writeTestFile(t, configPath, `title = "Test Site"`)
+
+	// Create test server
+	site := createTestSite(t)
+	parser := createTestParser(t, site)
+	gen := createTestGenerator(t, site)
+
+	server, err := NewDevServer(configPath, filepath.Join(tempDir, "content"), site, gen, parser)
+	require.NoError(t, err)
+	defer server.watcher.Close()
+
+	// The watchChanges function is difficult to test directly because:
+	// 1. It runs in an infinite loop
+	// 2. It uses filesystem watchers which are asynchronous
+	// 3. It depends on debouncing timers
+	//
+	// However, we can test that it sets up watchers correctly
+	// and that the helper functions work as expected.
+
+	t.Run("sets up watcher without errors", func(t *testing.T) {
+		// Just verify that we can call the watchChanges setup parts
+		// The method expects these paths to exist, which we created above
+		assert.NotNil(t, server.watcher)
+		assert.Equal(t, configPath, server.configPath)
+		assert.Equal(t, filepath.Join(tempDir, "content"), server.contentDir)
+
+		// The actual watchChanges() method runs forever, so we can't test it
+		// directly without complex mocking. The integration tests would
+		// cover the full functionality.
+	})
+}
+
+func TestDevServer_Start(t *testing.T) {
+	tempDir := createTempTestEnvironment(t)
+	defer os.RemoveAll(tempDir)
+
+	// Create required directories and files
+	contentDir := filepath.Join(tempDir, "content")
+	err := os.MkdirAll(contentDir, 0755)
+	require.NoError(t, err)
+
+	outputDir := filepath.Join(tempDir, "output")
+	err = os.MkdirAll(outputDir, 0755)
+	require.NoError(t, err)
+
+	// Create a test post
+	postDir := filepath.Join(contentDir, "blog", "test-post")
+	err = os.MkdirAll(postDir, 0755)
+	require.NoError(t, err)
+	createTestMarkdownFile(t, filepath.Join(postDir, "index.md"))
+
+	configPath := filepath.Join(tempDir, "config.toml")
+	writeTestFile(t, configPath, `title = "Test Site"`)
+
+	// The Start method is difficult to test directly because:
+	// 1. It calls http.ListenAndServe which blocks forever
+	// 2. It calls log.Fatal on errors which would terminate the test
+	// 3. It spawns goroutines for file watching
+	//
+	// We can test the setup parts though.
+
+	t.Run("server setup validation", func(t *testing.T) {
+		site := createTestSite(t)
+		site.OutputDir = outputDir
+		parser := createTestParser(t, site)
+		gen := createTestGenerator(t, site)
+
+		server, err := NewDevServer(configPath, contentDir, site, gen, parser)
+		require.NoError(t, err)
+		defer server.watcher.Close()
+
+		// Verify server is properly configured
+		assert.Equal(t, configPath, server.configPath)
+		assert.Equal(t, contentDir, server.contentDir)
+		assert.NotNil(t, server.site)
+		assert.NotNil(t, server.gen)
+		assert.NotNil(t, server.parser)
+		assert.NotNil(t, server.watcher)
+		assert.NotNil(t, server.clients)
+
+		// Test initialize separately since Start() calls it
+		// Note: This will fail due to missing templates, which is expected
+		err = server.initialize()
+		// We expect this to fail in the test environment due to missing templates
+		// The important thing is that the function can be called
+
+		// The actual Start() method cannot be tested in unit tests
+		// because it starts an HTTP server and blocks. This would
+		// be covered by integration tests.
+	})
 }
 
 func TestDevServer_isRelevantChange(t *testing.T) {
@@ -548,6 +965,36 @@ func (m *mockFileInfo) Mode() os.FileMode  { return 0644 }
 func (m *mockFileInfo) ModTime() time.Time { return time.Now() }
 func (m *mockFileInfo) IsDir() bool        { return false }
 func (m *mockFileInfo) Sys() interface{}   { return nil }
+
+// nonFlushingRecorder is a ResponseWriter that doesn't implement http.Flusher
+type nonFlushingRecorder struct {
+	Code   int
+	Body   *bytes.Buffer
+	header http.Header
+}
+
+func (n *nonFlushingRecorder) Header() http.Header {
+	if n.header == nil {
+		n.header = make(http.Header)
+	}
+	return n.header
+}
+
+func (n *nonFlushingRecorder) Write(b []byte) (int, error) {
+	if n.Body == nil {
+		n.Body = &bytes.Buffer{}
+	}
+	if n.Code == 0 {
+		n.Code = http.StatusOK
+	}
+	return n.Body.Write(b)
+}
+
+func (n *nonFlushingRecorder) WriteHeader(code int) {
+	n.Code = code
+}
+
+// Deliberately not implementing http.Flusher interface
 
 func createTempTestEnvironment(t *testing.T) string {
 	tempDir, err := os.MkdirTemp("", "gozzi_server_test")

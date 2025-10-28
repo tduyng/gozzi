@@ -52,7 +52,7 @@ func (g *Generator) generateAtomFeed() error {
 
 	if g.site.Extra["author"] != nil {
 		author := g.site.Extra["author"].(map[string]any)
-		feed.Author = xmlfeed.AtomAuthor{
+		feed.Author = &xmlfeed.AtomAuthor{
 			Name:  author["name"].(string),
 			Email: author["email"].(string),
 		}

@@ -598,12 +598,14 @@ This is in a nested directory.`
 				rootSection := p.ContentMap["."]
 				assert.NotNil(t, rootSection)
 
-				blogTechSection := p.ContentMap["blog/tech"]
-				assert.NotNil(t, blogTechSection)
+				// The nested post should be in blog/tech/2024 section (not blog/tech)
+				// because the file is blog/tech/2024/nested-post.md (not index.md)
+				blogTech2024Section := p.ContentMap["blog/tech/2024"]
+				assert.NotNil(t, blogTech2024Section)
 
 				// Verify the post was added to the correct parent
-				assert.Equal(t, 1, len(blogTechSection.Children))
-				nestedPost := blogTechSection.Children[0]
+				assert.Equal(t, 1, len(blogTech2024Section.Children))
+				nestedPost := blogTech2024Section.Children[0]
 				assert.Contains(t, string(nestedPost.Content), "Nested Post")
 				assert.Contains(t, string(nestedPost.Content), "nested directory")
 
@@ -749,13 +751,13 @@ Here's a second paragraph.`,
 			validate: func(t *testing.T, p *ContentParser, err error) {
 				assert.NoError(t, err)
 
-				// Should create parent section
-				parentSection := p.ContentMap["."]
-				assert.NotNil(t, parentSection)
-				assert.Equal(t, 1, len(parentSection.Children))
+				// Should create blog section and add page to it
+				blogSection := p.ContentMap["blog"]
+				assert.NotNil(t, blogSection)
+				assert.Equal(t, 1, len(blogSection.Children))
 
 				// Check the page
-				page := parentSection.Children[0]
+				page := blogSection.Children[0]
 				assert.Equal(t, content.NodeTypePage, page.Type)
 				assert.Contains(t, string(page.Content), "Test Page")
 				assert.Contains(t, string(page.Content), "test page")

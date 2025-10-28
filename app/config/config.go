@@ -134,6 +134,9 @@ func mergeFrontMatter(merged, frontMatter map[string]any) map[string]any {
 
 	if updated, ok := frontMatter["updated"].(time.Time); ok && !updated.IsZero() {
 		merged["updated"] = updated
+	} else {
+		// Ensure updated field always exists as time.Time, even if zero
+		merged["updated"] = time.Time{}
 	}
 
 	boolFields := []string{"generate_feed", "draft", "featured"}

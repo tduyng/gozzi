@@ -197,8 +197,21 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	parent := p.GetOrCreateSection(filepath.Dir(dir))
-	slug := content.GenerateSlug(path, parent)
+	// For index.md files, the page should be created at the directory level,
+	// with parent being the directory's parent, not the directory itself
+	var parent *content.Node
+	var pagePath string
+	if filepath.Base(path) == "index.md" {
+		// For blog/first-post/index.md: parent = blog, pagePath = blog/first-post
+		parent = p.GetOrCreateSection(filepath.Dir(dir))
+		pagePath = dir
+	} else {
+		// For blog/post.md: parent = blog, pagePath = blog/post
+		parent = p.GetOrCreateSection(dir)
+		pagePath = strings.TrimSuffix(path, "content/")
+	}
+
+	slug := content.GenerateSlug(pagePath, parent)
 	permalink := buildPermalink(slug)
 
 	wordCount, readTime := calculateReadStats(string(contentPart))
@@ -206,7 +219,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	mergedConfig["img_url"] = p.resolveImgURL(pageConfig, slug)
 
 	pageNode := &content.Node{
-		Path:      strings.TrimSuffix(path, "content/"),
+		Path:      pagePath,
 		Slug:      slug,
 		Permalink: permalink,
 		URL:       buildURL(p.Site.BaseURL, slug),

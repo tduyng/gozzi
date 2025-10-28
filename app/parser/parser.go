@@ -124,8 +124,11 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	}
 
 	frontMatter, contentPart, err := config.LoadFrontMatter(mdContent)
-	if err != nil || frontMatter.Draft {
+	if err != nil {
 		return err
+	}
+	if frontMatter.Draft {
+		return fmt.Errorf("section is marked as draft")
 	}
 
 	pc := parser.NewContext()
@@ -168,8 +171,11 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	}
 
 	pageConfig, contentPart, err := config.LoadFrontMatter(mdContent)
-	if err != nil || pageConfig.Draft {
+	if err != nil {
 		return err
+	}
+	if pageConfig.Draft {
+		return fmt.Errorf("page is marked as draft")
 	}
 
 	pc := parser.NewContext()

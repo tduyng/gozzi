@@ -13,6 +13,15 @@ import (
 	"github.com/tduyng/gozzi/app/content"
 )
 
+// Helper function for debugging
+func getKeys(m map[string]*content.Node) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 func TestNewParser(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -431,84 +440,411 @@ func TestGetMarkdownProcessor(t *testing.T) {
 	assert.Contains(t, buf.String(), "Hello World")
 }
 
-// TestParseWithRealFiles tests the Parse method with actual file system
-func TestParseWithRealFiles(t *testing.T) {
-	// Skip this test for now until we debug the nil pointer issue
-	t.Skip("Skipping until nil pointer issue is resolved")
+// TestParse tests the Parse method with actual file system using TOML frontmatter
+func TestParse(t *testing.T) {
+	tests := []struct {
+		name     string
+		setup    func(t *testing.T, contentDir string)
+		validate func(t *testing.T, p *ContentParser)
+	}{
+		{
+			name: "parses content directory with TOML frontmatter",
+			setup: func(t *testing.T, contentDir string) {
+				// Create directory structure (matching gozzi's expected structure)
+				require.NoError(t, os.MkdirAll(filepath.Join(contentDir, "blog", "first-post"), 0755))
 
-	// Create temporary directory structure
-	tempDir := t.TempDir()
-	contentDir := filepath.Join(tempDir, "content")
-
-	// Create directory structure
-	require.NoError(t, os.MkdirAll(filepath.Join(contentDir, "blog"), 0755))
-
-	// Create _index.md for root section
-	indexContent := `---
-title: Home
----
+				// Create _index.md for root section with TOML frontmatter
+				indexContent := `+++
+title = "Home"
+description = "Welcome page"
++++
 # Welcome to the site
-This is the home page.`
-	require.NoError(t, os.WriteFile(filepath.Join(contentDir, "_index.md"), []byte(indexContent), 0644))
+This is the home page with some content.`
+				require.NoError(t, os.WriteFile(filepath.Join(contentDir, "_index.md"), []byte(indexContent), 0644))
 
-	// Create blog section index
-	blogIndexContent := `---
-title: Blog
----
+				// Create blog section index with TOML frontmatter
+				blogIndexContent := `+++
+title = "Blog"
+description = "My blog posts"
++++
 # Blog Section
-All my blog posts.`
-	require.NoError(t, os.WriteFile(filepath.Join(contentDir, "blog", "_index.md"), []byte(blogIndexContent), 0644))
+All my blog posts are here.`
+				require.NoError(t, os.WriteFile(filepath.Join(contentDir, "blog", "_index.md"), []byte(blogIndexContent), 0644))
 
-	// Create a blog post
-	postContent := `---
-title: My First Post
-tags:
-  - go
-  - programming
----
+				// Create a blog post with TOML frontmatter (in subdirectory)
+				postContent := `+++
+title = "My First Post"
+date = 2024-01-15
+tags = ["go", "programming", "tutorial"]
+draft = false
++++
 # My First Post
-This is my first blog post about Go programming.`
-	require.NoError(t, os.WriteFile(filepath.Join(contentDir, "blog", "first-post.md"), []byte(postContent), 0644))
+This is my first blog post about Go programming.
 
-	// Create parser and parse
-	site := &config.Site{
-		Title:   "Test Site",
-		BaseURL: "https://example.com",
+Let's learn Go together!`
+				require.NoError(t, os.WriteFile(filepath.Join(contentDir, "blog", "first-post", "index.md"), []byte(postContent), 0644))
+			},
+			validate: func(t *testing.T, p *ContentParser) {
+				// Verify sections were created
+				rootSection, exists := p.ContentMap["."]
+				assert.True(t, exists)
+				assert.Equal(t, content.NodeTypeSection, rootSection.Type)
+				assert.Contains(t, string(rootSection.Content), "Welcome to the site")
+				assert.Contains(t, string(rootSection.Content), "home page")
+
+				blogSection, exists := p.ContentMap["blog"]
+				assert.True(t, exists)
+				assert.Equal(t, content.NodeTypeSection, blogSection.Type)
+				assert.Contains(t, string(blogSection.Content), "Blog Section")
+				assert.Contains(t, string(blogSection.Content), "blog posts are here")
+
+				// Debug logging
+				t.Logf("Root section children: %d", len(rootSection.Children))
+				t.Logf("Blog section children: %d", len(blogSection.Children))
+				for path, node := range p.ContentMap {
+					t.Logf("ContentMap[%s]: Type=%d, Children=%d", path, node.Type, len(node.Children))
+				}
+
+				// Verify blog post was parsed and added to blog section
+				if len(blogSection.Children) == 0 {
+					t.Fatalf("Expected 1 child in blog section, but got 0. ContentMap keys: %v", getKeys(p.ContentMap))
+				}
+				assert.Equal(t, 1, len(blogSection.Children))
+				blogPost := blogSection.Children[0]
+				assert.Equal(t, content.NodeTypePage, blogPost.Type)
+				assert.Contains(t, string(blogPost.Content), "My First Post")
+				assert.Contains(t, string(blogPost.Content), "Go programming")
+				assert.Contains(t, string(blogPost.Content), "learn Go together")
+
+				// Verify tags were parsed
+				assert.Equal(t, 3, len(p.Tags))
+				for _, tag := range []string{"go", "programming", "tutorial"} {
+					tagEntry, exists := p.Tags[tag]
+					assert.True(t, exists, "tag %s should exist", tag)
+					assert.Equal(t, 1, tagEntry.Count)
+					assert.Contains(t, tagEntry.Pages, blogPost)
+				}
+
+				// Verify pagination was built
+				assert.NotNil(t, blogSection.Children)
+			},
+		},
+		{
+			name: "handles empty content directory",
+			setup: func(t *testing.T, contentDir string) {
+				// Create empty content directory
+			},
+			validate: func(t *testing.T, p *ContentParser) {
+				// Should have empty ContentMap
+				assert.Equal(t, 0, len(p.ContentMap))
+				assert.Equal(t, 0, len(p.Tags))
+			},
+		},
+		{
+			name: "skips draft content",
+			setup: func(t *testing.T, contentDir string) {
+				require.NoError(t, os.MkdirAll(filepath.Join(contentDir, "blog"), 0755))
+
+				// Create draft post
+				draftContent := `+++
+title = "Draft Post"
+draft = true
+tags = ["draft"]
++++
+# Draft Post
+This should not be included.`
+				require.NoError(t, os.WriteFile(filepath.Join(contentDir, "blog", "draft.md"), []byte(draftContent), 0644))
+
+				// Create published post
+				publishedContent := `+++
+title = "Published Post"
+draft = false
+tags = ["published"]
++++
+# Published Post
+This should be included.`
+				require.NoError(t, os.WriteFile(filepath.Join(contentDir, "blog", "published.md"), []byte(publishedContent), 0644))
+			},
+			validate: func(t *testing.T, p *ContentParser) {
+				// Should only have the root section (created for published post)
+				rootSection := p.ContentMap["."]
+				assert.NotNil(t, rootSection)
+
+				// Should have only one tag (from published post)
+				assert.Equal(t, 1, len(p.Tags))
+				_, draftExists := p.Tags["draft"]
+				assert.False(t, draftExists)
+				_, publishedExists := p.Tags["published"]
+				assert.True(t, publishedExists)
+			},
+		},
+		{
+			name: "handles nested directory structure",
+			setup: func(t *testing.T, contentDir string) {
+				// Create nested structure
+				require.NoError(t, os.MkdirAll(filepath.Join(contentDir, "blog", "tech", "2024"), 0755))
+
+				// Create nested post
+				nestedContent := `+++
+title = "Nested Post"
+tags = ["nested", "tech"]
++++
+# Nested Post
+This is in a nested directory.`
+				require.NoError(t, os.WriteFile(filepath.Join(contentDir, "blog", "tech", "2024", "nested-post.md"), []byte(nestedContent), 0644))
+			},
+			validate: func(t *testing.T, p *ContentParser) {
+				// Should create all necessary sections
+				rootSection := p.ContentMap["."]
+				assert.NotNil(t, rootSection)
+
+				blogTechSection := p.ContentMap["blog/tech"]
+				assert.NotNil(t, blogTechSection)
+
+				// Verify the post was added to the correct parent
+				assert.Equal(t, 1, len(blogTechSection.Children))
+				nestedPost := blogTechSection.Children[0]
+				assert.Contains(t, string(nestedPost.Content), "Nested Post")
+				assert.Contains(t, string(nestedPost.Content), "nested directory")
+
+				// Verify tags
+				assert.Equal(t, 2, len(p.Tags))
+			},
+		},
 	}
-	p := NewParser(site)
 
-	err := p.Parse(contentDir)
-	assert.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create temporary directory structure
+			tempDir := t.TempDir()
+			contentDir := filepath.Join(tempDir, "content")
+			require.NoError(t, os.MkdirAll(contentDir, 0755))
 
-	// Verify sections were created
-	rootSection, exists := p.ContentMap["."]
-	assert.True(t, exists)
-	assert.Equal(t, content.NodeTypeSection, rootSection.Type)
-	assert.Contains(t, string(rootSection.Content), "Welcome to the site")
+			// Setup test content
+			tt.setup(t, contentDir)
 
-	blogSection, exists := p.ContentMap["blog"]
-	assert.True(t, exists)
-	assert.Equal(t, content.NodeTypeSection, blogSection.Type)
-	assert.Contains(t, string(blogSection.Content), "Blog Section")
+			// Create parser and parse
+			site := &config.Site{
+				Title:   "Test Site",
+				BaseURL: "https://example.com",
+			}
+			p := NewParser(site)
 
-	// Verify blog post was parsed and added to blog section
-	assert.Equal(t, 1, len(blogSection.Children))
-	blogPost := blogSection.Children[0]
-	assert.Equal(t, content.NodeTypePage, blogPost.Type)
-	assert.Contains(t, string(blogPost.Content), "My First Post")
-	assert.Contains(t, string(blogPost.Content), "Go programming")
+			err := p.Parse(contentDir)
+			assert.NoError(t, err)
 
-	// Verify tags were parsed
-	assert.Equal(t, 2, len(p.Tags))
-	goTag, exists := p.Tags["go"]
-	assert.True(t, exists)
-	assert.Equal(t, 1, goTag.Count)
-	assert.Contains(t, goTag.Pages, blogPost)
+			// Validate results
+			tt.validate(t, p)
+		})
+	}
+}
 
-	programmingTag, exists := p.Tags["programming"]
-	assert.True(t, exists)
-	assert.Equal(t, 1, programmingTag.Count)
-	assert.Contains(t, programmingTag.Pages, blogPost)
+// TestParseSection tests the parseSection method
+func TestParseSection(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		dir      string
+		validate func(t *testing.T, p *ContentParser, err error)
+	}{
+		{
+			name: "parses section with TOML frontmatter",
+			content: `+++
+title = "Test Section"
+description = "A test section"
+[extra]
+custom = "value"
++++
+# Test Section
+This is a test section with some content.`,
+			dir: "test",
+			validate: func(t *testing.T, p *ContentParser, err error) {
+				assert.NoError(t, err)
+
+				section := p.ContentMap["test"]
+				assert.NotNil(t, section)
+				assert.Equal(t, content.NodeTypeSection, section.Type)
+				assert.Contains(t, string(section.Content), "Test Section")
+				assert.Contains(t, string(section.Content), "test section")
+
+				// Check config was merged properly
+				assert.Equal(t, "Test Section", section.Config["title"])
+				assert.Equal(t, "A test section", section.Config["description"])
+			},
+		},
+		{
+			name: "handles section with invalid frontmatter gracefully",
+			content: `+++
+invalid toml syntax [[[
++++
+# Content`,
+			dir: "invalid",
+			validate: func(t *testing.T, p *ContentParser, err error) {
+				assert.Error(t, err)
+				// Should not create invalid sections
+				assert.Nil(t, p.ContentMap["invalid"])
+			},
+		},
+		{
+			name: "skips draft sections",
+			content: `+++
+title = "Draft Section"
+draft = true
++++
+# Draft Section
+This should be skipped.`,
+			dir: "draft",
+			validate: func(t *testing.T, p *ContentParser, err error) {
+				assert.Error(t, err)
+				// ContentMap should remain empty since no sections were added
+				assert.Equal(t, 0, len(p.ContentMap))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup
+			tempDir := t.TempDir()
+			sectionPath := filepath.Join(tempDir, "_index.md")
+			require.NoError(t, os.WriteFile(sectionPath, []byte(tt.content), 0644))
+
+			site := &config.Site{
+				Title:   "Test Site",
+				BaseURL: "https://example.com",
+			}
+			p := NewParser(site)
+
+			// Test
+			err := p.parseSection(sectionPath, tt.dir)
+
+			// Validate
+			tt.validate(t, p, err)
+		})
+	}
+}
+
+// TestParsePage tests the parsePage method
+func TestParsePage(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		dir      string
+		validate func(t *testing.T, p *ContentParser, err error)
+	}{
+		{
+			name: "parses page with TOML frontmatter and tags",
+			content: `+++
+title = "Test Page"
+date = 2024-01-15
+tags = ["go", "programming"]
+[extra]
+author = "Test Author"
++++
+# Test Page
+This is a test page with some content.
+
+Here's a second paragraph.`,
+			dir: "blog",
+			validate: func(t *testing.T, p *ContentParser, err error) {
+				assert.NoError(t, err)
+
+				// Should create parent section
+				parentSection := p.ContentMap["."]
+				assert.NotNil(t, parentSection)
+				assert.Equal(t, 1, len(parentSection.Children))
+
+				// Check the page
+				page := parentSection.Children[0]
+				assert.Equal(t, content.NodeTypePage, page.Type)
+				assert.Contains(t, string(page.Content), "Test Page")
+				assert.Contains(t, string(page.Content), "test page")
+				assert.Contains(t, string(page.Content), "second paragraph")
+
+				// Check config
+				assert.Equal(t, "Test Page", page.Config["title"])
+
+				// Check extra config is nested
+				extra, exists := page.Config["extra"]
+				assert.True(t, exists)
+				extraMap, ok := extra.(map[string]any)
+				assert.True(t, ok)
+				assert.Equal(t, "Test Author", extraMap["author"])
+
+				// Check tags were parsed
+				assert.Equal(t, 2, len(p.Tags))
+				for _, tag := range []string{"go", "programming"} {
+					tagEntry, exists := p.Tags[tag]
+					assert.True(t, exists)
+					assert.Equal(t, 1, tagEntry.Count)
+					assert.Contains(t, tagEntry.Pages, page)
+				}
+
+				// Check read stats
+				assert.True(t, page.WordCount > 0)
+				assert.True(t, page.ReadTime > 0)
+			},
+		},
+		{
+			name: "skips draft pages",
+			content: `+++
+title = "Draft Page"
+draft = true
+tags = ["draft"]
++++
+# Draft Page
+This should be skipped.`,
+			dir: "blog",
+			validate: func(t *testing.T, p *ContentParser, err error) {
+				assert.Error(t, err)
+				// ContentMap should remain empty since no pages or sections were added
+				assert.Equal(t, 0, len(p.ContentMap))
+				assert.Equal(t, 0, len(p.Tags))
+			},
+		},
+		{
+			name: "handles page without tags",
+			content: `+++
+title = "No Tags Page"
+date = 2024-01-15
++++
+# No Tags Page
+This page has no tags.`,
+			dir: "blog",
+			validate: func(t *testing.T, p *ContentParser, err error) {
+				assert.NoError(t, err)
+
+				// Should still create the page
+				parentSection := p.ContentMap["."]
+				assert.NotNil(t, parentSection)
+				assert.Equal(t, 1, len(parentSection.Children))
+
+				// Should have no tags
+				assert.Equal(t, 0, len(p.Tags))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup
+			tempDir := t.TempDir()
+			pagePath := filepath.Join(tempDir, "test-page.md")
+			require.NoError(t, os.WriteFile(pagePath, []byte(tt.content), 0644))
+
+			site := &config.Site{
+				Title:   "Test Site",
+				BaseURL: "https://example.com",
+			}
+			p := NewParser(site)
+
+			// Test
+			err := p.parsePage(pagePath, tt.dir)
+
+			// Validate
+			tt.validate(t, p, err)
+		})
+	}
 }
 
 func TestTagEntry(t *testing.T) {

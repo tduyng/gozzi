@@ -2,7 +2,7 @@
 
 **A Go static site generator born from curiosity**
 
-[![Go Version](https://img.shields.io/badge/Go-1.24%2B-blue.svg)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-1.25%2B-blue.svg)](https://golang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **Gozzi** started as a learning project to understand modern static site generators. What began as "let's see how Hugo, Zola works" became my daily driver for [tduyng.com](https://tduyng.com)

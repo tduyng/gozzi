@@ -10,7 +10,7 @@ on:
 permissions:
   contents: write
 
-run-name: Release v${{ inputs.strategy }}
+run-name: Release v${{ github.event.inputs.strategy }}
 
 jobs:
   release:

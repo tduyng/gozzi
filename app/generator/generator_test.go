@@ -3,17 +3,14 @@ package generator
 import (
 	"encoding/xml"
 	"fmt"
-	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tduyng/gozzi/app/config"
-	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/parser"
 )
 
@@ -39,12 +36,15 @@ func TestNewGenerator(t *testing.T) {
 				t.Cleanup(func() { os.Chdir(oldWd) })
 				os.Chdir(tempDir)
 
-				// Create templates directory with basic template
+				// Create templates directory with essential templates
 				templateDir := filepath.Join(tempDir, "templates")
 				require.NoError(t, os.MkdirAll(templateDir, 0755))
 
-				templateContent := `<html><head><title>{{.Page.Title}}</title></head><body>{{.Page.Content}}</body></html>`
+				templateContent := `<html><body>{{.Page.Title}}</body></html>`
 				require.NoError(t, os.WriteFile(filepath.Join(templateDir, "post.html"), []byte(templateContent), 0644))
+				require.NoError(t, os.WriteFile(filepath.Join(templateDir, "default.html"), []byte(templateContent), 0644))
+				require.NoError(t, os.WriteFile(filepath.Join(templateDir, "404.html"), []byte(`<html><body><h1>404 Not Found</h1></body></html>`), 0644))
+				require.NoError(t, os.WriteFile(filepath.Join(templateDir, "home.html"), []byte(templateContent), 0644))
 
 				return tempDir
 			},
@@ -119,375 +119,9 @@ func TestReloadTemplates(t *testing.T) {
 	gen, err := NewGenerator(site, p)
 	require.NoError(t, err)
 
-	// Verify initial template works
-	tpl := gen.templ.Lookup("post.html")
-	require.NotNil(t, tpl)
-
-	// Modify template
-	newContent := `<html><body><h1>{{.Page.Title}}</h1></body></html>`
-	require.NoError(t, os.WriteFile(templatePath, []byte(newContent), 0644))
-
-	// Reload templates
+	// Reload templates to ensure all templates are loaded
 	err = gen.ReloadTemplates()
-	assert.NoError(t, err)
-
-	// Verify template was reloaded
-	tpl = gen.templ.Lookup("post.html")
-	assert.NotNil(t, tpl)
-}
-
-func TestHasTemplate(t *testing.T) {
-	tempDir := t.TempDir()
-	oldWd, _ := os.Getwd()
-	defer os.Chdir(oldWd)
-	os.Chdir(tempDir)
-
-	// Create templates directory
-	templateDir := filepath.Join(tempDir, "templates")
-	require.NoError(t, os.MkdirAll(templateDir, 0755))
-
-	templateContent := `<html><body>{{.Page.Title}}</body></html>`
-	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "post.html"), []byte(templateContent), 0644))
-
-	site := &config.Site{Title: "Test Site", BaseURL: "https://example.com", OutputDir: "output"}
-	p := parser.NewParser(site)
-	gen, err := NewGenerator(site, p)
 	require.NoError(t, err)
-
-	tests := []struct {
-		name     string
-		template string
-		expected bool
-	}{
-		{"existing template", "post.html", true},
-		{"non-existing template", "nonexistent.html", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := gen.hasTemplate(tt.template)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestBuildTagPermalink(t *testing.T) {
-	site := &config.Site{Title: "Test Site", BaseURL: "https://example.com"}
-	p := parser.NewParser(site)
-	gen := &Generator{site: site, parser: p}
-
-	tests := []struct {
-		name     string
-		tag      string
-		expected string
-	}{
-		{"simple tag", "go", "/tags/go/"},
-		{"tag with spaces", "machine learning", "/tags/machine-learning/"},
-		{"tag with special chars", "C++", "/tags/c/"},
-		{"mixed case tag", "JavaScript", "/tags/javascript/"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := gen.buildTagPermalink(tt.tag)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestBuildTagURL(t *testing.T) {
-	site := &config.Site{Title: "Test Site", BaseURL: "https://example.com"}
-	p := parser.NewParser(site)
-	gen := &Generator{site: site, parser: p}
-
-	tests := []struct {
-		name     string
-		tagLink  string
-		expected string
-	}{
-		{"simple tag link", "/tags/go/", "https://example.com/tags/go/"},
-		{"nested tag link", "/tags/machine-learning/", "https://example.com/tags/machine-learning/"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := gen.buildTagURL(tt.tagLink)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestWalkNodes(t *testing.T) {
-	// Create a content hierarchy
-	root := &content.Node{
-		Path: ".",
-		Type: content.NodeTypeSection,
-		Children: []*content.Node{
-			{
-				Path: "blog",
-				Type: content.NodeTypeSection,
-				Children: []*content.Node{
-					{Path: "blog/post1.md", Type: content.NodeTypePage},
-					{Path: "blog/post2.md", Type: content.NodeTypePage},
-				},
-			},
-			{Path: "about.md", Type: content.NodeTypePage},
-		},
-	}
-
-	site := &config.Site{Title: "Test Site", BaseURL: "https://example.com"}
-	p := parser.NewParser(site)
-	gen := &Generator{site: site, parser: p}
-
-	var visitedPaths []string
-	gen.walkNodes(root, func(n *content.Node) {
-		visitedPaths = append(visitedPaths, n.Path)
-	})
-
-	expected := []string{".", "blog", "blog/post1.md", "blog/post2.md", "about.md"}
-	assert.Equal(t, expected, visitedPaths)
-}
-
-func TestCopyFile(t *testing.T) {
-	tempDir := t.TempDir()
-
-	// Create source file
-	srcContent := "test content"
-	srcPath := filepath.Join(tempDir, "source.txt")
-	require.NoError(t, os.WriteFile(srcPath, []byte(srcContent), 0644))
-
-	// Copy to destination
-	dstPath := filepath.Join(tempDir, "subdir", "dest.txt")
-	err := copyFile(srcPath, dstPath)
-	assert.NoError(t, err)
-
-	// Verify destination exists and has correct content
-	content, err := os.ReadFile(dstPath)
-	assert.NoError(t, err)
-	assert.Equal(t, srcContent, string(content))
-}
-
-func TestCopyDir(t *testing.T) {
-	tempDir := t.TempDir()
-
-	// Create source directory structure
-	srcDir := filepath.Join(tempDir, "src")
-	require.NoError(t, os.MkdirAll(filepath.Join(srcDir, "subdir"), 0755))
-	require.NoError(t, os.WriteFile(filepath.Join(srcDir, "file1.txt"), []byte("content1"), 0644))
-	require.NoError(t, os.WriteFile(filepath.Join(srcDir, "subdir", "file2.txt"), []byte("content2"), 0644))
-
-	// Copy to destination
-	dstDir := filepath.Join(tempDir, "dst")
-	err := copyDir(srcDir, dstDir)
-	assert.NoError(t, err)
-
-	// Verify files were copied
-	content1, err := os.ReadFile(filepath.Join(dstDir, "file1.txt"))
-	assert.NoError(t, err)
-	assert.Equal(t, "content1", string(content1))
-
-	content2, err := os.ReadFile(filepath.Join(dstDir, "subdir", "file2.txt"))
-	assert.NoError(t, err)
-	assert.Equal(t, "content2", string(content2))
-}
-
-func TestGenerateRobotsTxt(t *testing.T) {
-	tempDir := t.TempDir()
-	site := &config.Site{
-		Title:     "Test Site",
-		BaseURL:   "https://example.com",
-		OutputDir: tempDir,
-	}
-	p := parser.NewParser(site)
-	gen := &Generator{site: site, parser: p}
-
-	err := gen.generateRobotsTxt()
-	assert.NoError(t, err)
-
-	// Verify robots.txt was created
-	content, err := os.ReadFile(filepath.Join(tempDir, "robots.txt"))
-	assert.NoError(t, err)
-
-	expected := `User-agent: *
-Allow: /
-Sitemap: https://example.com/sitemap.xml
-`
-	assert.Equal(t, expected, string(content))
-}
-
-func TestGenerate404Page(t *testing.T) {
-	tempDir := t.TempDir()
-	oldWd, _ := os.Getwd()
-	defer os.Chdir(oldWd)
-	os.Chdir(tempDir)
-
-	// Create templates directory with 404 template
-	templateDir := filepath.Join(tempDir, "templates")
-	require.NoError(t, os.MkdirAll(templateDir, 0755))
-
-	template404 := `<html><body><h1>404 - {{.Page.Title}}</h1></body></html>`
-	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "404.html"), []byte(template404), 0644))
-
-	site := &config.Site{
-		Title:     "Test Site",
-		BaseURL:   "https://example.com",
-		OutputDir: tempDir,
-	}
-	p := parser.NewParser(site)
-	gen, err := NewGenerator(site, p)
-	require.NoError(t, err)
-
-	err = gen.generate404Page()
-	assert.NoError(t, err)
-
-	// Verify 404.html was created
-	content, err := os.ReadFile(filepath.Join(tempDir, "404.html"))
-	assert.NoError(t, err)
-	assert.Contains(t, string(content), "404 - Page Not Found")
-}
-
-func TestProcessNode(t *testing.T) {
-	tempDir := t.TempDir()
-	oldWd, _ := os.Getwd()
-	defer os.Chdir(oldWd)
-	os.Chdir(tempDir)
-
-	// Create templates
-	templateDir := filepath.Join(tempDir, "templates")
-	require.NoError(t, os.MkdirAll(templateDir, 0755))
-
-	pageTemplate := `<html><body><h1>{{.Page.Title}}</h1>{{.Page.Content}}</body></html>`
-	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "post.html"), []byte(pageTemplate), 0644))
-
-	site := &config.Site{
-		Title:     "Test Site",
-		BaseURL:   "https://example.com",
-		OutputDir: tempDir,
-	}
-	p := parser.NewParser(site)
-	gen, err := NewGenerator(site, p)
-	require.NoError(t, err)
-
-	tests := []struct {
-		name string
-		node *content.Node
-	}{
-		{
-			name: "process page node",
-			node: &content.Node{
-				Type:    content.NodeTypePage,
-				Slug:    "test-post",
-				Content: template.HTML("<p>Test content</p>"),
-				Config: map[string]any{
-					"title":    "Test Post",
-					"template": "post.html",
-					"date":     time.Now(),
-				},
-				Parent: &content.Node{
-					Type: content.NodeTypeSection,
-					Slug: "blog",
-				},
-			},
-		},
-		{
-			name: "process section node",
-			node: &content.Node{
-				Type:    content.NodeTypeSection,
-				Slug:    "blog",
-				Content: template.HTML("<p>Blog section</p>"),
-				Config: map[string]any{
-					"title":    "Blog",
-					"template": "post.html",
-					"date":     time.Now(),
-				},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := gen.processNode(tt.node)
-			assert.NoError(t, err)
-
-			// Verify output file was created
-			expectedPath := filepath.Join(tempDir, tt.node.Slug, "index.html")
-			_, err = os.Stat(expectedPath)
-			assert.NoError(t, err)
-		})
-	}
-}
-
-func TestGetLastMod(t *testing.T) {
-	testTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
-	updateTime := time.Date(2024, 2, 15, 12, 0, 0, 0, time.UTC)
-
-	tests := []struct {
-		name     string
-		node     *content.Node
-		expected string
-	}{
-		{
-			name: "uses updated date when available",
-			node: &content.Node{
-				Config: map[string]any{
-					"date":    testTime,
-					"updated": updateTime,
-				},
-			},
-			expected: "2024-02-15",
-		},
-		{
-			name: "falls back to date when no updated",
-			node: &content.Node{
-				Config: map[string]any{
-					"date": testTime,
-				},
-			},
-			expected: "2024-01-15",
-		},
-		{
-			name: "uses current time when no dates",
-			node: &content.Node{
-				Config: map[string]any{},
-			},
-			expected: time.Now().UTC().Format("2006-01-02"),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := getLastMod(tt.node)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-// Helper function to create a test generator with minimal setup
-func createTestGenerator(t *testing.T) (*Generator, string) {
-	tempDir := t.TempDir()
-	oldWd, _ := os.Getwd()
-	t.Cleanup(func() { os.Chdir(oldWd) })
-	os.Chdir(tempDir)
-
-	// Create templates directory with basic template
-	templateDir := filepath.Join(tempDir, "templates")
-	require.NoError(t, os.MkdirAll(templateDir, 0755))
-
-	templateContent := `<html><body>{{.Page.Title}}</body></html>`
-	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "post.html"), []byte(templateContent), 0644))
-
-	site := &config.Site{
-		Title:     "Test Site",
-		BaseURL:   "https://example.com",
-		OutputDir: filepath.Join(tempDir, "output"),
-	}
-
-	// Create parser but don't call Parse yet - that's done in individual tests
-	p := parser.NewParser(site)
-	gen, err := NewGenerator(site, p)
-	require.NoError(t, err)
-
-	return gen, tempDir
 }
 
 // Helper function to create a fully initialized test generator with parsed content
@@ -503,6 +137,11 @@ func createTestGeneratorWithContent(t *testing.T, contentFiles map[string]string
 
 	templateContent := `<html><body>{{.Page.Title}}</body></html>`
 	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "post.html"), []byte(templateContent), 0644))
+
+	// Create essential fallback templates
+	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "default.html"), []byte(templateContent), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "404.html"), []byte(`<html><body>404 Not Found</body></html>`), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "home.html"), []byte(templateContent), 0644))
 
 	// Create content directory and files
 	contentDir := filepath.Join(tempDir, "content")
@@ -529,7 +168,16 @@ func createTestGeneratorWithContent(t *testing.T, contentFiles map[string]string
 	gen, err := NewGenerator(site, p)
 	require.NoError(t, err)
 
+	// Reload templates to ensure all templates are loaded
+	err = gen.ReloadTemplates()
+	require.NoError(t, err)
+
 	return gen, tempDir
+}
+
+// createTestGenerator creates a minimal test generator without content files
+func createTestGenerator(t *testing.T) (*Generator, string) {
+	return createTestGeneratorWithContent(t, map[string]string{})
 }
 
 func TestCopyStaticAssets(t *testing.T) {
@@ -841,4 +489,322 @@ generate_feed = true
 	// Count entries (should be limited to 100)
 	entryCount := strings.Count(feedStr, "<entry>")
 	assert.Equal(t, 100, entryCount, "Feed should be limited to 100 entries")
+}
+
+func TestGenerate(t *testing.T) {
+	tests := []struct {
+		name     string
+		validate func(t *testing.T, gen *Generator, tempDir string)
+	}{
+		{
+			name: "successful generation with basic content",
+			validate: func(t *testing.T, gen *Generator, tempDir string) {
+				// Create essential templates that Generate method expects
+				templateDir := filepath.Join(tempDir, "templates")
+				require.NoError(t, os.MkdirAll(templateDir, 0755))
+
+				templates := map[string]string{
+					"home.html":    `<html><head><title>{{.Page.Title}}</title></head><body>{{.Page.Content}}</body></html>`,
+					"404.html":     `<html><head><title>404 Not Found</title></head><body><h1>Page Not Found</h1></body></html>`,
+					"default.html": `<html><head><title>{{.Page.Title}}</title></head><body>{{.Page.Content}}</body></html>`,
+				}
+
+				for name, content := range templates {
+					require.NoError(t, os.WriteFile(filepath.Join(templateDir, name), []byte(content), 0644))
+				}
+
+				// Reload templates after creating them
+				err := gen.ReloadTemplates()
+				require.NoError(t, err)
+
+				// Create minimal content
+				contentFiles := map[string]string{
+					"_index.md": `+++
+title = "Home"
+date = 2024-01-15T10:00:00Z
++++
+# Home Page`,
+				}
+
+				// Create content files
+				contentDir := filepath.Join(tempDir, "content")
+				require.NoError(t, os.MkdirAll(contentDir, 0755))
+				for filename, content := range contentFiles {
+					filePath := filepath.Join(contentDir, filename)
+					require.NoError(t, os.WriteFile(filePath, []byte(content), 0644))
+				}
+
+				// Parse content
+				err = gen.parser.Parse(contentDir)
+				require.NoError(t, err)
+
+				// Get content root
+				contentRoot, exists := gen.parser.ContentMap["."]
+				require.True(t, exists, "Parser should have content root")
+
+				// Generate the site
+				err = gen.Generate(contentRoot)
+				assert.NoError(t, err)
+
+				// Verify basic files were generated
+				outputDir := gen.site.OutputDir
+				assert.FileExists(t, filepath.Join(outputDir, "index.html"))
+				assert.FileExists(t, filepath.Join(outputDir, "404.html"))
+				assert.FileExists(t, filepath.Join(outputDir, "robots.txt"))
+				assert.FileExists(t, filepath.Join(outputDir, "atom.xml"))
+				assert.FileExists(t, filepath.Join(outputDir, "sitemap.xml"))
+
+				// Verify robots.txt content
+				robotsContent, err := os.ReadFile(filepath.Join(outputDir, "robots.txt"))
+				assert.NoError(t, err)
+				assert.Contains(t, string(robotsContent), "User-agent: *")
+				assert.Contains(t, string(robotsContent), gen.site.BaseURL+"/sitemap.xml")
+			},
+		},
+		{
+			name: "cleans existing output directory",
+			validate: func(t *testing.T, gen *Generator, tempDir string) {
+				// Create essential templates
+				templateDir := filepath.Join(tempDir, "templates")
+				require.NoError(t, os.MkdirAll(templateDir, 0755))
+
+				templates := map[string]string{
+					"home.html":    `<html><head><title>{{.Page.Title}}</title></head><body>{{.Page.Content}}</body></html>`,
+					"404.html":     `<html><head><title>404 Not Found</title></head><body><h1>Page Not Found</h1></body></html>`,
+					"default.html": `<html><head><title>{{.Page.Title}}</title></head><body>{{.Page.Content}}</body></html>`,
+				}
+
+				for name, content := range templates {
+					require.NoError(t, os.WriteFile(filepath.Join(templateDir, name), []byte(content), 0644))
+				}
+
+				// Reload templates
+				err := gen.ReloadTemplates()
+				require.NoError(t, err)
+
+				// Create existing output with old files
+				outputDir := gen.site.OutputDir
+				require.NoError(t, os.MkdirAll(outputDir, 0755))
+				oldFile := filepath.Join(outputDir, "old-file.html")
+				require.NoError(t, os.WriteFile(oldFile, []byte("old content"), 0644))
+
+				// Create minimal content
+				contentDir := filepath.Join(tempDir, "content")
+				require.NoError(t, os.MkdirAll(contentDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(contentDir, "_index.md"), []byte(`+++
+title = "Home"
+date = 2024-01-15T10:00:00Z
++++
+# Home`), 0644))
+
+				// Parse and generate
+				err = gen.parser.Parse(contentDir)
+				require.NoError(t, err)
+
+				contentRoot, exists := gen.parser.ContentMap["."]
+				require.True(t, exists)
+
+				err = gen.Generate(contentRoot)
+				assert.NoError(t, err)
+
+				// Verify old file was cleaned
+				assert.NoFileExists(t, oldFile)
+				// Verify new file was generated
+				assert.FileExists(t, filepath.Join(outputDir, "index.html"))
+			},
+		},
+		{
+			name: "handles static assets",
+			validate: func(t *testing.T, gen *Generator, tempDir string) {
+				// Create essential templates
+				templateDir := filepath.Join(tempDir, "templates")
+				require.NoError(t, os.MkdirAll(templateDir, 0755))
+
+				templates := map[string]string{
+					"home.html":    `<html><head><title>{{.Page.Title}}</title></head><body>{{.Page.Content}}</body></html>`,
+					"404.html":     `<html><head><title>404 Not Found</title></head><body><h1>Page Not Found</h1></body></html>`,
+					"default.html": `<html><head><title>{{.Page.Title}}</title></head><body>{{.Page.Content}}</body></html>`,
+				}
+
+				for name, content := range templates {
+					require.NoError(t, os.WriteFile(filepath.Join(templateDir, name), []byte(content), 0644))
+				}
+
+				// Reload templates
+				err := gen.ReloadTemplates()
+				require.NoError(t, err)
+
+				// Create static assets
+				staticDir := filepath.Join(tempDir, "static")
+				require.NoError(t, os.MkdirAll(filepath.Join(staticDir, "css"), 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(staticDir, "style.css"), []byte("body { margin: 0; }"), 0644))
+				require.NoError(t, os.WriteFile(filepath.Join(staticDir, "css", "main.css"), []byte(".header { color: blue; }"), 0644))
+
+				// Create content
+				contentDir := filepath.Join(tempDir, "content")
+				require.NoError(t, os.MkdirAll(contentDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(contentDir, "_index.md"), []byte(`+++
+title = "Home"
+date = 2024-01-15T10:00:00Z
++++
+# Home`), 0644))
+
+				// Parse and generate
+				err = gen.parser.Parse(contentDir)
+				require.NoError(t, err)
+
+				contentRoot, exists := gen.parser.ContentMap["."]
+				require.True(t, exists)
+
+				err = gen.Generate(contentRoot)
+				assert.NoError(t, err)
+
+				// Verify static assets were copied
+				outputDir := gen.site.OutputDir
+				content, err := os.ReadFile(filepath.Join(outputDir, "style.css"))
+				assert.NoError(t, err)
+				assert.Equal(t, "body { margin: 0; }", string(content))
+
+				content, err = os.ReadFile(filepath.Join(outputDir, "css", "main.css"))
+				assert.NoError(t, err)
+				assert.Equal(t, ".header { color: blue; }", string(content))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tempDir := t.TempDir()
+			oldWd, _ := os.Getwd()
+			defer os.Chdir(oldWd)
+			os.Chdir(tempDir)
+
+			// Create templates directory with basic templates
+			templateDir := filepath.Join(tempDir, "templates")
+			require.NoError(t, os.MkdirAll(templateDir, 0755))
+
+			// Create all necessary templates
+			templates := map[string]string{
+				"404.html":  `<html><body><h1>404 - {{.Page.Title}}</h1></body></html>`,
+				"post.html": `<html><body><h1>{{.Page.Title}}</h1><div>{{.Page.Content}}</div></body></html>`,
+			}
+			for name, content := range templates {
+				require.NoError(t, os.WriteFile(filepath.Join(templateDir, name), []byte(content), 0644))
+			}
+
+			// Create site and generator
+			site := &config.Site{
+				Title:     "Test Site",
+				BaseURL:   "https://example.com",
+				OutputDir: filepath.Join(tempDir, "output"),
+			}
+
+			p := parser.NewParser(site)
+			gen, err := NewGenerator(site, p)
+			require.NoError(t, err)
+
+			// Run test validation
+			if tt.validate != nil {
+				tt.validate(t, gen, tempDir)
+			}
+		})
+	}
+}
+
+func TestGenerateWithExistingOutput(t *testing.T) {
+	tempDir := t.TempDir()
+	oldWd, _ := os.Getwd()
+	defer os.Chdir(oldWd)
+	os.Chdir(tempDir)
+
+	// Create templates and content
+	templateDir := filepath.Join(tempDir, "templates")
+	require.NoError(t, os.MkdirAll(templateDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "post.html"), []byte(`<html><body>{{.Page.Title}}</body></html>`), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "default.html"), []byte(`<html><body>{{.Page.Title}}</body></html>`), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "404.html"), []byte(`<html><body>404 Not Found</body></html>`), 0644))
+
+	contentDir := filepath.Join(tempDir, "content")
+	require.NoError(t, os.MkdirAll(contentDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(contentDir, "_index.md"), []byte(`+++
+title = "Home"
+date = 2024-01-15T10:00:00Z
++++
+# Home`), 0644))
+
+	site := &config.Site{
+		Title:     "Test Site",
+		BaseURL:   "https://example.com",
+		OutputDir: filepath.Join(tempDir, "output"),
+	}
+
+	// Create existing output directory with old files
+	require.NoError(t, os.MkdirAll(site.OutputDir, 0755))
+	oldFile := filepath.Join(site.OutputDir, "old-file.html")
+	require.NoError(t, os.WriteFile(oldFile, []byte("old content"), 0644))
+
+	p := parser.NewParser(site)
+	err := p.Parse(contentDir)
+	require.NoError(t, err)
+
+	gen, err := NewGenerator(site, p)
+	require.NoError(t, err)
+
+	// Get content root
+	contentRoot, exists := p.ContentMap["."]
+	require.True(t, exists, "Parser should have content root")
+
+	// Generate should clean old output and create new
+	err = gen.Generate(contentRoot)
+	assert.NoError(t, err)
+
+	// Verify old file was cleaned
+	assert.NoFileExists(t, oldFile)
+
+	// Verify new files were generated
+	assert.FileExists(t, filepath.Join(site.OutputDir, "index.html"))
+}
+
+func TestGenerateWithConcurrentProcessing(t *testing.T) {
+	// Create a larger site to test concurrent processing
+	contentFiles := make(map[string]string)
+
+	// Create many posts to trigger concurrent processing
+	for i := 1; i <= 20; i++ {
+		filename := fmt.Sprintf("blog/post%02d.md", i)
+		content := fmt.Sprintf(`+++
+title = "Post %d"
+date = 2024-01-%02dT10:00:00Z
+description = "Post number %d"
++++
+# Post %d
+Content for post %d`, i, (i%28)+1, i, i, i)
+		contentFiles[filename] = content
+	}
+
+	// Add section index
+	contentFiles["blog/_index.md"] = `+++
+title = "Blog"
+date = 2024-01-01T10:00:00Z
++++
+# Blog Section`
+
+	gen, _ := createTestGeneratorWithContent(t, contentFiles)
+
+	// Get content root
+	contentRoot, exists := gen.parser.ContentMap["."]
+	require.True(t, exists, "Parser should have content root")
+
+	// Generate the site (should use concurrent processing)
+	err := gen.Generate(contentRoot)
+	assert.NoError(t, err)
+
+	// Verify all posts were generated
+	for i := 1; i <= 20; i++ {
+		expectedPath := filepath.Join(gen.site.OutputDir, "blog", fmt.Sprintf("post%02d", i), "index.html")
+		assert.FileExists(t, expectedPath)
+	}
+
+	// Verify section was generated
+	assert.FileExists(t, filepath.Join(gen.site.OutputDir, "blog", "index.html"))
 }

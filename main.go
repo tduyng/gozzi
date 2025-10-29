@@ -1,3 +1,4 @@
+// Gozzi is a fast static site generator built with Go.
 package main
 
 import (

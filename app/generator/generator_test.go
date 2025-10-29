@@ -124,7 +124,7 @@ func TestReloadTemplates(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Helper function to create a fully initialized test generator with parsed content
+// Helper function to create a fully initialized test generator with parsed content.
 func createTestGeneratorWithContent(t *testing.T, contentFiles map[string]string) (*Generator, string) {
 	tempDir := t.TempDir()
 	oldWd, _ := os.Getwd()
@@ -175,7 +175,7 @@ func createTestGeneratorWithContent(t *testing.T, contentFiles map[string]string
 	return gen, tempDir
 }
 
-// createTestGenerator creates a minimal test generator without content files
+// createTestGenerator creates a minimal test generator without content files.
 func createTestGenerator(t *testing.T) (*Generator, string) {
 	return createTestGeneratorWithContent(t, map[string]string{})
 }

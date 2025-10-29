@@ -27,6 +27,7 @@ import (
 	"go.abhg.dev/goldmark/mermaid"
 )
 
+// ContentParser parses markdown content files and builds the content tree.
 type ContentParser struct {
 	Site       *config.Site
 	ContentMap map[string]*content.Node
@@ -35,12 +36,14 @@ type ContentParser struct {
 	md         goldmark.Markdown
 }
 
+// TagEntry tracks pages associated with a specific tag.
 type TagEntry struct {
 	Pages []*content.Node
 	Count int
 	Seen  map[string]struct{} // Track page paths
 }
 
+// NewParser creates a new ContentParser with the given site configuration.
 func NewParser(cfg *config.Site) *ContentParser {
 	return &ContentParser{
 		Site:       cfg,
@@ -68,6 +71,7 @@ func NewParser(cfg *config.Site) *ContentParser {
 	}
 }
 
+// Parse walks the content directory and parses all markdown files.
 func (p *ContentParser) Parse(rootDir string) error {
 	p.mu.Lock()
 	p.ContentMap = make(map[string]*content.Node) // Reset ContentMap
@@ -75,7 +79,7 @@ func (p *ContentParser) Parse(rootDir string) error {
 
 	// Collect all files to parse
 	var files []string
-	filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return nil
 		}
@@ -289,6 +293,7 @@ func (p *ContentParser) resolveImgURL(fm *config.FrontMatter, slug string) strin
 	return baseURL + filepath.Join("/", slug, img)
 }
 
+// GetOrCreateSection retrieves or creates a section node for the given directory.
 func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 	if node, exists := p.ContentMap[dir]; exists {
 		return node
@@ -338,6 +343,7 @@ func calculateReadStats(content string) (int, int) {
 	return wordCount, readTime
 }
 
+// GetMarkdownProcessor returns the configured goldmark markdown processor.
 func (p *ContentParser) GetMarkdownProcessor() goldmark.Markdown {
 	return p.md
 }

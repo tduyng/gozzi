@@ -21,6 +21,7 @@ import (
 	"github.com/tduyng/gozzi/app/parser"
 )
 
+// Generator handles site generation including templates, feeds, and static files.
 type Generator struct {
 	site   *config.Site
 	templ  *template.Template
@@ -28,6 +29,7 @@ type Generator struct {
 	mu     sync.Mutex
 }
 
+// NewGenerator creates a new Generator with loaded templates.
 func NewGenerator(site *config.Site, parser *parser.ContentParser) (*Generator, error) {
 	gen := &Generator{
 		site:   site,
@@ -46,6 +48,7 @@ func NewGenerator(site *config.Site, parser *parser.ContentParser) (*Generator, 
 	return gen, nil
 }
 
+// ReloadTemplates reloads all templates from disk for development mode.
 func (g *Generator) ReloadTemplates() error {
 	tmpl, err := loadTemplatesWithFuncs(g.CreateFuncMap())
 	if err != nil {
@@ -118,6 +121,7 @@ func loadTemplatesWithFuncs(funcMap template.FuncMap) (*template.Template, error
 	return tmpl, nil
 }
 
+// Generate processes the content tree and generates the complete static site.
 func (g *Generator) Generate(contentRoot *content.Node) error {
 	if err := os.RemoveAll(g.site.OutputDir); err != nil {
 		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
@@ -464,7 +468,9 @@ func copyFile(src, dst string) error {
 			Path:      src,
 		})
 	}
-	defer in.Close()
+	defer func() {
+		_ = in.Close()
+	}()
 
 	out, err := os.Create(dst)
 	if err != nil {
@@ -474,7 +480,9 @@ func copyFile(src, dst string) error {
 			Path:      dst,
 		})
 	}
-	defer out.Close()
+	defer func() {
+		_ = out.Close()
+	}()
 
 	if _, err = io.Copy(out, in); err != nil {
 		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{

@@ -24,7 +24,7 @@ func TestNewWorkerPool(t *testing.T) {
 }
 
 func TestNewWorkerPool_NilContext(t *testing.T) {
-	wp := NewWorkerPool(nil)
+	wp := NewWorkerPool(context.TODO())
 	defer wp.Close()
 
 	if wp.ctx == nil {

@@ -1,3 +1,4 @@
+// Package app provides error handling types and utilities for the gozzi application.
 package app
 
 import (
@@ -5,28 +6,28 @@ import (
 	"fmt"
 )
 
-// Error categories for better error handling
+// Error categories for better error handling.
 var (
-	// ErrConfig indicates configuration-related errors
+	// ErrConfig indicates configuration-related errors.
 	ErrConfig = errors.New("configuration error")
 
-	// ErrTemplate indicates template-related errors
+	// ErrTemplate indicates template-related errors.
 	ErrTemplate = errors.New("template error")
 
-	// ErrContent indicates content processing errors
+	// ErrContent indicates content processing errors.
 	ErrContent = errors.New("content error")
 
-	// ErrFileSystem indicates file system operation errors
+	// ErrFileSystem indicates file system operation errors.
 	ErrFileSystem = errors.New("filesystem error")
 
-	// ErrServer indicates server-related errors
+	// ErrServer indicates server-related errors.
 	ErrServer = errors.New("server error")
 
-	// ErrParser indicates content parsing errors
+	// ErrParser indicates content parsing errors.
 	ErrParser = errors.New("parser error")
 )
 
-// ErrorContext provides additional context for errors
+// ErrorContext provides additional context for errors.
 type ErrorContext struct {
 	Operation string
 	Component string
@@ -34,7 +35,7 @@ type ErrorContext struct {
 	Details   map[string]any
 }
 
-// ContextualError wraps an error with additional context
+// ContextualError wraps an error with additional context.
 type ContextualError struct {
 	Err      error
 	Category error
@@ -52,11 +53,12 @@ func (e *ContextualError) Unwrap() error {
 	return e.Err
 }
 
+// Is implements error matching for both category and underlying error.
 func (e *ContextualError) Is(target error) bool {
 	return errors.Is(e.Category, target) || errors.Is(e.Err, target)
 }
 
-// WrapWithContext wraps an error with enhanced context
+// WrapWithContext wraps an error with enhanced context.
 func WrapWithContext(err error, category error, ctx ErrorContext) error {
 	if err == nil {
 		return nil
@@ -69,7 +71,7 @@ func WrapWithContext(err error, category error, ctx ErrorContext) error {
 	}
 }
 
-// ConfigError creates a configuration error with context
+// ConfigError creates a configuration error with context.
 func ConfigError(operation, path string, err error) error {
 	return WrapWithContext(err, ErrConfig, ErrorContext{
 		Operation: operation,
@@ -78,7 +80,7 @@ func ConfigError(operation, path string, err error) error {
 	})
 }
 
-// TemplateError creates a template error with context
+// TemplateError creates a template error with context.
 func TemplateError(operation, templateName string, err error) error {
 	return WrapWithContext(err, ErrTemplate, ErrorContext{
 		Operation: operation,
@@ -87,7 +89,7 @@ func TemplateError(operation, templateName string, err error) error {
 	})
 }
 
-// ContentError creates a content error with context
+// ContentError creates a content error with context.
 func ContentError(operation, filePath string, err error) error {
 	return WrapWithContext(err, ErrContent, ErrorContext{
 		Operation: operation,
@@ -96,7 +98,7 @@ func ContentError(operation, filePath string, err error) error {
 	})
 }
 
-// FileSystemError creates a filesystem error with context
+// FileSystemError creates a filesystem error with context.
 func FileSystemError(operation, path string, err error) error {
 	return WrapWithContext(err, ErrFileSystem, ErrorContext{
 		Operation: operation,
@@ -105,7 +107,7 @@ func FileSystemError(operation, path string, err error) error {
 	})
 }
 
-// ServerError creates a server error with context
+// ServerError creates a server error with context.
 func ServerError(operation string, err error) error {
 	return WrapWithContext(err, ErrServer, ErrorContext{
 		Operation: operation,
@@ -113,7 +115,7 @@ func ServerError(operation string, err error) error {
 	})
 }
 
-// ParserError creates a parser error with context
+// ParserError creates a parser error with context.
 func ParserError(operation, contentPath string, err error) error {
 	return WrapWithContext(err, ErrParser, ErrorContext{
 		Operation: operation,
@@ -122,12 +124,12 @@ func ParserError(operation, contentPath string, err error) error {
 	})
 }
 
-// IsCategory checks if an error belongs to a specific category
+// IsCategory checks if an error belongs to a specific category.
 func IsCategory(err error, category error) bool {
 	return errors.Is(err, category)
 }
 
-// GetErrorContext extracts the ErrorContext from a ContextualError if available
+// GetErrorContext extracts the ErrorContext from a ContextualError if available.
 func GetErrorContext(err error) (ErrorContext, bool) {
 	var contextualErr *ContextualError
 	if errors.As(err, &contextualErr) {

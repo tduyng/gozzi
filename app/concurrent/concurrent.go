@@ -1,3 +1,4 @@
+// Package concurrent provides worker pool and concurrent processing utilities for gozzi.
 package concurrent
 
 import (
@@ -10,7 +11,7 @@ import (
 	"github.com/tduyng/gozzi/app"
 )
 
-// WorkerPool represents a pool of workers with Go 1.25.x enhancements
+// WorkerPool represents a pool of workers with Go 1.25.x enhancements.
 type WorkerPool struct {
 	maxWorkers int
 	wg         sync.WaitGroup
@@ -18,7 +19,7 @@ type WorkerPool struct {
 	cancel     context.CancelFunc
 }
 
-// NewWorkerPool creates a new worker pool with container-aware concurrency
+// NewWorkerPool creates a new worker pool with container-aware concurrency.
 func NewWorkerPool(ctx context.Context) *WorkerPool {
 	if ctx == nil {
 		ctx = context.Background()
@@ -36,7 +37,7 @@ func NewWorkerPool(ctx context.Context) *WorkerPool {
 	}
 }
 
-// ProcessFiles processes files concurrently using Go 1.25.x patterns
+// ProcessFiles processes files concurrently using Go 1.25.x patterns.
 func (wp *WorkerPool) ProcessFiles(files []string, processor func(ctx context.Context, filePath string) error) error {
 	if len(files) == 0 {
 		return nil
@@ -87,7 +88,7 @@ func (wp *WorkerPool) ProcessFiles(files []string, processor func(ctx context.Co
 	return firstErr
 }
 
-// ProcessContentNodes processes content nodes concurrently
+// ProcessContentNodes processes content nodes concurrently.
 func (wp *WorkerPool) ProcessContentNodes(nodes []any, processor func(ctx context.Context, node any) error) error {
 	if len(nodes) == 0 {
 		return nil
@@ -138,14 +139,18 @@ func (wp *WorkerPool) ProcessContentNodes(nodes []any, processor func(ctx contex
 	return firstErr
 }
 
-// Close cancels all pending work and waits for completion
+// Close cancels all pending work and waits for completion.
 func (wp *WorkerPool) Close() {
 	wp.cancel()
 	wp.wg.Wait()
 }
 
-// TimeoutProcessor wraps a processor function with timeout using Go 1.25.x context patterns
-func TimeoutProcessor(timeout time.Duration, processor func(ctx context.Context, item any) error) func(ctx context.Context, item any) error {
+// TimeoutProcessor wraps a processor function with timeout using
+// Go 1.25.x context patterns.
+func TimeoutProcessor(
+	timeout time.Duration,
+	processor func(ctx context.Context, item any) error,
+) func(ctx context.Context, item any) error {
 	return func(ctx context.Context, item any) error {
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
@@ -168,21 +173,24 @@ func TimeoutProcessor(timeout time.Duration, processor func(ctx context.Context,
 	}
 }
 
-// BatchFileProcessor processes files in batches concurrently
+// BatchFileProcessor processes files in batches concurrently.
 type BatchFileProcessor struct {
 	batchSize int
 	processor func(ctx context.Context, files []string) error
 }
 
-// NewBatchFileProcessor creates a new batch file processor
-func NewBatchFileProcessor(batchSize int, processor func(ctx context.Context, files []string) error) *BatchFileProcessor {
+// NewBatchFileProcessor creates a new batch file processor.
+func NewBatchFileProcessor(
+	batchSize int,
+	processor func(ctx context.Context, files []string) error,
+) *BatchFileProcessor {
 	return &BatchFileProcessor{
 		batchSize: batchSize,
 		processor: processor,
 	}
 }
 
-// Process processes all files in batches concurrently
+// Process processes all files in batches concurrently.
 func (bp *BatchFileProcessor) Process(ctx context.Context, files []string) error {
 	if len(files) == 0 {
 		return nil
@@ -222,21 +230,21 @@ func (bp *BatchFileProcessor) Process(ctx context.Context, files []string) error
 	})
 }
 
-// EnhancedWaitGroup wraps sync.WaitGroup with Go 1.25.x improvements
+// EnhancedWaitGroup wraps sync.WaitGroup with Go 1.25.x improvements.
 type EnhancedWaitGroup struct {
 	wg  sync.WaitGroup
 	ctx context.Context
 }
 
-// NewEnhancedWaitGroup creates a new enhanced wait group
+// NewEnhancedWaitGroup creates a new enhanced wait group.
 func NewEnhancedWaitGroup(ctx context.Context) *EnhancedWaitGroup {
 	return &EnhancedWaitGroup{
 		ctx: ctx,
 	}
 }
 
-// Go starts a goroutine and automatically calls Done when finished
-// This simulates the proposed sync.WaitGroup.Go() method from Go 1.25.x
+// Go starts a goroutine and automatically calls Done when finished.
+// This simulates the proposed sync.WaitGroup.Go() method from Go 1.25.x.
 func (ewg *EnhancedWaitGroup) Go(f func(ctx context.Context)) {
 	ewg.wg.Add(1)
 	go func() {
@@ -245,12 +253,12 @@ func (ewg *EnhancedWaitGroup) Go(f func(ctx context.Context)) {
 	}()
 }
 
-// Wait waits for all goroutines to complete
+// Wait waits for all goroutines to complete.
 func (ewg *EnhancedWaitGroup) Wait() {
 	ewg.wg.Wait()
 }
 
-// WaitWithTimeout waits for all goroutines to complete or times out
+// WaitWithTimeout waits for all goroutines to complete or times out.
 func (ewg *EnhancedWaitGroup) WaitWithTimeout(timeout time.Duration) error {
 	done := make(chan struct{})
 	go func() {

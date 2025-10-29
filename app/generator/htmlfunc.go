@@ -18,6 +18,7 @@ import (
 	"github.com/tduyng/gozzi/app/content"
 )
 
+// CreateFuncMap returns a template function map with all custom functions.
 func (g *Generator) CreateFuncMap() template.FuncMap {
 	return template.FuncMap{
 		"add":            addNumbers,
@@ -60,6 +61,7 @@ func (g *Generator) CreateFuncMap() template.FuncMap {
 	}
 }
 
+// Group represents a grouped collection of content nodes with a common key.
 type Group struct {
 	Key   string
 	Items []*content.Node
@@ -161,9 +163,9 @@ func formatDate(t time.Time, layout ...string) string {
 	return t.Format("2006-01-02")
 }
 
-func limit(max any, items []*content.Node) []*content.Node {
+func limit(maxItems any, items []*content.Node) []*content.Node {
 	var m int
-	switch v := max.(type) {
+	switch v := maxItems.(type) {
 	case int:
 		m = v
 	case int64:

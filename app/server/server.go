@@ -1,3 +1,4 @@
+// Package server provides a development server with live reload functionality for gozzi.
 package server
 
 import (
@@ -22,6 +23,7 @@ import (
 	"github.com/tduyng/gozzi/app/parser"
 )
 
+// DevServer provides a development server with file watching and live reload.
 type DevServer struct {
 	configPath     string
 	contentDir     string
@@ -34,7 +36,13 @@ type DevServer struct {
 	lastConfigHash string
 }
 
-func NewDevServer(configPath, contentDir string, site *config.Site, gen *generator.Generator, parser *parser.ContentParser) (*DevServer, error) {
+// NewDevServer creates a new development server with file watching enabled.
+func NewDevServer(
+	configPath, contentDir string,
+	site *config.Site,
+	gen *generator.Generator,
+	parser *parser.ContentParser,
+) (*DevServer, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, app.WrapWithContext(app.ErrServer, err, app.ErrorContext{
@@ -54,6 +62,7 @@ func NewDevServer(configPath, contentDir string, site *config.Site, gen *generat
 	}, nil
 }
 
+// Start starts the development server on the specified port.
 func (s *DevServer) Start(port int) {
 	if err := s.initialize(); err != nil {
 		log.Fatal(err)
@@ -112,7 +121,9 @@ func (h *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	stat, _ := f.Stat()
 
 	if stat.IsDir() {
@@ -122,7 +133,9 @@ func (h *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.serve404(w, r)
 			return
 		}
-		defer indexFile.Close()
+		defer func() {
+			_ = indexFile.Close()
+		}()
 		h.serveHTML(indexFile, w)
 		return
 
@@ -149,7 +162,7 @@ func (h *fileHandler) serveHTML(f http.File, w http.ResponseWriter) {
 	content = bytes.Replace(content, []byte("</body>"), script, 1)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write(content)
+	_, _ = w.Write(content)
 }
 
 func (h *fileHandler) serve404(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +171,9 @@ func (h *fileHandler) serve404(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	h.serveHTML(f, w)
 }
 
@@ -190,7 +205,7 @@ func (s *DevServer) handleLiveReload(w http.ResponseWriter, r *http.Request) {
 		case <-r.Context().Done():
 			return
 		case msg := <-msgChan:
-			fmt.Fprintf(w, "data: %s\n\n", msg)
+			_, _ = fmt.Fprintf(w, "data: %s\n\n", msg)
 			flusher.Flush()
 		}
 	}
@@ -209,7 +224,9 @@ func (s *DevServer) notifyClients() {
 }
 
 func (s *DevServer) watchChanges() {
-	defer s.watcher.Close()
+	defer func() {
+		_ = s.watcher.Close()
+	}()
 	debounceDuration := 500 * time.Millisecond
 	var (
 		debounceTimer   *time.Timer

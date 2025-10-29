@@ -1,3 +1,4 @@
+// Package generator provides site generation including HTML, feeds, and sitemaps.
 package generator
 
 import (
@@ -16,6 +17,7 @@ const (
 	sitemapXSL = `<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>`
 )
 
+// AtomFeed represents an Atom XML feed structure.
 type AtomFeed struct {
 	XMLName xml.Name    `xml:"http://www.w3.org/2005/Atom feed"`
 	Title   string      `xml:"title"`
@@ -26,16 +28,19 @@ type AtomFeed struct {
 	Entries []AtomEntry `xml:"entry"`
 }
 
+// AtomAuthor represents the author information in an Atom feed.
 type AtomAuthor struct {
 	Name  string `xml:"name"`
 	Email string `xml:"email,omitempty"`
 }
 
+// AtomLink represents a link in an Atom feed entry.
 type AtomLink struct {
 	Rel  string `xml:"rel,attr,omitempty"`
 	Href string `xml:"href,attr"`
 }
 
+// AtomEntry represents a single entry in an Atom feed.
 type AtomEntry struct {
 	Title     string `xml:"title"`
 	ID        string `xml:"id"`
@@ -50,11 +55,13 @@ type AtomEntry struct {
 	Categories []string   `xml:"category,omitempty"`
 }
 
+// Sitemap represents an XML sitemap for search engines.
 type Sitemap struct {
 	XMLName xml.Name     `xml:"http://www.sitemaps.org/schemas/sitemap/0.9 urlset"`
 	URLs    []SitemapURL `xml:"url"`
 }
 
+// SitemapURL represents a single URL entry in a sitemap.
 type SitemapURL struct {
 	Loc        string `xml:"loc"`
 	LastMod    string `xml:"lastmod,omitempty"`
@@ -192,7 +199,9 @@ func (g *Generator) writeXMLFile(name string, xslHeader string, data any) error 
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	// Write XML header with XSL
 	if _, err := file.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n" + xslHeader + "\n"); err != nil {

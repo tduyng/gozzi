@@ -847,7 +847,7 @@ func TestDevServer_Start(t *testing.T) {
 
 		// Test initialize separately since Start() calls it
 		// Note: This will fail due to missing templates, which is expected
-		err = server.initialize()
+		_ = server.initialize()
 		// We expect this to fail in the test environment due to missing templates
 		// The important thing is that the function can be called
 
@@ -964,9 +964,9 @@ func (m *mockFileInfo) Size() int64        { return m.size }
 func (m *mockFileInfo) Mode() os.FileMode  { return 0644 }
 func (m *mockFileInfo) ModTime() time.Time { return time.Now() }
 func (m *mockFileInfo) IsDir() bool        { return false }
-func (m *mockFileInfo) Sys() any   { return nil }
+func (m *mockFileInfo) Sys() any           { return nil }
 
-// nonFlushingRecorder is a ResponseWriter that doesn't implement http.Flusher
+// nonFlushingRecorder is a ResponseWriter that doesn't implement http.Flusher.
 type nonFlushingRecorder struct {
 	Code   int
 	Body   *bytes.Buffer
@@ -1028,7 +1028,7 @@ func createTestSite(t *testing.T) *config.Site {
 	}
 }
 
-// Global test variables for reusing temporary directory
+// Global test variables for reusing temporary directory.
 var (
 	testTemplateDir     string
 	testTemplateDirOnce sync.Once
@@ -1088,7 +1088,7 @@ func createTestParser(t *testing.T, site *config.Site) *parser.ContentParser {
 	return parser.NewParser(site)
 }
 
-// Additional coverage tests for missing error paths
+// Additional coverage tests for missing error paths.
 func TestFileHandler_serveHTML_ErrorPath(t *testing.T) {
 	handler := &fileHandler{dev: true}
 
@@ -1104,7 +1104,7 @@ func TestFileHandler_serveHTML_ErrorPath(t *testing.T) {
 
 // Removed problematic initialize error path test that exposed generator bugs
 
-// errorReadFile simulates a file that fails on Read
+// errorReadFile simulates a file that fails on Read.
 type errorReadFile struct{}
 
 func (e *errorReadFile) Read(b []byte) (int, error) {

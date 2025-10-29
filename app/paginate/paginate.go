@@ -1,3 +1,4 @@
+// Package paginate provides pagination utilities for content sections in gozzi.
 package paginate
 
 import (
@@ -7,16 +8,19 @@ import (
 	"github.com/tduyng/gozzi/app/content"
 )
 
+// Paginator builds pagination links for content sections.
 type Paginator struct {
 	sections map[string]*content.Node
 }
 
+// New creates a new Paginator for the given sections.
 func New(sections map[string]*content.Node) *Paginator {
 	return &Paginator{
 		sections: sections,
 	}
 }
 
+// BuildLinks generates next/previous links for all paginated sections.
 func (p *Paginator) BuildLinks() {
 	for _, section := range p.sections {
 		p.processSection(section)

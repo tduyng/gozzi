@@ -1,3 +1,4 @@
+// Package content provides content tree data structures and navigation for gozzi.
 package content
 
 import (
@@ -7,13 +8,17 @@ import (
 	"strings"
 )
 
+// NodeType represents the type of content node (section or page).
 type NodeType int
 
 const (
+	// NodeTypeSection represents a content section (directory).
 	NodeTypeSection NodeType = iota
+	// NodeTypePage represents a content page (markdown file).
 	NodeTypePage
 )
 
+// Node represents a content node in the hierarchical content tree.
 type Node struct {
 	Type      NodeType
 	Path      string
@@ -37,6 +42,7 @@ var (
 	multiDashRe   = regexp.MustCompile(`\-+`)
 )
 
+// NewContentNode creates a new content node with the given path and parent.
 func NewContentNode(path string, parent *Node) *Node {
 	slug := GenerateSlug(path, parent)
 	return &Node{
@@ -47,6 +53,7 @@ func NewContentNode(path string, parent *Node) *Node {
 	}
 }
 
+// ToMap converts the node to a map for template rendering.
 func (node *Node) ToMap() map[string]any {
 	return map[string]any{
 		"Type":      node.Type,
@@ -66,6 +73,7 @@ func (node *Node) ToMap() map[string]any {
 	}
 }
 
+// GenerateSlug generates a URL-friendly slug from a file path.
 func GenerateSlug(path string, parent *Node) string {
 	base := extractBaseName(path)
 	base = datePrefixRe.ReplaceAllString(base, "")
@@ -82,14 +90,15 @@ func GenerateSlug(path string, parent *Node) string {
 	return slug
 }
 
-func (n *Node) TemplateChain() []string {
+// TemplateChain returns the hierarchical chain of template names.
+func (node *Node) TemplateChain() []string {
 	chain := []string{"default.html"}
 
-	if n.Parent != nil {
-		chain = append(n.Parent.TemplateChain(), chain...)
+	if node.Parent != nil {
+		chain = append(node.Parent.TemplateChain(), chain...)
 	}
 
-	if templateName, ok := n.Config["template"].(string); ok && templateName != "" {
+	if templateName, ok := node.Config["template"].(string); ok && templateName != "" {
 		chain = append([]string{templateName}, chain...)
 	}
 	return chain

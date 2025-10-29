@@ -656,13 +656,3 @@ func TestCreateFuncMap(t *testing.T) {
 		assert.True(t, result)
 	})
 }
-
-// Helper function to create test generator for functions that need it
-func createTestGeneratorForFuncs(t *testing.T) *Generator {
-	site := &config.Site{
-		Title:   "Test Site",
-		BaseURL: "https://example.com",
-	}
-	p := parser.NewParser(site)
-	return &Generator{site: site, parser: p}
-}

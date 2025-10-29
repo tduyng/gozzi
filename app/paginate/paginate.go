@@ -1,7 +1,7 @@
 package paginate
 
 import (
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/tduyng/gozzi/app/content"
@@ -35,10 +35,10 @@ func (p *Paginator) processSection(section *content.Node) {
 		}
 	}
 
-	sort.SliceStable(pages, func(i, j int) bool {
-		dateI := pages[i].Config["date"].(time.Time)
-		dateJ := pages[j].Config["date"].(time.Time)
-		return dateI.Before(dateJ)
+	slices.SortStableFunc(pages, func(a, b *content.Node) int {
+		dateA := a.Config["date"].(time.Time)
+		dateB := b.Config["date"].(time.Time)
+		return dateA.Compare(dateB) // Ascending order (oldest first)
 	})
 	section.Children = append(pages, otherNodes...)
 

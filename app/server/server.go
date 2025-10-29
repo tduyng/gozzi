@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -223,8 +224,8 @@ func (s *DevServer) watchChanges() {
 	}
 
 	for _, path := range paths {
-		err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
-			if err != nil || !info.IsDir() || s.shouldIgnore(p) {
+		err := filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
+			if err != nil || !d.IsDir() || s.shouldIgnore(p) {
 				return nil
 			}
 			return s.watcher.Add(p)

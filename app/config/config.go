@@ -97,8 +97,7 @@ func (frontMatter *FrontMatter) ToConfig() map[string]any {
 }
 
 func MergeConfigs(site, section, page map[string]any) map[string]any {
-	merged := make(map[string]any)
-	maps.Copy(merged, site)
+	merged := maps.Clone(site)
 
 	if section != nil {
 		merged = mergeFrontMatter(merged, section)
@@ -200,8 +199,7 @@ func GetBool(m map[string]any, key string) bool {
 }
 
 func mergeMapsDeep(base, override map[string]any) map[string]any {
-	result := make(map[string]any, len(base))
-	maps.Copy(result, base)
+	result := maps.Clone(base)
 
 	for k, overrideVal := range override {
 		if baseVal, exists := base[k]; exists {

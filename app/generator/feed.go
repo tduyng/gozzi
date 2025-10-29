@@ -4,7 +4,7 @@ import (
 	"encoding/xml"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/tduyng/gozzi/app/config"
@@ -76,9 +76,11 @@ func (g *Generator) generateAtomFeed() error {
 		}
 	})
 
-	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].Config["date"].(time.Time).After(
-			entries[j].Config["date"].(time.Time))
+	slices.SortFunc(entries, func(a, b *content.Node) int {
+		dateA := a.Config["date"].(time.Time)
+		dateB := b.Config["date"].(time.Time)
+		// Sort descending (newest first), so reverse comparison
+		return dateB.Compare(dateA)
 	})
 
 	if len(entries) > 100 {

@@ -10,7 +10,6 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -248,8 +247,8 @@ func (g *Generator) groupBy(key string, nodes []*content.Node) []Group {
 	}
 
 	// Sort descending chronological order
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Key > result[j].Key
+	slices.SortFunc(result, func(a, b Group) int {
+		return strings.Compare(b.Key, a.Key) // Reverse for descending
 	})
 
 	return result

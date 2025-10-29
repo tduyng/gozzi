@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"math"
 	"os"
 	"path/filepath"
@@ -74,8 +75,8 @@ func (p *ContentParser) Parse(rootDir string) error {
 
 	// Collect all files to parse
 	var files []string
-	filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
+	filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
 			return nil
 		}
 		if filepath.Base(path) == "_index.md" || filepath.Ext(path) == ".md" {

@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
-	"sort"
+	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -62,7 +64,7 @@ func (g *Generator) ReloadTemplates() error {
 func loadTemplatesWithFuncs(funcMap template.FuncMap) (*template.Template, error) {
 	tmpl := template.New("").Funcs(funcMap)
 
-	err := filepath.Walk("templates", func(path string, info os.FileInfo, err error) error {
+	err := filepath.WalkDir("templates", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
 				Operation: "template_walk",
@@ -71,7 +73,7 @@ func loadTemplatesWithFuncs(funcMap template.FuncMap) (*template.Template, error
 			})
 		}
 
-		if info.IsDir() {
+		if d.IsDir() {
 			return nil
 		}
 
@@ -283,8 +285,8 @@ func (g *Generator) generateTagsIndex() error {
 		})
 	}
 
-	sort.Slice(tags, func(i, j int) bool {
-		return tags[i]["Name"].(string) < tags[j]["Name"].(string)
+	slices.SortFunc(tags, func(a, b map[string]any) int {
+		return strings.Compare(a["Name"].(string), b["Name"].(string))
 	})
 
 	data := map[string]any{
@@ -306,9 +308,11 @@ func (g *Generator) generateTagsIndex() error {
 func (g *Generator) generateTagPage(tag string, entry *parser.TagEntry) error {
 	sortedPages := make([]*content.Node, len(entry.Pages))
 	copy(sortedPages, entry.Pages)
-	sort.Slice(sortedPages, func(i, j int) bool {
-		return sortedPages[i].Config["date"].(time.Time).After(
-			sortedPages[j].Config["date"].(time.Time))
+	slices.SortFunc(sortedPages, func(a, b *content.Node) int {
+		dateA := a.Config["date"].(time.Time)
+		dateB := b.Config["date"].(time.Time)
+		// Sort descending (newest first), so reverse comparison
+		return dateB.Compare(dateA)
 	})
 
 	data := map[string]any{
@@ -424,8 +428,8 @@ func (g *Generator) walkNodes(node *content.Node, fn func(*content.Node)) {
 }
 
 func (g *Generator) copyStaticAssets() error {
-	return filepath.Walk("static", func(srcPath string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
+	return filepath.WalkDir("static", func(srcPath string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
 			return nil
 		}
 
@@ -483,7 +487,7 @@ func copyFile(src, dst string) error {
 }
 
 func copyDir(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
 				Operation: "walk_directory",
@@ -502,7 +506,7 @@ func copyDir(src, dst string) error {
 		}
 
 		target := filepath.Join(dst, relPath)
-		if info.IsDir() {
+		if d.IsDir() {
 			if err := os.MkdirAll(target, 0755); err != nil {
 				return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
 					Operation: "create_directory",

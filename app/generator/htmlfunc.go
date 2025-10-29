@@ -401,7 +401,7 @@ func createDictionary(values ...any) (map[string]any, error) {
 			app.ErrorContext{
 				Operation: "validate_dict_arguments",
 				Component: "html_functions",
-				Details:   map[string]interface{}{"arg_count": len(values)},
+				Details:   map[string]any{"arg_count": len(values)},
 			})
 	}
 
@@ -414,7 +414,7 @@ func createDictionary(values ...any) (map[string]any, error) {
 				app.ErrorContext{
 					Operation: "validate_dict_key_type",
 					Component: "html_functions",
-					Details:   map[string]interface{}{"key_index": i, "key_value": values[i]},
+					Details:   map[string]any{"key_index": i, "key_value": values[i]},
 				})
 		}
 		dict[key] = values[i+1]

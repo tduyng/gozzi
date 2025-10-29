@@ -964,7 +964,7 @@ func (m *mockFileInfo) Size() int64        { return m.size }
 func (m *mockFileInfo) Mode() os.FileMode  { return 0644 }
 func (m *mockFileInfo) ModTime() time.Time { return time.Now() }
 func (m *mockFileInfo) IsDir() bool        { return false }
-func (m *mockFileInfo) Sys() interface{}   { return nil }
+func (m *mockFileInfo) Sys() any   { return nil }
 
 // nonFlushingRecorder is a ResponseWriter that doesn't implement http.Flusher
 type nonFlushingRecorder struct {

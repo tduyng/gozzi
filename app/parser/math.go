@@ -1,3 +1,4 @@
+// Package parser provides markdown parsing with custom goldmark extensions.
 package parser
 
 import (
@@ -10,6 +11,7 @@ import (
 
 type mathExtension struct{}
 
+// NewMathExtension creates a goldmark extension for math notation support.
 func NewMathExtension() goldmark.Extender { return &mathExtension{} }
 
 func (e *mathExtension) Extend(m goldmark.Markdown) {
@@ -21,7 +23,7 @@ func (e *mathExtension) Extend(m goldmark.Markdown) {
 type mathTransformer struct{}
 
 func (t *mathTransformer) Transform(doc *ast.Document, reader text.Reader, pc parser.Context) {
-	ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+	_ = ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		return ast.WalkContinue, nil
 	})
 }

@@ -14,8 +14,7 @@ func TestNewMathExtension(t *testing.T) {
 	assert.NotNil(t, ext)
 
 	// Verify it implements goldmark.Extender
-	_, ok := ext.(goldmark.Extender)
-	assert.True(t, ok)
+	assert.Implements(t, (*goldmark.Extender)(nil), ext)
 }
 
 func TestMathExtension_Extend(t *testing.T) {

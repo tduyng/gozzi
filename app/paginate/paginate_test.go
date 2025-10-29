@@ -230,7 +230,7 @@ func createTestSection(title string) *content.Node {
 		Type:     content.NodeTypeSection,
 		Slug:     title,
 		Children: []*content.Node{},
-		Config:   map[string]interface{}{"title": title},
+		Config:   map[string]any{"title": title},
 	}
 }
 
@@ -241,7 +241,7 @@ func createSectionWithPages(sectionTitle string, pageNames []string) *content.No
 		page := &content.Node{
 			Type: content.NodeTypePage,
 			Slug: name,
-			Config: map[string]interface{}{
+			Config: map[string]any{
 				"title": name,
 				"date":  time.Date(2024, 1, i+1, 0, 0, 0, 0, time.UTC),
 			},
@@ -259,7 +259,7 @@ func createSectionWithCustomDates(sectionTitle string, pageDates map[string]time
 		page := &content.Node{
 			Type: content.NodeTypePage,
 			Slug: name,
-			Config: map[string]interface{}{
+			Config: map[string]any{
 				"title": name,
 				"date":  date,
 			},
@@ -277,7 +277,7 @@ func createSectionWithMixedNodes(sectionTitle string) *content.Node {
 	page1 := &content.Node{
 		Type: content.NodeTypePage,
 		Slug: "page1",
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"title": "page1",
 			"date":  time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		},
@@ -285,7 +285,7 @@ func createSectionWithMixedNodes(sectionTitle string) *content.Node {
 	page2 := &content.Node{
 		Type: content.NodeTypePage,
 		Slug: "page2",
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"title": "page2",
 			"date":  time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
 		},
@@ -295,14 +295,14 @@ func createSectionWithMixedNodes(sectionTitle string) *content.Node {
 	subsection := &content.Node{
 		Type: content.NodeTypeSection,
 		Slug: "subsection",
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"title": "subsection",
 		},
 	}
 	indexNode := &content.Node{
 		Type: content.NodeTypeSection, // Using Section instead of Index
 		Slug: "index",
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"title": "index",
 		},
 	}
@@ -319,7 +319,7 @@ func createSectionWithSameDates(sectionTitle string, pageNames []string) *conten
 		page := &content.Node{
 			Type: content.NodeTypePage,
 			Slug: name,
-			Config: map[string]interface{}{
+			Config: map[string]any{
 				"title": name,
 				"date":  sameDate,
 			},
@@ -335,12 +335,12 @@ func createPageWithoutDate(title string) *content.Node {
 	page1 := &content.Node{
 		Type:   content.NodeTypePage,
 		Slug:   title,
-		Config: map[string]interface{}{"title": title}, // Missing date field
+		Config: map[string]any{"title": title}, // Missing date field
 	}
 	page2 := &content.Node{
 		Type: content.NodeTypePage,
 		Slug: "other-page",
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"title": "other-page",
 			"date":  time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		},
@@ -354,7 +354,7 @@ func createPageWithWrongDateType(title string) *content.Node {
 	page1 := &content.Node{
 		Type: content.NodeTypePage,
 		Slug: title,
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"title": title,
 			"date":  "not-a-time", // Wrong type
 		},
@@ -362,7 +362,7 @@ func createPageWithWrongDateType(title string) *content.Node {
 	page2 := &content.Node{
 		Type: content.NodeTypePage,
 		Slug: "other-page",
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"title": "other-page",
 			"date":  time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		},

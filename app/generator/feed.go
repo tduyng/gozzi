@@ -1,10 +1,11 @@
+// Package generator provides site generation including HTML, feeds, and sitemaps.
 package generator
 
 import (
 	"encoding/xml"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/tduyng/gozzi/app/config"
@@ -16,6 +17,7 @@ const (
 	sitemapXSL = `<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>`
 )
 
+// AtomFeed represents an Atom XML feed structure.
 type AtomFeed struct {
 	XMLName xml.Name    `xml:"http://www.w3.org/2005/Atom feed"`
 	Title   string      `xml:"title"`
@@ -26,16 +28,19 @@ type AtomFeed struct {
 	Entries []AtomEntry `xml:"entry"`
 }
 
+// AtomAuthor represents the author information in an Atom feed.
 type AtomAuthor struct {
 	Name  string `xml:"name"`
 	Email string `xml:"email,omitempty"`
 }
 
+// AtomLink represents a link in an Atom feed entry.
 type AtomLink struct {
 	Rel  string `xml:"rel,attr,omitempty"`
 	Href string `xml:"href,attr"`
 }
 
+// AtomEntry represents a single entry in an Atom feed.
 type AtomEntry struct {
 	Title     string `xml:"title"`
 	ID        string `xml:"id"`
@@ -50,11 +55,13 @@ type AtomEntry struct {
 	Categories []string   `xml:"category,omitempty"`
 }
 
+// Sitemap represents an XML sitemap for search engines.
 type Sitemap struct {
 	XMLName xml.Name     `xml:"http://www.sitemaps.org/schemas/sitemap/0.9 urlset"`
 	URLs    []SitemapURL `xml:"url"`
 }
 
+// SitemapURL represents a single URL entry in a sitemap.
 type SitemapURL struct {
 	Loc        string `xml:"loc"`
 	LastMod    string `xml:"lastmod,omitempty"`
@@ -76,9 +83,11 @@ func (g *Generator) generateAtomFeed() error {
 		}
 	})
 
-	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].Config["date"].(time.Time).After(
-			entries[j].Config["date"].(time.Time))
+	slices.SortFunc(entries, func(a, b *content.Node) int {
+		dateA := a.Config["date"].(time.Time)
+		dateB := b.Config["date"].(time.Time)
+		// Sort descending (newest first), so reverse comparison
+		return dateB.Compare(dateA)
 	})
 
 	if len(entries) > 100 {
@@ -190,7 +199,9 @@ func (g *Generator) writeXMLFile(name string, xslHeader string, data any) error 
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	// Write XML header with XSL
 	if _, err := file.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n" + xslHeader + "\n"); err != nil {

@@ -570,7 +570,7 @@ func TestMergeExtra(t *testing.T) {
 	}
 }
 
-// Helper function to deep copy a map
+// Helper function to deep copy a map.
 func copyMap(original map[string]any) map[string]any {
 	result := make(map[string]any)
 	for k, v := range original {
@@ -588,7 +588,7 @@ func copyMap(original map[string]any) map[string]any {
 	return result
 }
 
-// Helper functions
+// Helper functions.
 func parseTime(t *testing.T, timeStr string) time.Time {
 	t.Helper()
 	parsed, err := time.Parse(time.RFC3339, timeStr)

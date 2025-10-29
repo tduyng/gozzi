@@ -2,16 +2,19 @@ package parser
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"math"
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"sync"
 
+	"github.com/tduyng/gozzi/app"
+	"github.com/tduyng/gozzi/app/concurrent"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/paginate"
@@ -24,27 +27,28 @@ import (
 	"go.abhg.dev/goldmark/mermaid"
 )
 
+// ContentParser parses markdown content files and builds the content tree.
 type ContentParser struct {
 	Site       *config.Site
 	ContentMap map[string]*content.Node
 	Tags       map[string]*TagEntry
 	mu         sync.Mutex
 	md         goldmark.Markdown
-	workerPool chan struct{}
 }
 
+// TagEntry tracks pages associated with a specific tag.
 type TagEntry struct {
 	Pages []*content.Node
 	Count int
 	Seen  map[string]struct{} // Track page paths
 }
 
+// NewParser creates a new ContentParser with the given site configuration.
 func NewParser(cfg *config.Site) *ContentParser {
 	return &ContentParser{
 		Site:       cfg,
 		ContentMap: make(map[string]*content.Node),
 		Tags:       make(map[string]*TagEntry),
-		workerPool: make(chan struct{}, runtime.NumCPU()*2),
 		md: goldmark.New(
 			goldmark.WithExtensions(
 				extension.GFM,
@@ -67,50 +71,43 @@ func NewParser(cfg *config.Site) *ContentParser {
 	}
 }
 
+// Parse walks the content directory and parses all markdown files.
 func (p *ContentParser) Parse(rootDir string) error {
 	p.mu.Lock()
 	p.ContentMap = make(map[string]*content.Node) // Reset ContentMap
 	p.mu.Unlock()
 
-	var wg sync.WaitGroup
-	fileChan := make(chan string, 100)
-
-	go func() {
-		filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
-			if err != nil || info.IsDir() {
-				return nil
-			}
-			if filepath.Base(path) == "_index.md" || filepath.Ext(path) == ".md" {
-				fileChan <- path
-			}
+	// Collect all files to parse
+	var files []string
+	_ = filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
 			return nil
-		})
-		close(fileChan)
-	}()
+		}
+		if filepath.Base(path) == "_index.md" || filepath.Ext(path) == ".md" {
+			files = append(files, path)
+		}
+		return nil
+	})
 
-	for path := range fileChan {
-		wg.Add(1)
-		p.workerPool <- struct{}{}
+	// Create worker pool and process files
+	ctx := context.Background()
+	pool := concurrent.NewWorkerPool(ctx)
 
-		go func(path string) {
-			defer func() {
-				<-p.workerPool
-				wg.Done()
-			}()
+	// Process all markdown files concurrently
+	// Note: Errors are silently ignored to preserve old behavior
+	_ = pool.ProcessFiles(files, func(ctx context.Context, filePath string) error {
+		relPath, _ := filepath.Rel(rootDir, filePath)
+		dir := filepath.Dir(relPath)
 
-			relPath, _ := filepath.Rel(rootDir, path)
-			dir := filepath.Dir(relPath)
-
-			switch {
-			case filepath.Base(path) == "_index.md":
-				p.parseSection(path, dir)
-			case filepath.Ext(path) == ".md":
-				p.parsePage(path, dir)
-			}
-		}(path)
-	}
-
-	wg.Wait()
+		switch {
+		case filepath.Base(filePath) == "_index.md":
+			_ = p.parseSection(filePath, dir)
+		case filepath.Ext(filePath) == ".md":
+			_ = p.parsePage(filePath, dir)
+		}
+		// Preserve old behavior: silently ignore errors
+		return nil
+	})
 
 	paginator := paginate.New(p.ContentMap)
 	paginator.BuildLinks()
@@ -120,15 +117,27 @@ func (p *ContentParser) Parse(rootDir string) error {
 func (p *ContentParser) parseSection(path, dir string) error {
 	mdContent, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+			Operation: "read_section_file",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 
 	frontMatter, contentPart, err := config.LoadFrontMatter(mdContent)
 	if err != nil {
-		return err
+		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+			Operation: "parse_section_frontmatter",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 	if frontMatter.Draft {
-		return fmt.Errorf("section is marked as draft")
+		return app.WrapWithContext(app.ErrContent, fmt.Errorf("section is marked as draft"), app.ErrorContext{
+			Operation: "validate_section_draft_status",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 
 	pc := parser.NewContext()
@@ -137,7 +146,11 @@ func (p *ContentParser) parseSection(path, dir string) error {
 
 	var htmlBuf bytes.Buffer
 	if err := p.md.Renderer().Render(&htmlBuf, contentPart, doc); err != nil {
-		return fmt.Errorf("markdown rendering failed: %w", err)
+		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+			Operation: "render_section_markdown",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 	sectionConfig := frontMatter.ToConfig()
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, nil)
@@ -167,15 +180,27 @@ func (p *ContentParser) parseSection(path, dir string) error {
 func (p *ContentParser) parsePage(path, dir string) error {
 	mdContent, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+			Operation: "read_page_file",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 
 	pageConfig, contentPart, err := config.LoadFrontMatter(mdContent)
 	if err != nil {
-		return err
+		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+			Operation: "parse_page_frontmatter",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 	if pageConfig.Draft {
-		return fmt.Errorf("page is marked as draft")
+		return app.WrapWithContext(app.ErrContent, fmt.Errorf("page is marked as draft"), app.ErrorContext{
+			Operation: "validate_page_draft_status",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 
 	pc := parser.NewContext()
@@ -184,8 +209,15 @@ func (p *ContentParser) parsePage(path, dir string) error {
 
 	var htmlBuf bytes.Buffer
 	if err := p.md.Renderer().Render(&htmlBuf, contentPart, doc); err != nil {
-		return fmt.Errorf("markdown rendering failed: %w", err)
+		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+			Operation: "render_page_markdown",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	var sectionConfig map[string]any
 	if secNode, exists := p.ContentMap[dir]; exists {
@@ -193,9 +225,6 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	}
 
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, pageConfig.ToConfig())
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
 
 	// For index.md files, the page should be created at the directory level,
 	// with parent being the directory's parent, not the directory itself
@@ -264,6 +293,7 @@ func (p *ContentParser) resolveImgURL(fm *config.FrontMatter, slug string) strin
 	return baseURL + filepath.Join("/", slug, img)
 }
 
+// GetOrCreateSection retrieves or creates a section node for the given directory.
 func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 	if node, exists := p.ContentMap[dir]; exists {
 		return node
@@ -313,6 +343,7 @@ func calculateReadStats(content string) (int, int) {
 	return wordCount, readTime
 }
 
+// GetMarkdownProcessor returns the configured goldmark markdown processor.
 func (p *ContentParser) GetMarkdownProcessor() goldmark.Markdown {
 	return p.md
 }

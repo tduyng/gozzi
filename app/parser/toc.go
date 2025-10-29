@@ -13,6 +13,7 @@ import (
 
 type tocExtension struct{}
 
+// NewTocExtension creates a goldmark extension for table of contents generation.
 func NewTocExtension() goldmark.Extender { return &tocExtension{} }
 
 func (e *tocExtension) Extend(m goldmark.Markdown) {
@@ -27,7 +28,7 @@ func (t *tocTransformer) Transform(doc *ast.Document, reader text.Reader, pc par
 	var toc []map[string]any
 	var stack []map[string]any
 
-	ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+	_ = ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering || n.Kind() != ast.KindHeading {
 			return ast.WalkContinue, nil
 		}

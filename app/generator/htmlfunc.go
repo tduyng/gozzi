@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -9,14 +10,15 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/tduyng/gozzi/app"
 	"github.com/tduyng/gozzi/app/content"
 )
 
+// CreateFuncMap returns a template function map with all custom functions.
 func (g *Generator) CreateFuncMap() template.FuncMap {
 	return template.FuncMap{
 		"add":            addNumbers,
@@ -59,6 +61,7 @@ func (g *Generator) CreateFuncMap() template.FuncMap {
 	}
 }
 
+// Group represents a grouped collection of content nodes with a common key.
 type Group struct {
 	Key   string
 	Items []*content.Node
@@ -160,9 +163,9 @@ func formatDate(t time.Time, layout ...string) string {
 	return t.Format("2006-01-02")
 }
 
-func limit(max any, items []*content.Node) []*content.Node {
+func limit(maxItems any, items []*content.Node) []*content.Node {
 	var m int
-	switch v := max.(type) {
+	switch v := maxItems.(type) {
 	case int:
 		m = v
 	case int64:
@@ -246,8 +249,8 @@ func (g *Generator) groupBy(key string, nodes []*content.Node) []Group {
 	}
 
 	// Sort descending chronological order
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Key > result[j].Key
+	slices.SortFunc(result, func(a, b Group) int {
+		return strings.Compare(b.Key, a.Key) // Reverse for descending
 	})
 
 	return result
@@ -394,14 +397,26 @@ func pluralize(singular string, count any) string {
 
 func createDictionary(values ...any) (map[string]any, error) {
 	if len(values)%2 != 0 {
-		return nil, fmt.Errorf("invalid number of arguments for dict")
+		return nil, app.WrapWithContext(app.ErrTemplate,
+			errors.New("invalid number of arguments for dict function"),
+			app.ErrorContext{
+				Operation: "validate_dict_arguments",
+				Component: "html_functions",
+				Details:   map[string]any{"arg_count": len(values)},
+			})
 	}
 
 	dict := make(map[string]any)
 	for i := 0; i < len(values); i += 2 {
 		key, ok := values[i].(string)
 		if !ok {
-			return nil, fmt.Errorf("dict keys must be strings")
+			return nil, app.WrapWithContext(app.ErrTemplate,
+				errors.New("dict keys must be strings"),
+				app.ErrorContext{
+					Operation: "validate_dict_key_type",
+					Component: "html_functions",
+					Details:   map[string]any{"key_index": i, "key_value": values[i]},
+				})
 		}
 		dict[key] = values[i+1]
 	}

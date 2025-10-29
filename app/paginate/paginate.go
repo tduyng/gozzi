@@ -1,22 +1,26 @@
+// Package paginate provides pagination utilities for content sections in gozzi.
 package paginate
 
 import (
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/tduyng/gozzi/app/content"
 )
 
+// Paginator builds pagination links for content sections.
 type Paginator struct {
 	sections map[string]*content.Node
 }
 
+// New creates a new Paginator for the given sections.
 func New(sections map[string]*content.Node) *Paginator {
 	return &Paginator{
 		sections: sections,
 	}
 }
 
+// BuildLinks generates next/previous links for all paginated sections.
 func (p *Paginator) BuildLinks() {
 	for _, section := range p.sections {
 		p.processSection(section)
@@ -35,10 +39,10 @@ func (p *Paginator) processSection(section *content.Node) {
 		}
 	}
 
-	sort.SliceStable(pages, func(i, j int) bool {
-		dateI := pages[i].Config["date"].(time.Time)
-		dateJ := pages[j].Config["date"].(time.Time)
-		return dateI.Before(dateJ)
+	slices.SortStableFunc(pages, func(a, b *content.Node) int {
+		dateA := a.Config["date"].(time.Time)
+		dateB := b.Config["date"].(time.Time)
+		return dateA.Compare(dateB) // Ascending order (oldest first)
 	})
 	section.Children = append(pages, otherNodes...)
 

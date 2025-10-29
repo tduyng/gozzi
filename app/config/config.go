@@ -1,14 +1,16 @@
+// Package config handles TOML configuration loading and merging for gozzi.
 package config
 
 import (
 	"bytes"
-	"fmt"
 	"maps"
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/tduyng/gozzi/app"
 )
 
+// Site represents the site-wide configuration loaded from config.toml.
 type Site struct {
 	BaseURL      string         `toml:"base_url"`
 	FeedURL      string         `toml:"feed_url"`
@@ -22,6 +24,7 @@ type Site struct {
 	Title        string         `toml:"title"`
 }
 
+// FrontMatter represents the TOML front matter in markdown content files.
 type FrontMatter struct {
 	Date         time.Time      `toml:"date"`
 	Description  string         `toml:"description"`
@@ -37,18 +40,25 @@ type FrontMatter struct {
 	Updated      time.Time      `toml:"updated"`
 }
 
+// LoadSite loads site configuration from a TOML file.
 func LoadSite(path string) (*Site, error) {
 	var cfg Site
 	if _, err := toml.DecodeFile(path, &cfg); err != nil {
-		return nil, err
+		return nil, app.WrapWithContext(app.ErrConfig, err, app.ErrorContext{
+			Operation: "load_site_config",
+			Component: "config",
+			Path:      path,
+		})
 	}
 	return &cfg, nil
 }
 
+// LoadFrontMatter parses TOML front matter from markdown content.
 func LoadFrontMatter(content []byte) (*FrontMatter, []byte, error) {
 	return parseFrontMatter[FrontMatter](content)
 }
 
+// ToConfig converts Site to a map for template rendering.
 func (site *Site) ToConfig() map[string]any {
 	siteConfig := make(map[string]any)
 	if site != nil {
@@ -76,6 +86,7 @@ func (site *Site) ToConfig() map[string]any {
 	return siteConfig
 }
 
+// ToConfig converts FrontMatter to a map for template rendering.
 func (frontMatter *FrontMatter) ToConfig() map[string]any {
 	config := make(map[string]any)
 	config["title"] = frontMatter.Title
@@ -92,9 +103,9 @@ func (frontMatter *FrontMatter) ToConfig() map[string]any {
 	return config
 }
 
+// MergeConfigs merges site, section, and page configurations with proper precedence.
 func MergeConfigs(site, section, page map[string]any) map[string]any {
-	merged := make(map[string]any)
-	maps.Copy(merged, site)
+	merged := maps.Clone(site)
 
 	if section != nil {
 		merged = mergeFrontMatter(merged, section)
@@ -165,6 +176,7 @@ func mergeFrontMatter(merged, frontMatter map[string]any) map[string]any {
 	return merged
 }
 
+// MergeExtra recursively merges extra configuration maps.
 func MergeExtra(base map[string]any, extra map[string]any) map[string]any {
 	for k, v := range extra {
 		if existing, exists := base[k]; exists {
@@ -186,6 +198,7 @@ func MergeExtra(base map[string]any, extra map[string]any) map[string]any {
 	return base
 }
 
+// GetBool safely retrieves a boolean value from a configuration map.
 func GetBool(m map[string]any, key string) bool {
 	if val, exists := m[key]; exists {
 		if b, ok := val.(bool); ok {
@@ -196,8 +209,7 @@ func GetBool(m map[string]any, key string) bool {
 }
 
 func mergeMapsDeep(base, override map[string]any) map[string]any {
-	result := make(map[string]any, len(base))
-	maps.Copy(result, base)
+	result := maps.Clone(base)
 
 	for k, overrideVal := range override {
 		if baseVal, exists := base[k]; exists {
@@ -238,7 +250,10 @@ func parseFrontMatter[T any](content []byte) (*T, []byte, error) {
 		frontMatter := bytes.TrimSpace(parts[1])
 		config = new(T)
 		if err = toml.Unmarshal(frontMatter, config); err != nil {
-			return nil, nil, fmt.Errorf("front matter parsing failed: %w", err)
+			return nil, nil, app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+				Operation: "parse_frontmatter_toml",
+				Component: "config",
+			})
 		}
 
 		body = bytes.TrimSpace(parts[2])

@@ -3,7 +3,6 @@ package parser
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -13,7 +12,7 @@ import (
 	"github.com/tduyng/gozzi/app/content"
 )
 
-// Helper function for debugging
+// Helper function for debugging.
 func getKeys(m map[string]*content.Node) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
@@ -41,7 +40,6 @@ func TestNewParser(t *testing.T) {
 				assert.NotNil(t, p.ContentMap)
 				assert.NotNil(t, p.Tags)
 				assert.NotNil(t, p.md)
-				assert.Equal(t, runtime.NumCPU()*2, cap(p.workerPool))
 			},
 		},
 		{
@@ -440,7 +438,7 @@ func TestGetMarkdownProcessor(t *testing.T) {
 	assert.Contains(t, buf.String(), "Hello World")
 }
 
-// TestParse tests the Parse method with actual file system using TOML frontmatter
+// TestParse tests the Parse method with actual file system using TOML frontmatter.
 func TestParse(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -641,7 +639,7 @@ This is in a nested directory.`
 	}
 }
 
-// TestParseSection tests the parseSection method
+// TestParseSection tests the parseSection method.
 func TestParseSection(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -726,7 +724,7 @@ This should be skipped.`,
 	}
 }
 
-// TestParsePage tests the parsePage method
+// TestParsePage tests the parsePage method.
 func TestParsePage(t *testing.T) {
 	tests := []struct {
 		name     string

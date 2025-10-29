@@ -2,11 +2,11 @@ package config
 
 import (
 	"bytes"
-	"fmt"
 	"maps"
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/tduyng/gozzi/app"
 )
 
 type Site struct {
@@ -40,7 +40,11 @@ type FrontMatter struct {
 func LoadSite(path string) (*Site, error) {
 	var cfg Site
 	if _, err := toml.DecodeFile(path, &cfg); err != nil {
-		return nil, err
+		return nil, app.WrapWithContext(app.ErrConfig, err, app.ErrorContext{
+			Operation: "load_site_config",
+			Component: "config",
+			Path:      path,
+		})
 	}
 	return &cfg, nil
 }
@@ -238,7 +242,10 @@ func parseFrontMatter[T any](content []byte) (*T, []byte, error) {
 		frontMatter := bytes.TrimSpace(parts[1])
 		config = new(T)
 		if err = toml.Unmarshal(frontMatter, config); err != nil {
-			return nil, nil, fmt.Errorf("front matter parsing failed: %w", err)
+			return nil, nil, app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+				Operation: "parse_frontmatter_toml",
+				Component: "config",
+			})
 		}
 
 		body = bytes.TrimSpace(parts[2])

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/tduyng/gozzi/app"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/generator"
 	"github.com/tduyng/gozzi/app/parser"
@@ -35,7 +36,10 @@ type DevServer struct {
 func NewDevServer(configPath, contentDir string, site *config.Site, gen *generator.Generator, parser *parser.ContentParser) (*DevServer, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create watcher: %w", err)
+		return nil, app.WrapWithContext(app.ErrServer, err, app.ErrorContext{
+			Operation: "create_file_watcher",
+			Component: "dev_server",
+		})
 	}
 
 	return &DevServer{
@@ -69,9 +73,21 @@ func (s *DevServer) Start(port int) {
 
 func (s *DevServer) initialize() error {
 	if err := s.parser.Parse(s.contentDir); err != nil {
-		return fmt.Errorf("initial content parse failed: %w", err)
+		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+			Operation: "initial_content_parse",
+			Component: "dev_server",
+			Path:      s.contentDir,
+		})
 	}
-	return s.gen.Generate(s.parser.ContentMap["."])
+
+	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
+		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+			Operation: "initial_site_generation",
+			Component: "dev_server",
+		})
+	}
+
+	return nil
 }
 
 type fileHandler struct {
@@ -302,7 +318,11 @@ func (s *DevServer) triggerRebuild() {
 func (s *DevServer) reloadConfig() error {
 	content, err := os.ReadFile(s.configPath)
 	if err != nil {
-		return fmt.Errorf("config read failed: %w", err)
+		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+			Operation: "read_config_file",
+			Component: "dev_server",
+			Path:      s.configPath,
+		})
 	}
 
 	newHash := fmt.Sprintf("%x", md5.Sum(content))
@@ -312,19 +332,30 @@ func (s *DevServer) reloadConfig() error {
 
 	newSite, err := config.LoadSite(s.configPath)
 	if err != nil {
-		return fmt.Errorf("config reload failed: %w", err)
+		return app.WrapWithContext(app.ErrConfig, err, app.ErrorContext{
+			Operation: "reload_config",
+			Component: "dev_server",
+			Path:      s.configPath,
+		})
 	}
 
 	newSite.OutputDir = s.site.OutputDir // Maintain output directory
 
 	newParser := parser.NewParser(newSite)
 	if err := newParser.Parse(s.contentDir); err != nil {
-		return fmt.Errorf("content re-parse failed: %w", err)
+		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+			Operation: "reparse_content_after_config_reload",
+			Component: "dev_server",
+			Path:      s.contentDir,
+		})
 	}
 
 	newGen, err := generator.NewGenerator(newSite, newParser)
 	if err != nil {
-		return fmt.Errorf("generator recreation failed: %w", err)
+		return app.WrapWithContext(app.ErrTemplate, err, app.ErrorContext{
+			Operation: "recreate_generator_after_config_reload",
+			Component: "dev_server",
+		})
 	}
 
 	s.site = newSite

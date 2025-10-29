@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tduyng/gozzi/app"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/paginate"
@@ -120,15 +121,27 @@ func (p *ContentParser) Parse(rootDir string) error {
 func (p *ContentParser) parseSection(path, dir string) error {
 	mdContent, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+			Operation: "read_section_file",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 
 	frontMatter, contentPart, err := config.LoadFrontMatter(mdContent)
 	if err != nil {
-		return err
+		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+			Operation: "parse_section_frontmatter",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 	if frontMatter.Draft {
-		return fmt.Errorf("section is marked as draft")
+		return app.WrapWithContext(app.ErrContent, fmt.Errorf("section is marked as draft"), app.ErrorContext{
+			Operation: "validate_section_draft_status",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 
 	pc := parser.NewContext()
@@ -137,7 +150,11 @@ func (p *ContentParser) parseSection(path, dir string) error {
 
 	var htmlBuf bytes.Buffer
 	if err := p.md.Renderer().Render(&htmlBuf, contentPart, doc); err != nil {
-		return fmt.Errorf("markdown rendering failed: %w", err)
+		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+			Operation: "render_section_markdown",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 	sectionConfig := frontMatter.ToConfig()
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, nil)
@@ -167,15 +184,27 @@ func (p *ContentParser) parseSection(path, dir string) error {
 func (p *ContentParser) parsePage(path, dir string) error {
 	mdContent, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+			Operation: "read_page_file",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 
 	pageConfig, contentPart, err := config.LoadFrontMatter(mdContent)
 	if err != nil {
-		return err
+		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+			Operation: "parse_page_frontmatter",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 	if pageConfig.Draft {
-		return fmt.Errorf("page is marked as draft")
+		return app.WrapWithContext(app.ErrContent, fmt.Errorf("page is marked as draft"), app.ErrorContext{
+			Operation: "validate_page_draft_status",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 
 	pc := parser.NewContext()
@@ -184,7 +213,11 @@ func (p *ContentParser) parsePage(path, dir string) error {
 
 	var htmlBuf bytes.Buffer
 	if err := p.md.Renderer().Render(&htmlBuf, contentPart, doc); err != nil {
-		return fmt.Errorf("markdown rendering failed: %w", err)
+		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+			Operation: "render_page_markdown",
+			Component: "content_parser",
+			Path:      path,
+		})
 	}
 
 	var sectionConfig map[string]any

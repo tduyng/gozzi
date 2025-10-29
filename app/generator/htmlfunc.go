@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tduyng/gozzi/app"
 	"github.com/tduyng/gozzi/app/content"
 )
 
@@ -394,14 +396,26 @@ func pluralize(singular string, count any) string {
 
 func createDictionary(values ...any) (map[string]any, error) {
 	if len(values)%2 != 0 {
-		return nil, fmt.Errorf("invalid number of arguments for dict")
+		return nil, app.WrapWithContext(app.ErrTemplate,
+			errors.New("invalid number of arguments for dict function"),
+			app.ErrorContext{
+				Operation: "validate_dict_arguments",
+				Component: "html_functions",
+				Details:   map[string]interface{}{"arg_count": len(values)},
+			})
 	}
 
 	dict := make(map[string]any)
 	for i := 0; i < len(values); i += 2 {
 		key, ok := values[i].(string)
 		if !ok {
-			return nil, fmt.Errorf("dict keys must be strings")
+			return nil, app.WrapWithContext(app.ErrTemplate,
+				errors.New("dict keys must be strings"),
+				app.ErrorContext{
+					Operation: "validate_dict_key_type",
+					Component: "html_functions",
+					Details:   map[string]interface{}{"key_index": i, "key_value": values[i]},
+				})
 		}
 		dict[key] = values[i+1]
 	}

@@ -3,7 +3,6 @@ package parser
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -41,7 +40,6 @@ func TestNewParser(t *testing.T) {
 				assert.NotNil(t, p.ContentMap)
 				assert.NotNil(t, p.Tags)
 				assert.NotNil(t, p.md)
-				assert.Equal(t, runtime.NumCPU()*2, cap(p.workerPool))
 			},
 		},
 		{

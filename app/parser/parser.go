@@ -2,17 +2,18 @@ package parser
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
 	"math"
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"sync"
 
 	"github.com/tduyng/gozzi/app"
+	"github.com/tduyng/gozzi/app/concurrent"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/paginate"
@@ -31,7 +32,6 @@ type ContentParser struct {
 	Tags       map[string]*TagEntry
 	mu         sync.Mutex
 	md         goldmark.Markdown
-	workerPool chan struct{}
 }
 
 type TagEntry struct {
@@ -45,7 +45,6 @@ func NewParser(cfg *config.Site) *ContentParser {
 		Site:       cfg,
 		ContentMap: make(map[string]*content.Node),
 		Tags:       make(map[string]*TagEntry),
-		workerPool: make(chan struct{}, runtime.NumCPU()*2),
 		md: goldmark.New(
 			goldmark.WithExtensions(
 				extension.GFM,
@@ -73,45 +72,37 @@ func (p *ContentParser) Parse(rootDir string) error {
 	p.ContentMap = make(map[string]*content.Node) // Reset ContentMap
 	p.mu.Unlock()
 
-	var wg sync.WaitGroup
-	fileChan := make(chan string, 100)
-
-	go func() {
-		filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
-			if err != nil || info.IsDir() {
-				return nil
-			}
-			if filepath.Base(path) == "_index.md" || filepath.Ext(path) == ".md" {
-				fileChan <- path
-			}
+	// Collect all files to parse
+	var files []string
+	filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
 			return nil
-		})
-		close(fileChan)
-	}()
+		}
+		if filepath.Base(path) == "_index.md" || filepath.Ext(path) == ".md" {
+			files = append(files, path)
+		}
+		return nil
+	})
 
-	for path := range fileChan {
-		wg.Add(1)
-		p.workerPool <- struct{}{}
+	// Create worker pool and process files
+	ctx := context.Background()
+	pool := concurrent.NewWorkerPool(ctx)
 
-		go func(path string) {
-			defer func() {
-				<-p.workerPool
-				wg.Done()
-			}()
+	// Process all markdown files concurrently
+	// Note: Errors are silently ignored to preserve old behavior
+	_ = pool.ProcessFiles(files, func(ctx context.Context, filePath string) error {
+		relPath, _ := filepath.Rel(rootDir, filePath)
+		dir := filepath.Dir(relPath)
 
-			relPath, _ := filepath.Rel(rootDir, path)
-			dir := filepath.Dir(relPath)
-
-			switch {
-			case filepath.Base(path) == "_index.md":
-				p.parseSection(path, dir)
-			case filepath.Ext(path) == ".md":
-				p.parsePage(path, dir)
-			}
-		}(path)
-	}
-
-	wg.Wait()
+		switch {
+		case filepath.Base(filePath) == "_index.md":
+			_ = p.parseSection(filePath, dir)
+		case filepath.Ext(filePath) == ".md":
+			_ = p.parsePage(filePath, dir)
+		}
+		// Preserve old behavior: silently ignore errors
+		return nil
+	})
 
 	paginator := paginate.New(p.ContentMap)
 	paginator.BuildLinks()
@@ -220,15 +211,15 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		})
 	}
 
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	var sectionConfig map[string]any
 	if secNode, exists := p.ContentMap[dir]; exists {
 		sectionConfig = secNode.Config
 	}
 
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, pageConfig.ToConfig())
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
 
 	// For index.md files, the page should be created at the directory level,
 	// with parent being the directory's parent, not the directory itself

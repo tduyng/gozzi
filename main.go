@@ -9,8 +9,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/tduyng/gozzi/app/builder"
 	"github.com/tduyng/gozzi/app/config"
-	"github.com/tduyng/gozzi/app/generator"
 	"github.com/tduyng/gozzi/app/parser"
 	"github.com/tduyng/gozzi/app/server"
 )
@@ -165,7 +165,7 @@ Options:
   --port int       Port to listen on (default 1313)`)
 }
 
-func initApp(configPath, contentDir string) (*config.Site, *parser.ContentParser, *generator.Generator) {
+func initApp(configPath, contentDir string) (*config.Site, *parser.ContentParser, *builder.Builder) {
 	site, err := config.LoadSite(configPath)
 	if err != nil {
 		log.Fatalf("Error loading config %s: %v", configPath, err)
@@ -176,9 +176,9 @@ func initApp(configPath, contentDir string) (*config.Site, *parser.ContentParser
 		log.Fatalf("Error parsing content from %s: %v", contentDir, err)
 	}
 
-	gen, err := generator.NewGenerator(site, contentParser)
+	gen, err := builder.NewBuilder(site, contentParser)
 	if err != nil {
-		log.Fatalf("Error creating generator: %v", err)
+		log.Fatalf("Error creating builder: %v", err)
 	}
 	return site, contentParser, gen
 }

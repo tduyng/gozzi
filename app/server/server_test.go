@@ -18,8 +18,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tduyng/gozzi/app/builder"
 	"github.com/tduyng/gozzi/app/config"
-	"github.com/tduyng/gozzi/app/generator"
 	"github.com/tduyng/gozzi/app/parser"
 )
 
@@ -1034,8 +1034,8 @@ var (
 	testTemplateDirOnce sync.Once
 )
 
-func createTestGenerator(t *testing.T, site *config.Site) *generator.Generator {
-	// For tests that don't actually need generator functionality,
+func createTestGenerator(t *testing.T, site *config.Site) *builder.Builder {
+	// For tests that don't actually need builder functionality,
 	// we'll create a minimal setup that just works
 	parser := createTestParser(t, site)
 
@@ -1073,8 +1073,8 @@ func createTestGenerator(t *testing.T, site *config.Site) *generator.Generator {
 	err = os.Chdir(testTemplateDir)
 	require.NoError(t, err)
 
-	// Create generator (this will now find the templates directory)
-	gen, err := generator.NewGenerator(site, parser)
+	// Create builder (this will now find the templates directory)
+	gen, err := builder.NewBuilder(site, parser)
 	require.NoError(t, err)
 
 	// Restore original directory

@@ -1,5 +1,6 @@
-// Package generator provides site generation including HTML, feeds, and sitemaps.
-package generator
+// Atom feed and sitemap generation for the site builder.
+// Creates XML feeds (Atom) and sitemaps for content discovery.
+package builder
 
 import (
 	"encoding/xml"
@@ -69,9 +70,9 @@ type SitemapURL struct {
 	Priority   string `xml:"priority,omitempty"`
 }
 
-func (g *Generator) generateAtomFeed() error {
+func (b *Builder) generateAtomFeed() error {
 	var entries []*content.Node
-	g.walkNodes(g.parser.ContentMap["."], func(n *content.Node) {
+	b.walkNodes(b.parser.ContentMap["."], func(n *content.Node) {
 		if n.Type != content.NodeTypePage {
 			return
 		}
@@ -95,17 +96,17 @@ func (g *Generator) generateAtomFeed() error {
 	}
 
 	feed := AtomFeed{
-		Title:   g.site.Title,
-		ID:      g.site.BaseURL,
+		Title:   b.site.Title,
+		ID:      b.site.BaseURL,
 		Updated: time.Now().UTC().Format(time.RFC3339),
 		Links: []AtomLink{
-			{Rel: "self", Href: g.site.BaseURL + "/atom.xml"},
-			{Href: g.site.BaseURL},
+			{Rel: "self", Href: b.site.BaseURL + "/atom.xml"},
+			{Href: b.site.BaseURL},
 		},
 	}
 
-	if g.site.Extra["author"] != nil {
-		author := g.site.Extra["author"].(map[string]any)
+	if b.site.Extra["author"] != nil {
+		author := b.site.Extra["author"].(map[string]any)
 		feed.Author = &AtomAuthor{
 			Name:  author["name"].(string),
 			Email: author["email"].(string),
@@ -144,14 +145,14 @@ func (g *Generator) generateAtomFeed() error {
 		})
 	}
 
-	return g.writeXMLFile("atom.xml", atomXSL, feed)
+	return b.writeXMLFile("atom.xml", atomXSL, feed)
 }
 
-func (g *Generator) generateSitemap() error {
+func (b *Builder) generateSitemap() error {
 	var urls []SitemapURL
 
 	// Content pages
-	g.walkNodes(g.parser.ContentMap["."], func(n *content.Node) {
+	b.walkNodes(b.parser.ContentMap["."], func(n *content.Node) {
 		if config.GetBool(n.Config, "draft") {
 			return
 		}
@@ -179,9 +180,9 @@ func (g *Generator) generateSitemap() error {
 	})
 
 	// Tag pages
-	if g.hasTemplate("tags.html") {
-		for tag := range g.parser.Tags {
-			loc := g.buildTagURL(g.buildTagPermalink(tag))
+	if b.hasTemplate("tags.html") {
+		for tag := range b.parser.Tags {
+			loc := b.buildTagURL(b.buildTagPermalink(tag))
 			urls = append(urls, SitemapURL{
 				Loc:        loc,
 				ChangeFreq: "monthly",
@@ -190,11 +191,11 @@ func (g *Generator) generateSitemap() error {
 		}
 	}
 
-	return g.writeXMLFile("sitemap.xml", sitemapXSL, Sitemap{URLs: urls})
+	return b.writeXMLFile("sitemap.xml", sitemapXSL, Sitemap{URLs: urls})
 }
 
-func (g *Generator) writeXMLFile(name string, xslHeader string, data any) error {
-	path := filepath.Join(g.site.OutputDir, name)
+func (b *Builder) writeXMLFile(name string, xslHeader string, data any) error {
+	path := filepath.Join(b.site.OutputDir, name)
 	file, err := os.Create(path)
 	if err != nil {
 		return err

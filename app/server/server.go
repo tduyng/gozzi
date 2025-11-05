@@ -18,8 +18,8 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/tduyng/gozzi/app"
+	"github.com/tduyng/gozzi/app/builder"
 	"github.com/tduyng/gozzi/app/config"
-	"github.com/tduyng/gozzi/app/generator"
 	"github.com/tduyng/gozzi/app/parser"
 )
 
@@ -28,7 +28,7 @@ type DevServer struct {
 	configPath     string
 	contentDir     string
 	site           *config.Site
-	gen            *generator.Generator
+	gen            *builder.Builder
 	parser         *parser.ContentParser
 	watcher        *fsnotify.Watcher
 	clients        map[chan string]struct{}
@@ -40,7 +40,7 @@ type DevServer struct {
 func NewDevServer(
 	configPath, contentDir string,
 	site *config.Site,
-	gen *generator.Generator,
+	gen *builder.Builder,
 	parser *parser.ContentParser,
 ) (*DevServer, error) {
 	watcher, err := fsnotify.NewWatcher()
@@ -368,10 +368,10 @@ func (s *DevServer) reloadConfig() error {
 		})
 	}
 
-	newGen, err := generator.NewGenerator(newSite, newParser)
+	newGen, err := builder.NewBuilder(newSite, newParser)
 	if err != nil {
 		return app.WrapWithContext(app.ErrTemplate, err, app.ErrorContext{
-			Operation: "recreate_generator_after_config_reload",
+			Operation: "recreate_builder_after_config_reload",
 			Component: "dev_server",
 		})
 	}

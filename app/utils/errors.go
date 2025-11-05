@@ -1,6 +1,6 @@
-// Package shared provides error handling types and utilities for the gozzi application.
+// Package utils provides error handling types and utilities for the gozzi application.
 // This package contains common error categories and contextual error wrapping functionality.
-package shared
+package utils
 
 import (
 	"errors"

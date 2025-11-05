@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/tduyng/gozzi/shared"
+	"github.com/tduyng/gozzi/app/utils"
 )
 
 // Site represents the site-wide configuration loaded from config.toml.
@@ -45,7 +45,7 @@ type FrontMatter struct {
 func LoadSite(path string) (*Site, error) {
 	var cfg Site
 	if _, err := toml.DecodeFile(path, &cfg); err != nil {
-		return nil, shared.WrapWithContext(shared.ErrConfig, err, shared.ErrorContext{
+		return nil, utils.WrapWithContext(utils.ErrConfig, err, utils.ErrorContext{
 			Operation: "load_site_config",
 			Component: "config",
 			Path:      path,
@@ -252,7 +252,7 @@ func parseFrontMatter[T any](content []byte) (*T, []byte, error) {
 		frontMatter := bytes.TrimSpace(parts[1])
 		config = new(T)
 		if err = toml.Unmarshal(frontMatter, config); err != nil {
-			return nil, nil, shared.WrapWithContext(shared.ErrContent, err, shared.ErrorContext{
+			return nil, nil, utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{
 				Operation: "parse_frontmatter_toml",
 				Component: "config",
 			})

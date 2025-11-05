@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/tduyng/gozzi/app/template/funcs"
-	"github.com/tduyng/gozzi/shared"
+	"github.com/tduyng/gozzi/app/utils"
 )
 
 // loadTemplates loads all templates with the engine's function map.
@@ -27,7 +27,7 @@ func (b *Builder) loadTemplates() (*template.Template, error) {
 
 	err := filepath.WalkDir("templates", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
+			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 				Operation: "template_walk",
 				Component: "builder",
 				Path:      path,
@@ -40,7 +40,7 @@ func (b *Builder) loadTemplates() (*template.Template, error) {
 
 		relPath, err := filepath.Rel("templates", path)
 		if err != nil {
-			return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
+			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 				Operation: "get_relative_path",
 				Component: "builder",
 				Path:      path,
@@ -51,7 +51,7 @@ func (b *Builder) loadTemplates() (*template.Template, error) {
 
 		content, err := os.ReadFile(path)
 		if err != nil {
-			return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
+			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 				Operation: "read_template",
 				Component: "builder",
 				Path:      path,
@@ -60,7 +60,7 @@ func (b *Builder) loadTemplates() (*template.Template, error) {
 
 		_, err = tmpl.New(templateName).Parse(string(content))
 		if err != nil {
-			return shared.WrapWithContext(err, shared.ErrTemplate, shared.ErrorContext{
+			return utils.WrapWithContext(err, utils.ErrTemplate, utils.ErrorContext{
 				Operation: "parse_template",
 				Component: "builder",
 				Path:      templateName,
@@ -70,7 +70,7 @@ func (b *Builder) loadTemplates() (*template.Template, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, shared.WrapWithContext(err, shared.ErrTemplate, shared.ErrorContext{
+		return nil, utils.WrapWithContext(err, utils.ErrTemplate, utils.ErrorContext{
 			Operation: "load_templates",
 			Component: "builder",
 		})

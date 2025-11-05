@@ -1,6 +1,6 @@
-// Package shared provides worker pool and concurrent processing utilities for gozzi.
+// Package utils provides worker pool and concurrent processing utilities for gozzi.
 // This package contains concurrency primitives like WorkerPool, BatchFileProcessor, and EnhancedWaitGroup.
-package shared
+package utils
 
 import (
 	"context"

@@ -12,7 +12,7 @@ import (
 
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
-	"github.com/tduyng/gozzi/shared"
+	"github.com/tduyng/gozzi/app/utils"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
 )
@@ -20,7 +20,7 @@ import (
 func (p *ContentParser) parsePage(path, dir string) error {
 	mdContent, err := os.ReadFile(path)
 	if err != nil {
-		return shared.WrapWithContext(shared.ErrFileSystem, err, shared.ErrorContext{
+		return utils.WrapWithContext(utils.ErrFileSystem, err, utils.ErrorContext{
 			Operation: "read_page_file",
 			Component: "content_parser",
 			Path:      path,
@@ -29,14 +29,14 @@ func (p *ContentParser) parsePage(path, dir string) error {
 
 	pageConfig, contentPart, err := config.LoadFrontMatter(mdContent)
 	if err != nil {
-		return shared.WrapWithContext(shared.ErrContent, err, shared.ErrorContext{
+		return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{
 			Operation: "parse_page_frontmatter",
 			Component: "content_parser",
 			Path:      path,
 		})
 	}
 	if pageConfig.Draft {
-		return shared.WrapWithContext(shared.ErrContent, fmt.Errorf("page is marked as draft"), shared.ErrorContext{
+		return utils.WrapWithContext(utils.ErrContent, fmt.Errorf("page is marked as draft"), utils.ErrorContext{
 			Operation: "validate_page_draft_status",
 			Component: "content_parser",
 			Path:      path,
@@ -49,7 +49,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 
 	var htmlBuf bytes.Buffer
 	if err := p.md.Renderer().Render(&htmlBuf, contentPart, doc); err != nil {
-		return shared.WrapWithContext(shared.ErrContent, err, shared.ErrorContext{
+		return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{
 			Operation: "render_page_markdown",
 			Component: "content_parser",
 			Path:      path,

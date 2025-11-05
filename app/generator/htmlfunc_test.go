@@ -12,6 +12,7 @@ import (
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/parser"
+	tplengine "github.com/tduyng/gozzi/app/template"
 )
 
 func TestUrlize(t *testing.T) {
@@ -622,7 +623,21 @@ func TestWhere(t *testing.T) {
 func TestCreateFuncMap(t *testing.T) {
 	site := &config.Site{BaseURL: "https://example.com"}
 	p := parser.NewParser(site)
-	gen := &Generator{site: site, parser: p}
+
+	// Initialize just the engine for testing CreateFuncMap
+	// without needing full template loading
+	engine := tplengine.NewEngine(&tplengine.EngineConfig{
+		BaseURL:         site.BaseURL,
+		ContentMap:      p.ContentMap,
+		Markdown:        p.GetMarkdownProcessor(),
+		StrictTemplates: site.StrictTemplates,
+	})
+
+	gen := &Generator{
+		site:   site,
+		parser: p,
+		engine: engine,
+	}
 
 	funcMap := gen.CreateFuncMap()
 
@@ -645,8 +660,9 @@ func TestCreateFuncMap(t *testing.T) {
 
 	// Test a few functions work correctly
 	t.Run("test add function", func(t *testing.T) {
-		addFunc := funcMap["add"].(func(any, any) any)
-		result := addFunc(5, 3)
+		addFunc := funcMap["add"].(func(any, any) (any, error))
+		result, err := addFunc(5, 3)
+		require.NoError(t, err)
 		assert.Equal(t, 8, result)
 	})
 

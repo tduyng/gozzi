@@ -19,6 +19,8 @@ import (
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/parser"
+	tplengine "github.com/tduyng/gozzi/app/template"
+	"github.com/tduyng/gozzi/app/template/funcs"
 )
 
 // Generator handles site generation including templates, feeds, and static files.
@@ -26,19 +28,29 @@ type Generator struct {
 	site   *config.Site
 	templ  *template.Template
 	parser *parser.ContentParser
+	engine *tplengine.Engine
 	mu     sync.Mutex
 }
 
 // NewGenerator creates a new Generator with loaded templates.
 func NewGenerator(site *config.Site, parser *parser.ContentParser) (*Generator, error) {
+	// Initialize template engine
+	engine := tplengine.NewEngine(&tplengine.EngineConfig{
+		BaseURL:         site.BaseURL,
+		ContentMap:      parser.ContentMap,
+		Markdown:        parser.GetMarkdownProcessor(),
+		StrictTemplates: site.StrictTemplates,
+	})
+
 	gen := &Generator{
 		site:   site,
 		parser: parser,
+		engine: engine,
 	}
 
-	tmpl, err := loadTemplatesWithFuncs(gen.CreateFuncMap())
+	tmpl, err := gen.loadTemplates()
 	if err != nil {
-		return nil, app.WrapWithContext(app.ErrTemplate, err, app.ErrorContext{
+		return nil, app.WrapWithContext(err, app.ErrTemplate, app.ErrorContext{
 			Operation: "template_initialization",
 			Component: "generator",
 		})
@@ -50,9 +62,9 @@ func NewGenerator(site *config.Site, parser *parser.ContentParser) (*Generator, 
 
 // ReloadTemplates reloads all templates from disk for development mode.
 func (g *Generator) ReloadTemplates() error {
-	tmpl, err := loadTemplatesWithFuncs(g.CreateFuncMap())
+	tmpl, err := g.loadTemplates()
 	if err != nil {
-		return app.WrapWithContext(app.ErrTemplate, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrTemplate, app.ErrorContext{
 			Operation: "template_reload",
 			Component: "generator",
 		})
@@ -64,12 +76,21 @@ func (g *Generator) ReloadTemplates() error {
 	return nil
 }
 
-func loadTemplatesWithFuncs(funcMap template.FuncMap) (*template.Template, error) {
+// loadTemplates loads all templates with the engine's function map.
+func (g *Generator) loadTemplates() (*template.Template, error) {
+	// Get base function map from engine
+	funcMap := g.engine.CreateFuncMap()
+
+	// Add a placeholder for pagination function (will be replaced after templates are loaded)
+	funcMap["pagination"] = func(data map[string]any) (template.HTML, error) {
+		return "", fmt.Errorf("pagination not yet initialized")
+	}
+
 	tmpl := template.New("").Funcs(funcMap)
 
 	err := filepath.WalkDir("templates", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+			return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 				Operation: "template_walk",
 				Component: "generator",
 				Path:      path,
@@ -82,7 +103,7 @@ func loadTemplatesWithFuncs(funcMap template.FuncMap) (*template.Template, error
 
 		relPath, err := filepath.Rel("templates", path)
 		if err != nil {
-			return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+			return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 				Operation: "get_relative_path",
 				Component: "generator",
 				Path:      path,
@@ -93,7 +114,7 @@ func loadTemplatesWithFuncs(funcMap template.FuncMap) (*template.Template, error
 
 		content, err := os.ReadFile(path)
 		if err != nil {
-			return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+			return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 				Operation: "read_template",
 				Component: "generator",
 				Path:      path,
@@ -102,7 +123,7 @@ func loadTemplatesWithFuncs(funcMap template.FuncMap) (*template.Template, error
 
 		_, err = tmpl.New(templateName).Parse(string(content))
 		if err != nil {
-			return app.WrapWithContext(app.ErrTemplate, err, app.ErrorContext{
+			return app.WrapWithContext(err, app.ErrTemplate, app.ErrorContext{
 				Operation: "parse_template",
 				Component: "generator",
 				Path:      templateName,
@@ -112,11 +133,17 @@ func loadTemplatesWithFuncs(funcMap template.FuncMap) (*template.Template, error
 		return nil
 	})
 	if err != nil {
-		return nil, app.WrapWithContext(app.ErrTemplate, err, app.ErrorContext{
+		return nil, app.WrapWithContext(err, app.ErrTemplate, app.ErrorContext{
 			Operation: "load_templates",
 			Component: "generator",
 		})
 	}
+
+	// Add pagination macro after templates are loaded
+	macroRenderer := funcs.NewMacroRenderer(tmpl)
+	tmpl = tmpl.Funcs(template.FuncMap{
+		"pagination": macroRenderer.RenderPagination(g.site.ToConfig()),
+	})
 
 	return tmpl, nil
 }
@@ -124,7 +151,7 @@ func loadTemplatesWithFuncs(funcMap template.FuncMap) (*template.Template, error
 // Generate processes the content tree and generates the complete static site.
 func (g *Generator) Generate(contentRoot *content.Node) error {
 	if err := os.RemoveAll(g.site.OutputDir); err != nil {
-		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 			Operation: "clean_output_directory",
 			Component: "generator",
 			Path:      g.site.OutputDir,
@@ -159,35 +186,35 @@ func (g *Generator) Generate(contentRoot *content.Node) error {
 	}
 
 	if err := g.generate404Page(); err != nil {
-		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrContent, app.ErrorContext{
 			Operation: "generate_404_page",
 			Component: "generator",
 		})
 	}
 
 	if err := g.generateTagPages(); err != nil {
-		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrContent, app.ErrorContext{
 			Operation: "generate_tag_pages",
 			Component: "generator",
 		})
 	}
 
 	if err := g.generateRobotsTxt(); err != nil {
-		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrContent, app.ErrorContext{
 			Operation: "generate_robots_txt",
 			Component: "generator",
 		})
 	}
 
 	if err := g.generateAtomFeed(); err != nil {
-		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrContent, app.ErrorContext{
 			Operation: "generate_atom_feed",
 			Component: "generator",
 		})
 	}
 
 	if err := g.generateSitemap(); err != nil {
-		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrContent, app.ErrorContext{
 			Operation: "generate_sitemap",
 			Component: "generator",
 		})
@@ -328,6 +355,7 @@ func (g *Generator) generateTagPage(tag string, entry *parser.TagEntry) error {
 			"Tag":       tag,
 			"Pages":     sortedPages,
 			"Permalink": g.buildTagPermalink(tag),
+			"Path":      g.buildTagPermalink(tag),
 		},
 	}
 
@@ -365,7 +393,7 @@ func (g *Generator) renderTemplate(node *content.Node, outputPath string, data a
 	}
 
 	if tpl == nil {
-		return app.WrapWithContext(app.ErrTemplate, fmt.Errorf("no template found"), app.ErrorContext{
+		return app.WrapWithContext(fmt.Errorf("no template found"), app.ErrTemplate, app.ErrorContext{
 			Operation: "find_template",
 			Component: "generator",
 			Path:      outputPath,
@@ -373,7 +401,7 @@ func (g *Generator) renderTemplate(node *content.Node, outputPath string, data a
 	}
 
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 			Operation: "create_output_directory",
 			Component: "generator",
 			Path:      filepath.Dir(outputPath),
@@ -382,7 +410,7 @@ func (g *Generator) renderTemplate(node *content.Node, outputPath string, data a
 
 	var buf bytes.Buffer
 	if err := tpl.Execute(&buf, data); err != nil {
-		return app.WrapWithContext(app.ErrTemplate, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrTemplate, app.ErrorContext{
 			Operation: "execute_template",
 			Component: "generator",
 			Path:      outputPath,
@@ -390,7 +418,7 @@ func (g *Generator) renderTemplate(node *content.Node, outputPath string, data a
 	}
 
 	if err := os.WriteFile(outputPath, buf.Bytes(), 0644); err != nil {
-		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 			Operation: "write_html_output",
 			Component: "generator",
 			Path:      outputPath,
@@ -439,7 +467,7 @@ func (g *Generator) copyStaticAssets() error {
 
 		relPath, err := filepath.Rel("static", srcPath)
 		if err != nil {
-			return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+			return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 				Operation: "get_relative_path",
 				Component: "generator",
 				Path:      srcPath,
@@ -453,7 +481,7 @@ func (g *Generator) copyStaticAssets() error {
 
 func copyFile(src, dst string) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
-		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 			Operation: "create_directory",
 			Component: "generator",
 			Path:      filepath.Dir(dst),
@@ -462,7 +490,7 @@ func copyFile(src, dst string) error {
 
 	in, err := os.Open(src)
 	if err != nil {
-		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 			Operation: "open_source_file",
 			Component: "generator",
 			Path:      src,
@@ -474,7 +502,7 @@ func copyFile(src, dst string) error {
 
 	out, err := os.Create(dst)
 	if err != nil {
-		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 			Operation: "create_destination_file",
 			Component: "generator",
 			Path:      dst,
@@ -485,7 +513,7 @@ func copyFile(src, dst string) error {
 	}()
 
 	if _, err = io.Copy(out, in); err != nil {
-		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 			Operation: "copy_file_content",
 			Component: "generator",
 			Path:      fmt.Sprintf("%s -> %s", src, dst),
@@ -497,7 +525,7 @@ func copyFile(src, dst string) error {
 func copyDir(src, dst string) error {
 	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+			return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 				Operation: "walk_directory",
 				Component: "generator",
 				Path:      path,
@@ -506,7 +534,7 @@ func copyDir(src, dst string) error {
 
 		relPath, err := filepath.Rel(src, path)
 		if err != nil {
-			return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+			return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 				Operation: "get_relative_path",
 				Component: "generator",
 				Path:      path,
@@ -516,7 +544,7 @@ func copyDir(src, dst string) error {
 		target := filepath.Join(dst, relPath)
 		if d.IsDir() {
 			if err := os.MkdirAll(target, 0755); err != nil {
-				return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+				return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
 					Operation: "create_directory",
 					Component: "generator",
 					Path:      target,

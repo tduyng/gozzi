@@ -19,46 +19,16 @@ import (
 )
 
 // CreateFuncMap returns a template function map with all custom functions.
+// Deprecated: Use the template engine via g.engine.CreateFuncMap() instead.
+// This method is kept for backward compatibility and testing.
 func (g *Generator) CreateFuncMap() template.FuncMap {
-	return template.FuncMap{
-		"add":            addNumbers,
-		"and":            andLogic,
-		"asset":          g.assetPath,
-		"contains":       contains,
-		"date":           formatDate,
-		"default":        defaultValue,
-		"dict":           createDictionary,
-		"eq":             eq,
-		"first":          firstElement,
-		"get_section":    g.getSection,
-		"group_by":       g.groupBy,
-		"has_prefix":     strings.HasPrefix,
-		"has_suffix":     strings.HasSuffix,
-		"join":           strings.Join,
-		"last":           lastElement,
-		"limit":          limit,
-		"load":           loadDataToHTML,
-		"load_attribute": loadAttributeToHTML,
-		"lower":          strings.ToLower,
-		"markdown":       g.renderMarkdown,
-		"ne":             ne,
-		"now":            time.Now,
-		"or":             orLogic,
-		"pluralize":      pluralize,
-		"priority":       priority,
-		"replace":        strings.ReplaceAll,
-		"reverse":        reverse,
-		"safe":           safeHTML,
-		"split":          strings.Split,
-		"sub":            func(a, b int) int { return a - b },
-		"to_date":        parseDate,
-		"trim":           strings.TrimSpace,
-		"upper":          strings.ToUpper,
-		"urlize":         urlize,
-		"where":          where,
-		// macros
-		"pagination": g.renderPagination,
-	}
+	// Delegate to the new template engine
+	funcMap := g.engine.CreateFuncMap()
+
+	// Add the old pagination function for backward compatibility
+	funcMap["pagination"] = g.renderPagination
+
+	return funcMap
 }
 
 // Group represents a grouped collection of content nodes with a common key.

@@ -12,16 +12,17 @@ import (
 
 // Site represents the site-wide configuration loaded from config.toml.
 type Site struct {
-	BaseURL      string         `toml:"base_url"`
-	FeedURL      string         `toml:"feed_url"`
-	Description  string         `toml:"Description"`
-	Extra        map[string]any `toml:"extra"`
-	GenerateFeed bool           `toml:"generate_feed"`
-	Theme        string         `toml:"theme"`
-	Img          string         `toml:"img"`
-	Lang         string         `toml:"language"`
-	OutputDir    string         `toml:"output_dir"`
-	Title        string         `toml:"title"`
+	BaseURL         string         `toml:"base_url"`
+	FeedURL         string         `toml:"feed_url"`
+	Description     string         `toml:"Description"`
+	Extra           map[string]any `toml:"extra"`
+	GenerateFeed    bool           `toml:"generate_feed"`
+	Theme           string         `toml:"theme"`
+	Img             string         `toml:"img"`
+	Lang            string         `toml:"language"`
+	OutputDir       string         `toml:"output_dir"`
+	Title           string         `toml:"title"`
+	StrictTemplates bool           `toml:"strict_templates"`
 }
 
 // FrontMatter represents the TOML front matter in markdown content files.
@@ -69,6 +70,7 @@ func (site *Site) ToConfig() map[string]any {
 		siteConfig["output_dir"] = site.OutputDir
 		siteConfig["lang"] = site.Lang
 		siteConfig["generate_feed"] = site.GenerateFeed
+		siteConfig["strict_templates"] = site.StrictTemplates
 		siteConfig["extra"] = MergeExtra(make(map[string]any), site.Extra)
 	}
 	if site.OutputDir == "" {

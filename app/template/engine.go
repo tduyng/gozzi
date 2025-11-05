@@ -1,5 +1,5 @@
-// ABOUTME: Template function registry that manages all available template functions and their metadata.
-// ABOUTME: Provides a clean way to register, validate, and retrieve template functions.
+// Template function registry that manages all available template functions and their metadata.
+// Provides a clean way to register, validate, and retrieve template functions.
 package template
 
 import (

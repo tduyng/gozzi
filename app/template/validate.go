@@ -1,5 +1,5 @@
-// ABOUTME: Template validation with source-level error reporting similar to Rust compiler errors.
-// ABOUTME: Provides detailed error messages with line numbers and code snippets for debugging.
+// Template validation with source-level error reporting similar to Rust compiler errors.
+// Provides detailed error messages with line numbers and code snippets for debugging.
 package template
 
 import (

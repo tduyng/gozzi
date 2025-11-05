@@ -1,5 +1,5 @@
-// ABOUTME: Tests for content-specific template functions for filtering, grouping, and manipulating content nodes.
-// ABOUTME: Validates Limit, Reverse, Where, and GroupBy functions.
+// Tests for content-specific template functions for filtering, grouping, and manipulating content nodes.
+// Validates Limit, Reverse, Where, and GroupBy functions.
 package funcs
 
 import (

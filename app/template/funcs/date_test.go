@@ -1,5 +1,5 @@
-// ABOUTME: Tests for date and time formatting template functions.
-// ABOUTME: Validates FormatDate, ParseDate, and Now functions.
+// Tests for date and time formatting template functions.
+// Validates FormatDate, ParseDate, and Now functions.
 package funcs
 
 import (

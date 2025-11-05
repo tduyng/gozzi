@@ -1,5 +1,5 @@
-// ABOUTME: Tests for template engine function registry and engine initialization.
-// ABOUTME: Verifies function registration, FuncMap building, and custom function handling.
+// Tests for template engine function registry and engine initialization.
+// Verifies function registration, FuncMap building, and custom function handling.
 package template
 
 import (

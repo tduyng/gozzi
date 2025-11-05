@@ -1,5 +1,5 @@
-// ABOUTME: Tests for core template functions including arithmetic, logic, and collection operations.
-// ABOUTME: Validates Add, Sub, Eq, Ne, And, Or, First, Last, Contains, Default, Priority, and Pluralize.
+// Tests for core template functions including arithmetic, logic, and collection operations.
+// Validates Add, Sub, Eq, Ne, And, Or, First, Last, Contains, Default, Priority, and Pluralize.
 package funcs
 
 import (

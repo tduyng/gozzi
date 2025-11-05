@@ -1,5 +1,5 @@
-// ABOUTME: Tests for dictionary and data structure manipulation template functions.
-// ABOUTME: Validates Dict function for creating maps from key-value pairs.
+// Tests for dictionary and data structure manipulation template functions.
+// Validates Dict function for creating maps from key-value pairs.
 package funcs
 
 import (

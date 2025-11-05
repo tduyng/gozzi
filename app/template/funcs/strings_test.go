@@ -1,5 +1,5 @@
-// ABOUTME: Tests for string manipulation template functions.
-// ABOUTME: Validates Lower, Upper, Trim, Replace, Split, Join, HasPrefix, HasSuffix, and Urlize.
+// Tests for string manipulation template functions.
+// Validates Lower, Upper, Trim, Replace, Split, Join, HasPrefix, HasSuffix, and Urlize.
 package funcs
 
 import (

@@ -1,4 +1,4 @@
-// ABOUTME: Tests for site-specific template functions requiring generator context.
+// Tests for site-specific template functions requiring generator context.
 package funcs
 
 import (

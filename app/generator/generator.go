@@ -362,7 +362,7 @@ func (g *Generator) generateTagPage(tag string, entry *parser.TagEntry) error {
 	outputPath := filepath.Join(
 		g.site.OutputDir,
 		"tags",
-		urlize(tag),
+		funcs.Urlize(tag),
 		"index.html",
 	)
 
@@ -578,7 +578,7 @@ func (g *Generator) generate404Page() error {
 }
 
 func (g *Generator) buildTagPermalink(tag string) string {
-	return path.Join("/tags", urlize(tag)) + "/"
+	return path.Join("/tags", funcs.Urlize(tag)) + "/"
 }
 
 func (g *Generator) buildTagURL(tagLink string) string {

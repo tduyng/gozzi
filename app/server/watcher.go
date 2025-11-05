@@ -16,7 +16,7 @@ import (
 	"github.com/tduyng/gozzi/app/builder"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/parser"
-	"github.com/tduyng/gozzi/shared"
+	"github.com/tduyng/gozzi/app/utils"
 )
 
 func (s *DevServer) watchChanges() {
@@ -132,7 +132,7 @@ func (s *DevServer) triggerRebuild() {
 func (s *DevServer) reloadConfig() error {
 	content, err := os.ReadFile(s.configPath)
 	if err != nil {
-		return shared.WrapWithContext(shared.ErrFileSystem, err, shared.ErrorContext{
+		return utils.WrapWithContext(utils.ErrFileSystem, err, utils.ErrorContext{
 			Operation: "read_config_file",
 			Component: "dev_server",
 			Path:      s.configPath,
@@ -146,7 +146,7 @@ func (s *DevServer) reloadConfig() error {
 
 	newSite, err := config.LoadSite(s.configPath)
 	if err != nil {
-		return shared.WrapWithContext(shared.ErrConfig, err, shared.ErrorContext{
+		return utils.WrapWithContext(utils.ErrConfig, err, utils.ErrorContext{
 			Operation: "reload_config",
 			Component: "dev_server",
 			Path:      s.configPath,
@@ -157,7 +157,7 @@ func (s *DevServer) reloadConfig() error {
 
 	newParser := parser.NewParser(newSite)
 	if err := newParser.Parse(s.contentDir); err != nil {
-		return shared.WrapWithContext(shared.ErrContent, err, shared.ErrorContext{
+		return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{
 			Operation: "reparse_content_after_config_reload",
 			Component: "dev_server",
 			Path:      s.contentDir,
@@ -166,7 +166,7 @@ func (s *DevServer) reloadConfig() error {
 
 	newGen, err := builder.NewBuilder(newSite, newParser)
 	if err != nil {
-		return shared.WrapWithContext(shared.ErrTemplate, err, shared.ErrorContext{
+		return utils.WrapWithContext(utils.ErrTemplate, err, utils.ErrorContext{
 			Operation: "recreate_builder_after_config_reload",
 			Component: "dev_server",
 		})

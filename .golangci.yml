@@ -94,6 +94,10 @@ linters:
           - errcheck
           - lll
         path: _test.go
+      - linters:
+          - revive
+        path: app/utils
+        text: "var-naming"
     paths:
       - third_party$
       - builtin$

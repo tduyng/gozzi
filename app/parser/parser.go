@@ -17,6 +17,7 @@ import (
 	"github.com/tduyng/gozzi/app/concurrent"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
+	"github.com/tduyng/gozzi/app/markdown"
 	"github.com/tduyng/gozzi/app/paginate"
 	"github.com/yuin/goldmark"
 	highlight "github.com/yuin/goldmark-highlighting/v2"
@@ -58,8 +59,8 @@ func NewParser(cfg *config.Site) *ContentParser {
 					highlight.WithStyle("dracula"),
 				),
 				&mermaid.Extender{},
-				NewMathExtension(),
-				NewTocExtension(),
+				markdown.NewMathExtension(),
+				markdown.NewTocExtension(),
 			),
 			goldmark.WithParserOptions(
 				parser.WithAutoHeadingID(),

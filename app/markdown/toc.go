@@ -1,4 +1,6 @@
-package parser
+// ABOUTME: Goldmark extension for automatic table of contents generation from headings.
+// ABOUTME: Extracts heading hierarchy and makes it available for template rendering.
+package markdown
 
 import (
 	"bytes"

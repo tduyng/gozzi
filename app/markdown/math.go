@@ -1,5 +1,6 @@
-// Package parser provides markdown parsing with custom goldmark extensions.
-package parser
+// ABOUTME: Goldmark extension for math notation support in markdown content.
+// ABOUTME: Provides AST transformer to enable mathematical expressions rendering.
+package markdown
 
 import (
 	"github.com/yuin/goldmark"

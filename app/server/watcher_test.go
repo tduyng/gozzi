@@ -1,5 +1,5 @@
-// ABOUTME: Tests for file watching, rebuild triggers, and change detection.
-// ABOUTME: Covers filesystem watching, event filtering, and rebuild orchestration.
+// Tests for file watching, rebuild triggers, and change detection.
+// Covers filesystem watching, event filtering, and rebuild orchestration.
 package server
 
 import (

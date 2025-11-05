@@ -1,4 +1,4 @@
-// Site-specific template functions that require generator context for asset paths and content access.
+// Package funcs provides site-specific template functions requiring generator context.
 package funcs
 
 import (

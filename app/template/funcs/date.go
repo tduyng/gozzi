@@ -1,4 +1,4 @@
-// Date and time formatting template functions.
+// Package funcs provides date and time formatting template functions.
 package funcs
 
 import (

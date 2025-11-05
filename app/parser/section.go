@@ -1,5 +1,5 @@
-// ABOUTME: Section parsing logic for _index.md files.
-// ABOUTME: Handles section frontmatter, content rendering, and section node creation.
+// Package parser provides section parsing logic for _index.md files.
+// Handles section frontmatter, content rendering, and section node creation.
 package parser
 
 import (

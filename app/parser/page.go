@@ -1,5 +1,5 @@
-// ABOUTME: Page parsing logic for individual markdown files.
-// ABOUTME: Handles page frontmatter, content rendering, and page node creation with tag support.
+// Package parser provides page parsing logic for individual markdown files.
+// Handles page frontmatter, content rendering, and page node creation with tag support.
 package parser
 
 import (

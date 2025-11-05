@@ -1,5 +1,5 @@
-// ABOUTME: Goldmark extension for automatic table of contents generation from headings.
-// ABOUTME: Extracts heading hierarchy and makes it available for template rendering.
+// Package markdown provides a Goldmark extension for automatic table of contents generation from headings.
+// Extracts heading hierarchy and makes it available for template rendering.
 package markdown
 
 import (

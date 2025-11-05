@@ -1,4 +1,4 @@
-// Page and section generation logic for the site builder.
+// Package builder provides page and section generation logic.
 // Handles rendering individual pages and section index pages.
 package builder
 

@@ -1,5 +1,5 @@
-// ABOUTME: Tests for parser orchestration, initialization, and main Parse method.
-// ABOUTME: Covers ContentParser creation, markdown processor setup, and full directory parsing.
+// Tests for parser orchestration, initialization, and main Parse method.
+// Covers ContentParser creation, markdown processor setup, and full directory parsing.
 package parser
 
 import (

@@ -1,5 +1,5 @@
-// ABOUTME: Goldmark extension for math notation support in markdown content.
-// ABOUTME: Provides AST transformer to enable mathematical expressions rendering.
+// Package markdown provides a Goldmark extension for math notation support in markdown content.
+// Provides AST transformer to enable mathematical expressions rendering.
 package markdown
 
 import (

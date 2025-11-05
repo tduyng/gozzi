@@ -1,5 +1,5 @@
-// ABOUTME: Content parser orchestration and markdown processing configuration.
-// ABOUTME: Main entry point for parsing content directory with concurrent file processing.
+// Package parser provides content parser orchestration and markdown processing.
+// Main entry point for parsing content directory with concurrent file processing.
 package parser
 
 import (

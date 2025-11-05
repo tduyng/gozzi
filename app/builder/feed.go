@@ -1,4 +1,4 @@
-// Atom feed and sitemap generation for the site builder.
+// Package builder provides Atom feed and sitemap generation for the site builder.
 // Creates XML feeds (Atom) and sitemaps for content discovery.
 package builder
 

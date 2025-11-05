@@ -1,5 +1,5 @@
-// ABOUTME: Tests for tag parsing and tracking functionality.
-// ABOUTME: Covers parseTags method and TagEntry operations.
+// Tests for tag parsing and tracking functionality.
+// Covers parseTags method and TagEntry operations.
 package parser
 
 import (

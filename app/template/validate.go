@@ -1,4 +1,4 @@
-// Template validation with source-level error reporting similar to Rust compiler errors.
+// Package template provides validation with source-level error reporting similar to Rust compiler errors.
 // Provides detailed error messages with line numbers and code snippets for debugging.
 package template
 
@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-// TemplateError represents a template error with source context.
-type TemplateError struct {
+// Error represents a template error with source context.
+type Error struct {
 	Template string // Template file name
 	Line     int    // Line number (1-indexed)
 	Column   int    // Column number (1-indexed)
@@ -21,7 +21,7 @@ type TemplateError struct {
 }
 
 // Error implements the error interface.
-func (e *TemplateError) Error() string {
+func (e *Error) Error() string {
 	var sb strings.Builder
 
 	sb.WriteString(fmt.Sprintf("Template error in %s", e.Template))
@@ -59,8 +59,8 @@ func NewValidator(templatesDir string, funcMap template.FuncMap) *Validator {
 }
 
 // Validate checks all templates for syntax errors.
-func (v *Validator) Validate() []TemplateError {
-	var errors []TemplateError
+func (v *Validator) Validate() []Error {
+	var errors []Error
 
 	err := filepath.WalkDir(v.templatesDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -79,7 +79,7 @@ func (v *Validator) Validate() []TemplateError {
 	})
 
 	if err != nil {
-		errors = append(errors, TemplateError{
+		errors = append(errors, Error{
 			Template: v.templatesDir,
 			Message:  fmt.Sprintf("Failed to walk templates directory: %v", err),
 		})
@@ -89,10 +89,10 @@ func (v *Validator) Validate() []TemplateError {
 }
 
 // validateTemplate validates a single template file.
-func (v *Validator) validateTemplate(name, path string) []TemplateError {
+func (v *Validator) validateTemplate(name, path string) []Error {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return []TemplateError{{
+		return []Error{{
 			Template: name,
 			Message:  fmt.Sprintf("Failed to read template: %v", err),
 		}}
@@ -102,14 +102,14 @@ func (v *Validator) validateTemplate(name, path string) []TemplateError {
 	tmpl := template.New(name).Funcs(v.funcMap)
 	_, err = tmpl.Parse(string(content))
 	if err != nil {
-		return v.parseTemplateError(name, string(content), err)
+		return v.parseError(name, string(content), err)
 	}
 
 	return nil
 }
 
-// parseTemplateError extracts detailed error information from template parse errors.
-func (v *Validator) parseTemplateError(name, content string, err error) []TemplateError {
+// parseError extracts detailed error information from template parse errors.
+func (v *Validator) parseError(name, content string, err error) []Error {
 	errMsg := err.Error()
 	lines := strings.Split(content, "\n")
 
@@ -122,7 +122,7 @@ func (v *Validator) parseTemplateError(name, content string, err error) []Templa
 	// Format: "template: name:LINE:COL: message"
 	parts := strings.Split(errMsg, ":")
 	if len(parts) >= 3 {
-		fmt.Sscanf(parts[1], "%d", &lineNum)
+		_, _ = fmt.Sscanf(parts[1], "%d", &lineNum)
 	}
 
 	// Extract snippet around error line
@@ -130,7 +130,7 @@ func (v *Validator) parseTemplateError(name, content string, err error) []Templa
 		snippet = v.buildSnippet(lines, lineNum)
 	}
 
-	return []TemplateError{{
+	return []Error{{
 		Template: name,
 		Line:     lineNum,
 		Message:  extractMessage(errMsg),
@@ -189,8 +189,8 @@ func suggestFix(errMsg string) string {
 
 // ValidationResult holds the results of template validation.
 type ValidationResult struct {
-	Errors   []TemplateError
-	Warnings []TemplateError
+	Errors   []Error
+	Warnings []Error
 }
 
 // IsValid returns true if there are no errors.

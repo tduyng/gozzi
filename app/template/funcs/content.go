@@ -1,4 +1,4 @@
-// Content-specific template functions for filtering, grouping, and manipulating content nodes.
+// Package funcs provides content-specific template functions for filtering and grouping.
 package funcs
 
 import (

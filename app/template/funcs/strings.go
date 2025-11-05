@@ -1,4 +1,4 @@
-// String manipulation template functions including formatting, URL generation, and text processing.
+// Package funcs provides string manipulation template functions for formatting, URLs, and text processing.
 package funcs
 
 import (
@@ -23,9 +23,9 @@ func Trim(s string) string {
 	return strings.TrimSpace(s)
 }
 
-// Replace replaces all occurrences of old with new in s.
-func Replace(s, old, new string) string {
-	return strings.ReplaceAll(s, old, new)
+// Replace replaces all occurrences of old with replacement in s.
+func Replace(s, old, replacement string) string {
+	return strings.ReplaceAll(s, old, replacement)
 }
 
 // Split splits a string by a separator.

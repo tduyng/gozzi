@@ -1,5 +1,5 @@
-// ABOUTME: File watching and automatic rebuild functionality for development server.
-// ABOUTME: Monitors content, templates, static files, and config for changes and triggers rebuilds.
+// Package server provides file watching and automatic rebuild functionality for development server.
+// Monitors content, templates, static files, and config for changes and triggers rebuilds.
 package server
 
 import (

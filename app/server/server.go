@@ -1,5 +1,5 @@
-// ABOUTME: Development server with live reload functionality for gozzi.
-// ABOUTME: Manages server lifecycle, initialization, and file watching orchestration.
+// Package server provides a development server with live reload functionality for gozzi.
+// Manages server lifecycle, initialization, and file watching orchestration.
 package server
 
 import (

@@ -10,15 +10,15 @@ import (
 	"testing"
 )
 
-func TestTemplateError_Error(t *testing.T) {
+func TestError_Error(t *testing.T) {
 	tests := []struct {
 		name     string
-		err      *TemplateError
+		err      *Error
 		contains []string
 	}{
 		{
 			name: "full error with all fields",
-			err: &TemplateError{
+			err: &Error{
 				Template: "home.html",
 				Line:     10,
 				Column:   5,
@@ -37,7 +37,7 @@ func TestTemplateError_Error(t *testing.T) {
 		},
 		{
 			name: "error without column",
-			err: &TemplateError{
+			err: &Error{
 				Template: "post.html",
 				Line:     5,
 				Message:  "syntax error",
@@ -50,7 +50,7 @@ func TestTemplateError_Error(t *testing.T) {
 		},
 		{
 			name: "error without line number",
-			err: &TemplateError{
+			err: &Error{
 				Template: "base.html",
 				Message:  "parse error",
 			},
@@ -61,7 +61,7 @@ func TestTemplateError_Error(t *testing.T) {
 		},
 		{
 			name: "minimal error",
-			err: &TemplateError{
+			err: &Error{
 				Template: "error.html",
 				Message:  "something went wrong",
 			},
@@ -388,7 +388,7 @@ func TestBuildSnippet(t *testing.T) {
 	}
 }
 
-func TestParseTemplateError(t *testing.T) {
+func TestParseError(t *testing.T) {
 	validator := &Validator{}
 
 	content := `<html>
@@ -407,7 +407,7 @@ func TestParseTemplateError(t *testing.T) {
 		err = fmt.Errorf("template: test.html:6:5: function \"undefined_func\" not defined")
 	}
 
-	errors := validator.parseTemplateError("test.html", content, err)
+	errors := validator.parseError("test.html", content, err)
 
 	if len(errors) == 0 {
 		t.Fatal("expected at least one error")
@@ -431,13 +431,13 @@ func TestValidationResult_IsValid(t *testing.T) {
 	}{
 		{
 			name:     "no errors",
-			result:   &ValidationResult{Errors: []TemplateError{}},
+			result:   &ValidationResult{Errors: []Error{}},
 			expected: true,
 		},
 		{
 			name: "with errors",
 			result: &ValidationResult{
-				Errors: []TemplateError{
+				Errors: []Error{
 					{Template: "test.html", Message: "error"},
 				},
 			},
@@ -446,8 +446,8 @@ func TestValidationResult_IsValid(t *testing.T) {
 		{
 			name: "with warnings but no errors",
 			result: &ValidationResult{
-				Errors:   []TemplateError{},
-				Warnings: []TemplateError{{Template: "test.html", Message: "warning"}},
+				Errors:   []Error{},
+				Warnings: []Error{{Template: "test.html", Message: "warning"}},
 			},
 			expected: true,
 		},
@@ -477,7 +477,7 @@ func TestValidationResult_Report(t *testing.T) {
 		{
 			name: "with errors",
 			result: &ValidationResult{
-				Errors: []TemplateError{
+				Errors: []Error{
 					{Template: "home.html", Message: "syntax error"},
 					{Template: "post.html", Message: "parse error"},
 				},
@@ -487,7 +487,7 @@ func TestValidationResult_Report(t *testing.T) {
 		{
 			name: "with warnings",
 			result: &ValidationResult{
-				Warnings: []TemplateError{
+				Warnings: []Error{
 					{Template: "old.html", Message: "deprecated function"},
 				},
 			},
@@ -496,10 +496,10 @@ func TestValidationResult_Report(t *testing.T) {
 		{
 			name: "with both errors and warnings",
 			result: &ValidationResult{
-				Errors: []TemplateError{
+				Errors: []Error{
 					{Template: "error.html", Message: "error"},
 				},
-				Warnings: []TemplateError{
+				Warnings: []Error{
 					{Template: "warn.html", Message: "warning"},
 				},
 			},

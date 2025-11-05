@@ -1,4 +1,4 @@
-// Core template functions for basic operations like arithmetic, logic, and comparisons.
+// Package funcs provides core template functions for arithmetic, logic, and comparisons.
 package funcs
 
 import (

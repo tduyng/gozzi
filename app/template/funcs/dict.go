@@ -1,4 +1,4 @@
-// Dictionary and data structure manipulation template functions.
+// Package funcs provides dictionary and data structure manipulation template functions.
 package funcs
 
 import (

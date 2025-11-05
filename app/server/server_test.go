@@ -1,5 +1,5 @@
-// ABOUTME: Tests for server lifecycle, initialization, and configuration reload.
-// ABOUTME: Covers DevServer creation, startup, and configuration management.
+// Tests for server lifecycle, initialization, and configuration reload.
+// Covers DevServer creation, startup, and configuration management.
 package server
 
 import (

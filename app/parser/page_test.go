@@ -1,5 +1,5 @@
-// ABOUTME: Tests for page parsing functionality.
-// ABOUTME: Covers parsePage, read stats calculation, image URL resolution, and URL building.
+// Tests for page parsing functionality.
+// Covers parsePage, read stats calculation, image URL resolution, and URL building.
 package parser
 
 import (

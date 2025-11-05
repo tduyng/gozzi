@@ -1,5 +1,5 @@
-// ABOUTME: HTTP handlers for serving static files and live reload functionality.
-// ABOUTME: Handles file serving, 404 pages, HTML injection, and SSE for live reload.
+// Package server provides HTTP handlers for serving static files and live reload functionality.
+// Handles file serving, 404 pages, HTML injection, and SSE for live reload.
 package server
 
 import (

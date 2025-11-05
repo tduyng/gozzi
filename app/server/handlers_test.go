@@ -1,5 +1,5 @@
-// ABOUTME: Tests for HTTP handlers, file serving, and live reload functionality.
-// ABOUTME: Covers fileHandler, SSE connections, and client notifications.
+// Tests for HTTP handlers, file serving, and live reload functionality.
+// Covers fileHandler, SSE connections, and client notifications.
 package server
 
 import (

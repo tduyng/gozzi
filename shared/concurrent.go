@@ -1,5 +1,5 @@
-// ABOUTME: Package shared provides worker pool and concurrent processing utilities for gozzi.
-// ABOUTME: This package contains concurrency primitives like WorkerPool, BatchFileProcessor, and EnhancedWaitGroup.
+// Package shared provides worker pool and concurrent processing utilities for gozzi.
+// This package contains concurrency primitives like WorkerPool, BatchFileProcessor, and EnhancedWaitGroup.
 package shared
 
 import (

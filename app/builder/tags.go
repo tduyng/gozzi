@@ -1,4 +1,4 @@
-// Tag page generation for organizing content by tags.
+// Package builder provides tag page generation for organizing content.
 // Creates tag index pages and individual tag pages with tagged content.
 package builder
 

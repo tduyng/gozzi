@@ -1,5 +1,5 @@
-// ABOUTME: Tag parsing and tracking functionality for content pages.
-// ABOUTME: Maintains tag index and associates pages with their tags.
+// Package parser provides tag parsing and tracking functionality for content pages.
+// Maintains tag index and associates pages with their tags.
 package parser
 
 import (

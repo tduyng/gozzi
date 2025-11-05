@@ -1,5 +1,5 @@
-// ABOUTME: Tests for section parsing functionality.
-// ABOUTME: Covers GetOrCreateSection and parseSection methods for _index.md files.
+// Tests for section parsing functionality.
+// Covers GetOrCreateSection and parseSection methods for _index.md files.
 package parser
 
 import (

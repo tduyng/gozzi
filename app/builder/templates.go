@@ -1,4 +1,4 @@
-// Template loading and management for the site builder.
+// Package builder provides template loading and management for the site builder.
 // Handles template discovery, parsing, and function registration.
 package builder
 

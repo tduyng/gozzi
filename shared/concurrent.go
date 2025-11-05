@@ -1,5 +1,6 @@
-// Package concurrent provides worker pool and concurrent processing utilities for gozzi.
-package concurrent
+// ABOUTME: Package shared provides worker pool and concurrent processing utilities for gozzi.
+// ABOUTME: This package contains concurrency primitives like WorkerPool, BatchFileProcessor, and EnhancedWaitGroup.
+package shared
 
 import (
 	"context"
@@ -7,8 +8,6 @@ import (
 	"runtime"
 	"sync"
 	"time"
-
-	"github.com/tduyng/gozzi/app"
 )
 
 // WorkerPool represents a pool of workers with Go 1.25.x enhancements.
@@ -164,7 +163,7 @@ func TimeoutProcessor(
 		case err := <-done:
 			return err
 		case <-ctx.Done():
-			return app.WrapWithContext(app.ErrServer, ctx.Err(), app.ErrorContext{
+			return WrapWithContext(ctx.Err(), ErrServer, ErrorContext{
 				Operation: "processor_timeout",
 				Component: "concurrent",
 				Details:   map[string]any{"timeout": timeout.String()},
@@ -219,9 +218,10 @@ func (bp *BatchFileProcessor) Process(ctx context.Context, files []string) error
 	return wp.ProcessContentNodes(batchNodes, func(ctx context.Context, node any) error {
 		batch, ok := node.([]string)
 		if !ok {
-			return app.WrapWithContext(app.ErrServer,
+			return WrapWithContext(
 				errors.New("invalid batch type: expected []string"),
-				app.ErrorContext{
+				ErrServer,
+				ErrorContext{
 					Operation: "validate_batch_type",
 					Component: "concurrent",
 				})
@@ -270,9 +270,10 @@ func (ewg *EnhancedWaitGroup) WaitWithTimeout(timeout time.Duration) error {
 	case <-done:
 		return nil
 	case <-time.After(timeout):
-		return app.WrapWithContext(app.ErrServer,
+		return WrapWithContext(
 			errors.New("wait group timeout"),
-			app.ErrorContext{
+			ErrServer,
+			ErrorContext{
 				Operation: "wait_group_timeout",
 				Component: "concurrent",
 				Details:   map[string]any{"timeout": timeout.String()},

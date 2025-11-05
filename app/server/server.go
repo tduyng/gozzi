@@ -9,10 +9,10 @@ import (
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/tduyng/gozzi/app"
 	"github.com/tduyng/gozzi/app/builder"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/parser"
+	"github.com/tduyng/gozzi/shared"
 )
 
 // DevServer provides a development server with file watching and live reload.
@@ -37,7 +37,7 @@ func NewDevServer(
 ) (*DevServer, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return nil, app.WrapWithContext(app.ErrServer, err, app.ErrorContext{
+		return nil, shared.WrapWithContext(shared.ErrServer, err, shared.ErrorContext{
 			Operation: "create_file_watcher",
 			Component: "dev_server",
 		})
@@ -75,7 +75,7 @@ func (s *DevServer) Start(port int) {
 
 func (s *DevServer) initialize() error {
 	if err := s.parser.Parse(s.contentDir); err != nil {
-		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+		return shared.WrapWithContext(shared.ErrContent, err, shared.ErrorContext{
 			Operation: "initial_content_parse",
 			Component: "dev_server",
 			Path:      s.contentDir,
@@ -83,7 +83,7 @@ func (s *DevServer) initialize() error {
 	}
 
 	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
-		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+		return shared.WrapWithContext(shared.ErrContent, err, shared.ErrorContext{
 			Operation: "initial_site_generation",
 			Component: "dev_server",
 		})

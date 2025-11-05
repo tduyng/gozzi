@@ -1,5 +1,6 @@
-// Package app provides error handling types and utilities for the gozzi application.
-package app
+// ABOUTME: Package shared provides error handling types and utilities for the gozzi application.
+// ABOUTME: This package contains common error categories and contextual error wrapping functionality.
+package shared
 
 import (
 	"errors"

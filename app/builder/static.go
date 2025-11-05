@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/tduyng/gozzi/app"
+	"github.com/tduyng/gozzi/shared"
 )
 
 func (b *Builder) copyStaticAssets() error {
@@ -20,7 +20,7 @@ func (b *Builder) copyStaticAssets() error {
 
 		relPath, err := filepath.Rel("static", srcPath)
 		if err != nil {
-			return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
+			return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
 				Operation: "get_relative_path",
 				Component: "builder",
 				Path:      srcPath,
@@ -34,7 +34,7 @@ func (b *Builder) copyStaticAssets() error {
 
 func copyFile(src, dst string) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
-		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
 			Operation: "create_directory",
 			Component: "builder",
 			Path:      filepath.Dir(dst),
@@ -43,7 +43,7 @@ func copyFile(src, dst string) error {
 
 	in, err := os.Open(src)
 	if err != nil {
-		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
 			Operation: "open_source_file",
 			Component: "builder",
 			Path:      src,
@@ -55,7 +55,7 @@ func copyFile(src, dst string) error {
 
 	out, err := os.Create(dst)
 	if err != nil {
-		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
 			Operation: "create_destination_file",
 			Component: "builder",
 			Path:      dst,
@@ -66,7 +66,7 @@ func copyFile(src, dst string) error {
 	}()
 
 	if _, err = io.Copy(out, in); err != nil {
-		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
 			Operation: "copy_file_content",
 			Component: "builder",
 			Path:      fmt.Sprintf("%s -> %s", src, dst),
@@ -78,7 +78,7 @@ func copyFile(src, dst string) error {
 func copyDir(src, dst string) error {
 	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
+			return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
 				Operation: "walk_directory",
 				Component: "builder",
 				Path:      path,
@@ -87,7 +87,7 @@ func copyDir(src, dst string) error {
 
 		relPath, err := filepath.Rel(src, path)
 		if err != nil {
-			return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
+			return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
 				Operation: "get_relative_path",
 				Component: "builder",
 				Path:      path,
@@ -97,7 +97,7 @@ func copyDir(src, dst string) error {
 		target := filepath.Join(dst, relPath)
 		if d.IsDir() {
 			if err := os.MkdirAll(target, 0755); err != nil {
-				return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
+				return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
 					Operation: "create_directory",
 					Component: "builder",
 					Path:      target,

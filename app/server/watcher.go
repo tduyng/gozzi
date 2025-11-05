@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/tduyng/gozzi/app"
 	"github.com/tduyng/gozzi/app/builder"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/parser"
+	"github.com/tduyng/gozzi/shared"
 )
 
 func (s *DevServer) watchChanges() {
@@ -132,7 +132,7 @@ func (s *DevServer) triggerRebuild() {
 func (s *DevServer) reloadConfig() error {
 	content, err := os.ReadFile(s.configPath)
 	if err != nil {
-		return app.WrapWithContext(app.ErrFileSystem, err, app.ErrorContext{
+		return shared.WrapWithContext(shared.ErrFileSystem, err, shared.ErrorContext{
 			Operation: "read_config_file",
 			Component: "dev_server",
 			Path:      s.configPath,
@@ -146,7 +146,7 @@ func (s *DevServer) reloadConfig() error {
 
 	newSite, err := config.LoadSite(s.configPath)
 	if err != nil {
-		return app.WrapWithContext(app.ErrConfig, err, app.ErrorContext{
+		return shared.WrapWithContext(shared.ErrConfig, err, shared.ErrorContext{
 			Operation: "reload_config",
 			Component: "dev_server",
 			Path:      s.configPath,
@@ -157,7 +157,7 @@ func (s *DevServer) reloadConfig() error {
 
 	newParser := parser.NewParser(newSite)
 	if err := newParser.Parse(s.contentDir); err != nil {
-		return app.WrapWithContext(app.ErrContent, err, app.ErrorContext{
+		return shared.WrapWithContext(shared.ErrContent, err, shared.ErrorContext{
 			Operation: "reparse_content_after_config_reload",
 			Component: "dev_server",
 			Path:      s.contentDir,
@@ -166,7 +166,7 @@ func (s *DevServer) reloadConfig() error {
 
 	newGen, err := builder.NewBuilder(newSite, newParser)
 	if err != nil {
-		return app.WrapWithContext(app.ErrTemplate, err, app.ErrorContext{
+		return shared.WrapWithContext(shared.ErrTemplate, err, shared.ErrorContext{
 			Operation: "recreate_builder_after_config_reload",
 			Component: "dev_server",
 		})

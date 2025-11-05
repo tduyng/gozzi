@@ -10,8 +10,8 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/tduyng/gozzi/app"
 	"github.com/tduyng/gozzi/app/content"
+	"github.com/tduyng/gozzi/shared"
 )
 
 func (b *Builder) generateSection(node *content.Node) error {
@@ -99,7 +99,7 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 	}
 
 	if tpl == nil {
-		return app.WrapWithContext(fmt.Errorf("no template found"), app.ErrTemplate, app.ErrorContext{
+		return shared.WrapWithContext(fmt.Errorf("no template found"), shared.ErrTemplate, shared.ErrorContext{
 			Operation: "find_template",
 			Component: "builder",
 			Path:      outputPath,
@@ -107,7 +107,7 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 	}
 
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
 			Operation: "create_output_directory",
 			Component: "builder",
 			Path:      filepath.Dir(outputPath),
@@ -116,7 +116,7 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 
 	var buf bytes.Buffer
 	if err := tpl.Execute(&buf, data); err != nil {
-		return app.WrapWithContext(err, app.ErrTemplate, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrTemplate, shared.ErrorContext{
 			Operation: "execute_template",
 			Component: "builder",
 			Path:      outputPath,
@@ -124,7 +124,7 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 	}
 
 	if err := os.WriteFile(outputPath, buf.Bytes(), 0644); err != nil {
-		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
 			Operation: "write_html_output",
 			Component: "builder",
 			Path:      outputPath,

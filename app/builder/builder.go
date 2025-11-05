@@ -9,11 +9,11 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/tduyng/gozzi/app"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/parser"
 	tplengine "github.com/tduyng/gozzi/app/template"
+	"github.com/tduyng/gozzi/shared"
 )
 
 // Builder handles site generation including templates, feeds, and static files.
@@ -43,7 +43,7 @@ func NewBuilder(site *config.Site, parser *parser.ContentParser) (*Builder, erro
 
 	tmpl, err := b.loadTemplates()
 	if err != nil {
-		return nil, app.WrapWithContext(err, app.ErrTemplate, app.ErrorContext{
+		return nil, shared.WrapWithContext(err, shared.ErrTemplate, shared.ErrorContext{
 			Operation: "template_initialization",
 			Component: "builder",
 		})
@@ -57,7 +57,7 @@ func NewBuilder(site *config.Site, parser *parser.ContentParser) (*Builder, erro
 func (b *Builder) ReloadTemplates() error {
 	tmpl, err := b.loadTemplates()
 	if err != nil {
-		return app.WrapWithContext(err, app.ErrTemplate, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrTemplate, shared.ErrorContext{
 			Operation: "template_reload",
 			Component: "builder",
 		})
@@ -72,7 +72,7 @@ func (b *Builder) ReloadTemplates() error {
 // Generate processes the content tree and generates the complete static site.
 func (b *Builder) Generate(contentRoot *content.Node) error {
 	if err := os.RemoveAll(b.site.OutputDir); err != nil {
-		return app.WrapWithContext(err, app.ErrFileSystem, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrFileSystem, shared.ErrorContext{
 			Operation: "clean_output_directory",
 			Component: "builder",
 			Path:      b.site.OutputDir,
@@ -107,35 +107,35 @@ func (b *Builder) Generate(contentRoot *content.Node) error {
 	}
 
 	if err := b.generate404Page(); err != nil {
-		return app.WrapWithContext(err, app.ErrContent, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrContent, shared.ErrorContext{
 			Operation: "generate_404_page",
 			Component: "builder",
 		})
 	}
 
 	if err := b.generateTagPages(); err != nil {
-		return app.WrapWithContext(err, app.ErrContent, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrContent, shared.ErrorContext{
 			Operation: "generate_tag_pages",
 			Component: "builder",
 		})
 	}
 
 	if err := b.generateRobotsTxt(); err != nil {
-		return app.WrapWithContext(err, app.ErrContent, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrContent, shared.ErrorContext{
 			Operation: "generate_robots_txt",
 			Component: "builder",
 		})
 	}
 
 	if err := b.generateAtomFeed(); err != nil {
-		return app.WrapWithContext(err, app.ErrContent, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrContent, shared.ErrorContext{
 			Operation: "generate_atom_feed",
 			Component: "builder",
 		})
 	}
 
 	if err := b.generateSitemap(); err != nil {
-		return app.WrapWithContext(err, app.ErrContent, app.ErrorContext{
+		return shared.WrapWithContext(err, shared.ErrContent, shared.ErrorContext{
 			Operation: "generate_sitemap",
 			Component: "builder",
 		})

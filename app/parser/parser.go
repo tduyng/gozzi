@@ -11,11 +11,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tduyng/gozzi/app/concurrent"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/markdown"
 	"github.com/tduyng/gozzi/app/paginate"
+	"github.com/tduyng/gozzi/shared"
 	"github.com/yuin/goldmark"
 	highlight "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/extension"
@@ -79,7 +79,7 @@ func (p *ContentParser) Parse(rootDir string) error {
 
 	// Create worker pool and process files
 	ctx := context.Background()
-	pool := concurrent.NewWorkerPool(ctx)
+	pool := shared.NewWorkerPool(ctx)
 
 	// Process all markdown files concurrently
 	// Note: Errors are silently ignored to preserve old behavior

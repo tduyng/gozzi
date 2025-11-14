@@ -400,7 +400,7 @@ func TestConcatDoesNotModifyOriginals(t *testing.T) {
 	result := Concat(slice1, slice2)
 
 	// Modify result slice structure (not the nodes themselves)
-	result = append(result, &content.Node{Slug: "new"})
+	_ = append(result, &content.Node{Slug: "new"})
 
 	// Check original slice structures are unmodified
 	if len(slice1) != originalLen1 {

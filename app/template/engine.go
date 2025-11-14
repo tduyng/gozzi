@@ -107,6 +107,8 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("last", FuncDef{Fn: funcs.Last, Description: "Get last element"})
 	r.MustRegister("contains", FuncDef{Fn: funcs.Contains, Description: "Check if collection contains value"})
 	r.MustRegister("reverse", FuncDef{Fn: funcs.Reverse, Description: "Reverse a slice of nodes"})
+	r.MustRegister("concat", FuncDef{Fn: funcs.Concat, Description: "Merge multiple slices into one"})
+	r.MustRegister("sort_by", FuncDef{Fn: funcs.SortBy, Description: "Sort nodes by field"})
 	r.MustRegister("limit", FuncDef{Fn: funcs.Limit, Description: "Limit number of items"})
 	r.MustRegister("where", FuncDef{Fn: funcs.Where, Description: "Filter items by field value"})
 	r.MustRegister("group_by", FuncDef{Fn: funcs.GroupBy, Description: "Group nodes by date field"})

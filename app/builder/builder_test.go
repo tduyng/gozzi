@@ -168,7 +168,7 @@ date = 2024-01-15T10:00:00Z
 			},
 		},
 		{
-			name: "cleans existing output directory",
+			name: "preserves existing output directory (incremental build)",
 			validate: func(t *testing.T, b *Builder, tempDir string) {
 				// Create essential templates
 				templateDir := filepath.Join(tempDir, "templates")
@@ -213,8 +213,9 @@ date = 2024-01-15T10:00:00Z
 				err = b.Generate(contentRoot)
 				assert.NoError(t, err)
 
-				// Verify old file was cleaned
-				assert.NoFileExists(t, oldFile)
+				// Note: With incremental builds, old files are NOT automatically cleaned
+				// This is intentional to preserve user-generated files
+				assert.FileExists(t, oldFile, "Old files should be preserved for incremental builds")
 				// Verify new file was generated
 				assert.FileExists(t, filepath.Join(outputDir, "index.html"))
 			},
@@ -360,12 +361,12 @@ date = 2024-01-15T10:00:00Z
 	contentRoot, exists := p.ContentMap["."]
 	require.True(t, exists, "Parser should have content root")
 
-	// Generate should clean old output and create new
+	// Generate should preserve existing output and add new files (incremental build)
 	err = b.Generate(contentRoot)
 	assert.NoError(t, err)
 
-	// Verify old file was cleaned
-	assert.NoFileExists(t, oldFile)
+	// Verify old file was preserved (incremental build keeps user files)
+	assert.FileExists(t, oldFile, "Old files should be preserved for incremental builds")
 
 	// Verify new files were generated
 	assert.FileExists(t, filepath.Join(site.OutputDir, "index.html"))

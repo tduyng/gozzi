@@ -67,6 +67,7 @@ func handleBuildCommand(args []string) {
 	fs := flag.NewFlagSet("build", flag.ExitOnError)
 	configPath := fs.String("config", "config.toml", "Path to config file")
 	contentDir := fs.String("content", "content", "Content directory")
+	cleanOutput := fs.Bool("clean", false, "Clean output directory before build")
 	fs.Usage = func() { buildUsage() }
 
 	if err := fs.Parse(args); err != nil {
@@ -74,7 +75,15 @@ func handleBuildCommand(args []string) {
 	}
 
 	startTime := time.Now()
-	_, contentParser, gen := initApp(*configPath, *contentDir)
+	site, contentParser, gen := initApp(*configPath, *contentDir)
+
+	// Clean output directory if requested
+	if *cleanOutput {
+		log.Printf("Cleaning output directory: %s", site.OutputDir)
+		if err := os.RemoveAll(site.OutputDir); err != nil {
+			log.Fatalf("Error cleaning output directory: %v", err)
+		}
+	}
 
 	if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
 		log.Fatal(err)
@@ -153,7 +162,8 @@ func buildUsage() {
 
 Options:
   --config string  Path to config file (default "config.toml")
-  --content string Content directory (default "content")`)
+  --content string Content directory (default "content")
+  --clean          Clean output directory before build (removes all files)`)
 }
 
 func serveUsage() {

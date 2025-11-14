@@ -37,6 +37,8 @@ Gozzi augments Go’s `html/template` with a rich set of custom functions to sim
 | `last`           | `{{ last 3 .Slice }}`                                  | Takes last N elements of a slice.                                           |
 | `limit`          | `{{ limit 10 .Slice }}`                                | Shorthand for `first`.                                                      |
 | `reverse`        | `{{ reverse .Slice }}`                                 | Reverses the order of a slice.                                              |
+| `concat`         | `{{ concat .Posts .Notes }}`                           | Merges multiple slices into a single slice.                                 |
+| `sort_by`        | `{{ sort_by "date" .Pages }}`                          | Sorts pages by field (currently "date") in descending order (newest first). |
 | `group_by`       | `{{ range group_by "year" .Pages }}`               | Groups a collection of pages by date field ("year", "month", or "day").     |
 | `where`          | `{{ range where "Draft" false .Pages }}`               | Filters a slice of objects by field/value equality.                         |
 | `get_section`    | `{{ range get_section "blog" }}...{{ end }}`           | Retrieves a section’s pages by section name or path.                        |
@@ -105,6 +107,20 @@ Go's `html/template` includes all functions from `text/template`, with auto-esca
 <!-- Reverse chronological order -->
 {{ range reverse .Site.Pages }}
   <h3>{{ .Title }}</h3>
+{{ end }}
+
+<!-- Merge multiple sections -->
+{{ $blogPosts := get_section "blog" }}
+{{ $notes := get_section "notes" }}
+{{ $allContent := concat $blogPosts.Pages $notes.Pages }}
+{{ range $allContent }}
+  <article>{{ .Title }}</article>
+{{ end }}
+
+<!-- Sort by date (newest first) -->
+{{ $sorted := sort_by "date" .Site.Pages }}
+{{ range $sorted }}
+  <h3>{{ .Title }} - {{ date .Config.date "Jan 2, 2006" }}</h3>
 {{ end }}
 
 <!-- Group by month -->

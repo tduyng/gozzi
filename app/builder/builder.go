@@ -71,9 +71,10 @@ func (b *Builder) ReloadTemplates() error {
 
 // Generate processes the content tree and generates the complete static site.
 func (b *Builder) Generate(contentRoot *content.Node) error {
-	if err := os.RemoveAll(b.site.OutputDir); err != nil {
+	// Create output directory if it doesn't exist, but don't remove it
+	if err := os.MkdirAll(b.site.OutputDir, 0755); err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
-			Operation: "clean_output_directory",
+			Operation: "create_output_directory",
 			Component: "builder",
 			Path:      b.site.OutputDir,
 		})
@@ -155,6 +156,9 @@ func (b *Builder) processNode(node *content.Node) error {
 }
 
 func (b *Builder) walkNodes(node *content.Node, fn func(*content.Node)) {
+	if node == nil {
+		return
+	}
 	fn(node)
 	for _, child := range node.Children {
 		b.walkNodes(child, fn)

@@ -56,6 +56,58 @@ func Concat(slices ...[]*content.Node) []*content.Node {
 	return result
 }
 
+// SortBy sorts content nodes by a field in descending order (newest first).
+// Currently only supports sorting by "date" field.
+func SortBy(field string, nodes []*content.Node) ([]*content.Node, error) {
+	if field != "date" {
+		return nil, fmt.Errorf("sort_by: currently only 'date' field is supported, got %q", field)
+	}
+
+	// Create a copy to avoid modifying the original slice
+	sorted := make([]*content.Node, len(nodes))
+	copy(sorted, nodes)
+
+	// Sort by date in descending order (newest first)
+	slices.SortFunc(sorted, func(a, b *content.Node) int {
+		aDate := extractTime(a.Config["date"])
+		bDate := extractTime(b.Config["date"])
+
+		// Handle nil dates (push to end)
+		if aDate.IsZero() && bDate.IsZero() {
+			return 0
+		}
+		if aDate.IsZero() {
+			return 1 // a goes after b
+		}
+		if bDate.IsZero() {
+			return -1 // b goes after a
+		}
+
+		// Descending order: newer dates first
+		return bDate.Compare(aDate)
+	})
+
+	return sorted, nil
+}
+
+// extractTime extracts a time.Time from various date formats.
+func extractTime(dateVal any) time.Time {
+	switch v := dateVal.(type) {
+	case time.Time:
+		return v
+	case string:
+		// Try RFC3339 format
+		if t, err := time.Parse(time.RFC3339, v); err == nil {
+			return t
+		}
+		// Try date-only format
+		if t, err := time.Parse("2006-01-02", v); err == nil {
+			return t
+		}
+	}
+	return time.Time{} // Zero time
+}
+
 // Where filters a slice of maps by a field value.
 func Where(sections []any, field string, value any) ([]any, error) {
 	if field == "" {

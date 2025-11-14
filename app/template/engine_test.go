@@ -181,7 +181,7 @@ func TestCreateDefaultRegistry(t *testing.T) {
 		// Core
 		"add", "sub", "eq", "ne", "and", "or",
 		// Collections
-		"first", "last", "contains", "reverse", "limit", "where", "group_by",
+		"first", "last", "contains", "reverse", "concat", "sort_by", "limit", "where", "group_by",
 		// Strings
 		"lower", "upper", "trim", "replace", "split", "join",
 		"has_prefix", "has_suffix", "urlize", "default", "priority", "pluralize",

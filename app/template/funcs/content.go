@@ -42,6 +42,20 @@ func Reverse(items []*content.Node) []*content.Node {
 	return reversed
 }
 
+// Concat merges multiple slices of content nodes into a single slice.
+func Concat(slices ...[]*content.Node) []*content.Node {
+	var totalLen int
+	for _, s := range slices {
+		totalLen += len(s)
+	}
+
+	result := make([]*content.Node, 0, totalLen)
+	for _, s := range slices {
+		result = append(result, s...)
+	}
+	return result
+}
+
 // Where filters a slice of maps by a field value.
 func Where(sections []any, field string, value any) ([]any, error) {
 	if field == "" {

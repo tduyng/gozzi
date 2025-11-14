@@ -340,3 +340,73 @@ func TestReverseNilSafety(t *testing.T) {
 		t.Errorf("Reverse() of nil = %v, want empty slice", reversed)
 	}
 }
+
+func TestConcat(t *testing.T) {
+	slice1 := []*content.Node{
+		{Slug: "post1"},
+		{Slug: "post2"},
+	}
+	slice2 := []*content.Node{
+		{Slug: "note1"},
+		{Slug: "note2"},
+		{Slug: "note3"},
+	}
+	slice3 := []*content.Node{
+		{Slug: "page1"},
+	}
+
+	tests := []struct {
+		name   string
+		slices [][]*content.Node
+		want   int
+	}{
+		{"concat two slices", [][]*content.Node{slice1, slice2}, 5},
+		{"concat three slices", [][]*content.Node{slice1, slice2, slice3}, 6},
+		{"concat one slice", [][]*content.Node{slice1}, 2},
+		{"concat empty slices", [][]*content.Node{{}, {}}, 0},
+		{"concat no slices", [][]*content.Node{}, 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Concat(tt.slices...)
+			if len(got) != tt.want {
+				t.Errorf("Concat() returned %d items, want %d", len(got), tt.want)
+			}
+		})
+	}
+}
+
+func TestConcatOrder(t *testing.T) {
+	slice1 := []*content.Node{{Slug: "a"}, {Slug: "b"}}
+	slice2 := []*content.Node{{Slug: "c"}, {Slug: "d"}}
+
+	result := Concat(slice1, slice2)
+
+	expected := []string{"a", "b", "c", "d"}
+	for i, slug := range expected {
+		if result[i].Slug != slug {
+			t.Errorf("Concat()[%d].Slug = %s, want %s", i, result[i].Slug, slug)
+		}
+	}
+}
+
+func TestConcatDoesNotModifyOriginals(t *testing.T) {
+	slice1 := []*content.Node{{Slug: "post1"}}
+	slice2 := []*content.Node{{Slug: "note1"}}
+
+	result := Concat(slice1, slice2)
+
+	// Modify result
+	if len(result) > 0 {
+		result[0].Slug = "modified"
+	}
+
+	// Check originals are unmodified
+	if slice1[0].Slug != "post1" {
+		t.Error("Concat() modified original slice1")
+	}
+	if slice2[0].Slug != "note1" {
+		t.Error("Concat() modified original slice2")
+	}
+}

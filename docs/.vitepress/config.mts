@@ -21,12 +21,15 @@ export default defineConfig({
     base: '/gozzi/', // Required for GitHub Pages on project repos (not username.github.io)
 
     head: [
-        ['link', { rel: 'icon', href: '/gozzi/favicon.ico' }],
+        ['link', { rel: 'icon', type: 'image/x-icon', href: '/gozzi/favicon.ico' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/gozzi/favicon-32x32.png' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/gozzi/favicon-16x16.png' }],
+        ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/gozzi/apple-touch-icon.png' }],
         ['meta', { name: 'theme-color', content: '#10b981' }],
         ['meta', { name: 'og:type', content: 'website' }],
         ['meta', { name: 'og:locale', content: 'en' }],
         ['meta', { name: 'og:site_name', content: 'Gozzi' }],
-        ['meta', { name: 'og:image', content: 'https://tduyng.github.io/gozzi/og-image.png' }],
+        ['meta', { name: 'og:image', content: 'https://tduyng.github.io/gozzi/logo.svg' }],
     ],
 
     themeConfig: {

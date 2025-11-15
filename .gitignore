@@ -48,3 +48,9 @@ debug
 public
 examples/gozzi
 gozzi
+**/.vitepress/cache/*
+**/.vitepress/dist/*
+
+# Node/Bun dependencies
+node_modules/
+bun.lockb

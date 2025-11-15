@@ -179,6 +179,6 @@ go version
 ## Next Steps
 
 Once installed, check out:
-- [CLI Usage](cli.md) - Learn the command-line interface
-- [Configuration](configuration.md) - Set up your first project
+- [CLI Usage](/reference/cli) - Learn the command-line interface
+- [Configuration](/guide/configuration) - Set up your first project
 - [Quick Start Tutorial](README.md#quick-start) - Build your first site

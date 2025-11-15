@@ -284,7 +284,7 @@ lsof -ti:1313 | xargs kill -9
 
 ## Next Steps
 
-- [Configuration Guide](configuration.md) - Learn about config options
-- [Content Structure](content_structure.md) - Organize your content  
-- [Templates](templates.md) - Customize your site appearance
-- [HTML Functions](htmlfunc.md) - Use template functions
+- [Configuration Guide](/guide/configuration) - Learn about config options
+- [Content Structure](/guide/content-structure) - Organize your content  
+- [Templates](/guide/templates) - Customize your site appearance
+- [HTML Functions](/reference/template-functions) - Use template functions

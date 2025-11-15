@@ -109,7 +109,7 @@ I built Gozzi to learn, and now I use it daily for [tduyng.com](https://tduyng.c
 - Math expressions with KaTeX
 - Diagrams with Mermaid
 - Full-text search
-- Builds in ~500ms
+- Builds in ~100ms
 
 See the [real-world example](/examples/real-world) to learn from my setup.
 

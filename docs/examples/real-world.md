@@ -7,6 +7,7 @@ This is how I actually use Gozzi for my personal website [tduyng.com](https://td
 ## What It Is
 
 A personal blog and notes site with:
+
 - 100+ blog posts (technical articles)
 - 20+ quick notes (TILs, short learnings)
 - Math expressions (KaTeX)
@@ -87,7 +88,7 @@ links = [
 
 ### Blog Post
 
-```markdown
+````markdown
 +++
 title = "Understanding Go Channels"
 date = 2024-01-15
@@ -112,9 +113,11 @@ go func() {
 }()
 value := <-ch
 ```
+````
 
 ## Key Concepts...
-```
+
+````
 
 ### Quick Note
 
@@ -131,8 +134,9 @@ Learned about `git worktree` today. Super useful for working on multiple branche
 git worktree add ../feature-branch feature-branch
 # Work in ../feature-branch directory
 # No need to stash or commit
-```
-```
+````
+
+````
 
 ## Template Example
 
@@ -144,7 +148,7 @@ Simple post template with TOC:
 {{ template "partials/_head.html" . }}
 <body>
   {{ template "partials/_header.html" . }}
-  
+
   <main class="container">
     <div class="content-wrapper">
       <!-- Sidebar with TOC -->
@@ -153,14 +157,14 @@ Simple post template with TOC:
         {{ .Page.TOC }}
       </aside>
       {{ end }}
-      
+
       <!-- Main content -->
       <article>
         <h1>{{ .Page.Config.title }}</h1>
-        
+
         <div class="meta">
           <time>{{ date .Page.Config.date "January 2, 2006" }}</time>
-          
+
           {{ if .Page.Config.tags }}
           <div class="tags">
             {{ range .Page.Config.tags }}
@@ -169,23 +173,23 @@ Simple post template with TOC:
           </div>
           {{ end }}
         </div>
-        
+
         <div class="prose">
           {{ .Page.Content }}
         </div>
       </article>
     </div>
   </main>
-  
+
   {{ template "partials/_footer.html" . }}
 </body>
 </html>
-```
+````
 
 ## Build Performance
 
-- **100+ posts**: ~500ms build time
-- **Development**: <200ms incremental rebuilds
+- **100+ posts**: ~100ms build time
+- **Development**: <100ms incremental rebuilds
 - **Live reload**: Instant browser refresh
 
 ## Deployment
@@ -196,30 +200,30 @@ GitHub Actions workflow:
 name: Deploy
 
 on:
-  push:
-    branches: [main]
+    push:
+        branches: [main]
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-      
-      - name: Install Gozzi
-        run: go install github.com/tduyng/gozzi@latest
-      
-      - name: Build
-        run: gozzi build --config config.prod.toml
-      
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: '1.25'
+
+            - name: Install Gozzi
+              run: go install github.com/tduyng/gozzi@latest
+
+            - name: Build
+              run: gozzi build --config config.prod.toml
+
+            - name: Deploy to GitHub Pages
+              uses: peaceiris/actions-gh-pages@v3
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./public
 ```
 
 ## What I Learned
@@ -234,7 +238,7 @@ jobs:
 
 ### What Works Well
 
-- **Fast builds** - 500ms even with 100+ posts
+- **Fast builds** - 100ms even with 100+ posts
 - **Live reload** - Saves so much time during writing
 - **Clear config** - Easy to understand and modify
 - **Go templates** - Simple enough, powerful enough
@@ -242,6 +246,7 @@ jobs:
 ### If I Started Today
 
 I'd do mostly the same, but:
+
 - Maybe organize posts by year folders
 - Add more examples in docs earlier
 - Set up search from day one
@@ -249,12 +254,14 @@ I'd do mostly the same, but:
 ## Key Takeaways
 
 Gozzi works well for personal sites where you want:
+
 - **Control** - You understand everything
 - **Simplicity** - Clear configuration, no surprises
 - **Speed** - Fast builds, good developer experience
 - **Learning** - Great way to learn Go templates
 
 The source code is all public, so you can:
+
 - Copy the template structure
 - See how features work together
 - Use it as a starting point for your site

@@ -18,14 +18,15 @@ export default defineConfig({
     description:
         'A Go static site generator born from curiosity - Fast, flexible, and built for developers',
     lang: 'en-US',
+    base: '/gozzi/', // Required for GitHub Pages on project repos (not username.github.io)
 
     head: [
-        ['link', { rel: 'icon', href: '/favicon.ico' }],
+        ['link', { rel: 'icon', href: '/gozzi/favicon.ico' }],
         ['meta', { name: 'theme-color', content: '#10b981' }],
         ['meta', { name: 'og:type', content: 'website' }],
         ['meta', { name: 'og:locale', content: 'en' }],
         ['meta', { name: 'og:site_name', content: 'Gozzi' }],
-        ['meta', { name: 'og:image', content: 'https://gozzi.dev/og-image.png' }],
+        ['meta', { name: 'og:image', content: 'https://tduyng.github.io/gozzi/og-image.png' }],
     ],
 
     themeConfig: {

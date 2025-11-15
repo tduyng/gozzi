@@ -12,10 +12,12 @@ Before you begin, make sure you have:
 
 ::: tip
 Check your Go version:
+
 ```bash
 go version
 # Should show go1.25 or higher
 ```
+
 :::
 
 ## Step 1: Install Gozzi
@@ -95,12 +97,13 @@ bio = "Developer and writer"
 ```
 
 ::: details What does this config do?
+
 - `base_url`: Your site's URL (used for absolute links)
 - `title`: Site title (appears in browser tabs and feeds)
 - `description`: SEO meta description
 - `generate_feed`: Create RSS/Atom feed automatically
 - `[extra]`: Custom data accessible in templates
-:::
+  :::
 
 ## Step 4: Create Your First Post
 
@@ -145,51 +148,57 @@ Create `templates/post.html`:
 ```html
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Page.Config.title }} - {{ .Site.Config.title }}</title>
-    <meta name="description" content="{{ .Page.Config.description }}">
-    <style>
-        body {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-            font-family: system-ui, -apple-system, sans-serif;
-            line-height: 1.6;
-        }
-        h1 { color: #10b981; }
-        .meta { color: #666; margin-bottom: 2rem; }
-        .tag { 
-            display: inline-block;
-            background: #f0f0f0;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            margin-right: 0.5rem;
-        }
-    </style>
-</head>
-<body>
-    <article>
-        <h1>{{ .Page.Config.title }}</h1>
-        
-        <div class="meta">
-            <time>{{ date .Page.Config.date "January 2, 2006" }}</time>
-            
-            {{ if .Page.Config.tags }}
-            <div style="margin-top: 0.5rem;">
-                {{ range .Page.Config.tags }}
-                <span class="tag">#{{ . }}</span>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{{ .Page.Config.title }} - {{ .Site.Config.title }}</title>
+        <meta name="description" content="{{ .Page.Config.description }}" />
+        <style>
+            body {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 2rem;
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                line-height: 1.6;
+            }
+            h1 {
+                color: #10b981;
+            }
+            .meta {
+                color: #666;
+                margin-bottom: 2rem;
+            }
+            .tag {
+                display: inline-block;
+                background: #f0f0f0;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.25rem;
+                margin-right: 0.5rem;
+            }
+        </style>
+    </head>
+    <body>
+        <article>
+            <h1>{{ .Page.Config.title }}</h1>
+
+            <div class="meta">
+                <time>{{ date .Page.Config.date "January 2, 2006" }}</time>
+
+                {{ if .Page.Config.tags }}
+                <div style="margin-top: 0.5rem;">
+                    {{ range .Page.Config.tags }}
+                    <span class="tag">#{{ . }}</span>
+                    {{ end }}
+                </div>
                 {{ end }}
             </div>
-            {{ end }}
-        </div>
-        
-        <div class="content">
-            {{ .Page.Content }}
-        </div>
-    </article>
-</body>
+
+            <div class="content">{{ .Page.Content }}</div>
+        </article>
+    </body>
 </html>
 ```
 
@@ -242,16 +251,19 @@ You can now deploy the `public/` folder to any static hosting service!
 Now that you have a basic site running, explore more features:
 
 ### Learn the Basics
+
 - [Content Structure](/guide/content-structure) - Organize pages and sections
 - [Configuration](/guide/configuration) - Customize your site
 - [Templates](/guide/templates) - Build custom layouts
 
 ### Add Features
+
 - [Tags & Pagination](/guide/features) - Organize content
 - [RSS & SEO](/guide/features) - Optimize for search engines
 - [Built-in Features](/guide/features) - TOC, math, diagrams
 
 ### See Examples
+
 - [Blog Setup](/examples/quick-start) - Complete blog example
 - [Custom Templates](/guide/templates) - Advanced templating
 - [Real-World Sites](/examples/real-world) - Production examples
@@ -297,8 +309,7 @@ static/
 Reference in templates:
 
 ```html
-<link rel="stylesheet" href="/css/main.css">
-<img src="/img/avatar.jpg" alt="Avatar">
+<link rel="stylesheet" href="/css/main.css" /> <img src="/img/avatar.jpg" alt="Avatar" />
 ```
 
 ## Troubleshooting
@@ -322,6 +333,7 @@ export PATH="$PATH:$HOME/go/bin"
 ### Template Errors
 
 Check that your template file names match the content type:
+
 - `post.html` for blog posts
 - `blog.html` for blog section
 - `home.html` for homepage

@@ -1,9 +1,16 @@
 import { defineConfig } from 'vitepress'
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
+import { execSync } from 'child_process'
 
-// Read version from VERSION file
-const version = readFileSync(resolve(__dirname, '../../VERSION'), 'utf-8').trim()
+// Read version from git tags (the Go way!)
+const getVersion = () => {
+    try {
+        return execSync('git describe --tags --abbrev=0').toString().trim()
+    } catch {
+        return 'v0.0.10' // Fallback
+    }
+}
+
+const version = getVersion()
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -31,7 +38,7 @@ export default defineConfig({
             { text: 'Reference', link: '/reference/cli' },
             { text: 'Examples', link: '/examples/quick-start' },
             {
-                text: `v${version}`,
+                text: version,
                 items: [
                     {
                         text: 'Changelog',

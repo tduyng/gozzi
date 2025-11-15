@@ -76,11 +76,24 @@ Docs auto-deploy via GitHub Actions on push to `main`.
 
 Site goes live at: https://tduyng.github.io/gozzi/
 
+## Versioning
+
+Version is read from **git tags** (the Go way):
+
+```bash
+# Release new version
+git tag v0.0.11
+git push --tags
+```
+
+Docs automatically show the latest tag in navigation.
+
 ## Technology
 
 - **VitePress** - Fast static site generator
-- **Bun** - Fast JavaScript runtime
+- **Bun** - Fast JavaScript runtime (~2x faster than Node.js)
 - **GitHub Actions** - Auto-deployment
+- **Git tags** - Version management
 
 ## Contributing
 

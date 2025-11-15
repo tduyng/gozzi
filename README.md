@@ -48,7 +48,7 @@ EOF
 gozzi serve
 ```
 
-Visit **http://localhost:3000** 🎉
+Visit **http://localhost:1313** 🎉
 
 ## 📚 Documentation
 

@@ -137,7 +137,7 @@ tag:
 	fi
 	@echo "Creating tag v$(VER)..."
 	@echo "Updating package.json version..."
-	@sed -i '' 's/"version": "[^"]*"/"version": "$(VER)"/' package.json
+	@sed -i.bak 's/"version": "[^"]*"/"version": "$(VER)"/' package.json && rm -f package.json.bak
 	@git tag -a v$(VER) -m "Release v$(VER)"
 	@make changelog
 	@git add $(CHANGELOG) LATEST_CHANGELOG.md package.json

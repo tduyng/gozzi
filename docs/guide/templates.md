@@ -804,7 +804,7 @@ public/
 
 ## Next Steps
 
-- [Configuration](configuration.md) - Configure site settings and front matter
-- [HTML Functions](htmlfunc.md) - Complete template function reference  
-- [Content Structure](content_structure.md) - Organize your content effectively
-- [CLI Reference](cli.md) - Development server and build commands
+- [Configuration](/guide/configuration) - Configure site settings and front matter
+- [HTML Functions](/reference/template-functions) - Complete template function reference  
+- [Content Structure](/guide/content-structure) - Organize your content effectively
+- [CLI Reference](/reference/cli) - Development server and build commands

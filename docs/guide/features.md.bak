@@ -8,22 +8,22 @@ Gozzi automatically generates a table of contents from your content headings, ma
 
 ### How It Works
 
-The TOC is built from all heading tags (`h1` through `h6`) found in your content. It's accessible in templates via the `{{ .Toc }}` variable.
+The TOC is built from all heading tags (`h1` through `h6`) found in your content. It's accessible in templates via the `{{ .Toc  }}` variable.
 
 ### Usage in Templates
 
 ```html
 <!-- Basic TOC display -->
-{{ if .Toc }}
+{{ if .Toc  }}
 <nav class="toc">
   <h3>Table of Contents</h3>
-  {{ .Toc }}
+  {{ .Toc  }}
 </nav>
-{{ end }}
+{{ end  }}
 
 <!-- With custom styling -->
 <div class="content-navigation">
-  {{ .Toc }}
+  {{ .Toc  }}
 </div>
 ```
 
@@ -45,17 +45,17 @@ Tags are extracted from:
 
 ```html
 <!-- Display tags for current page -->
-{{ range .Tags }}
-  <span class="tag">{{ . }}</span>
-{{ end }}
+{{ range .Tags  }}
+  <span class="tag">{{ .  }}</span>
+{{ end  }}
 
 <!-- Access all site tags -->
-{{ range .Site.Tags }}
-  <a href="/tags/{{ . | urlize }}">{{ . }}</a>
-{{ end }}
+{{ range .Site.Tags  }}
+  <a href="/tags/{{ . | urlize  }}">{{ .  }}</a>
+{{ end  }}
 
 <!-- Get tag counts -->
-{{ .Site.TagCounts.development }} <!-- Number of posts with "development" tag -->
+{{ .Site.TagCounts.development  }} <!-- Number of posts with "development" tag -->
 ```
 
 ### Tag Pages
@@ -78,36 +78,36 @@ pagination_path = "page" # URL path for pagination (default: "page")
 
 ```html
 <!-- Display paginated content -->
-{{ range .Paginate.Items }}
+{{ range .Paginate.Items  }}
   <article>
-    <h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
-    <p>{{ .Summary }}</p>
+    <h2><a href="{{ .Permalink  }}">{{ .Title  }}</a></h2>
+    <p>{{ .Summary  }}</p>
   </article>
-{{ end }}
+{{ end  }}
 
 <!-- Pagination navigation -->
-{{ if .Paginate.HasPrev }}
-  <a href="{{ .Paginate.PrevURL }}">← Previous</a>
-{{ end }}
+{{ if .Paginate.HasPrev  }}
+  <a href="{{ .Paginate.PrevURL  }}">← Previous</a>
+{{ end  }}
 
-<span>Page {{ .Paginate.Current }} of {{ .Paginate.Total }}</span>
+<span>Page {{ .Paginate.Current  }} of {{ .Paginate.Total  }}</span>
 
-{{ if .Paginate.HasNext }}
-  <a href="{{ .Paginate.NextURL }}">Next →</a>
-{{ end }}
+{{ if .Paginate.HasNext  }}
+  <a href="{{ .Paginate.NextURL  }}">Next →</a>
+{{ end  }}
 ```
 
 ### Advanced Pagination
 
 ```html
 <!-- Page number list -->
-{{ range .Paginate.Pages }}
-  {{ if eq . $.Paginate.Current }}
-    <span class="current">{{ . }}</span>
-  {{ else }}
-    <a href="{{ $.Paginate.PageURL . }}">{{ . }}</a>
-  {{ end }}
-{{ end }}
+{{ range .Paginate.Pages  }}
+  {{ if eq . $.Paginate.Current  }}
+    <span class="current">{{ .  }}</span>
+  {{ else  }}
+    <a href="{{ $.Paginate.PageURL .  }}">{{ .  }}</a>
+  {{ end  }}
+{{ end  }}
 ```
 
 ## RSS/Atom Feeds
@@ -138,18 +138,18 @@ Create `templates/atom.xml` to customize feed format:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <title>{{ .Site.Title }}</title>
-  <link href="{{ .Site.BaseURL }}/atom.xml" rel="self"/>
-  <updated>{{ .Site.LastMod | dateFormat "2006-01-02T15:04:05Z07:00" }}</updated>
+  <title>{{ .Site.Title  }}</title>
+  <link href="{{ .Site.BaseURL  }}/atom.xml" rel="self"/>
+  <updated>{{ .Site.LastMod | dateFormat "2006-01-02T15:04:05Z07:00"  }}</updated>
   
-  {{ range .Site.RecentPosts }}
+  {{ range .Site.RecentPosts  }}
   <entry>
-    <title>{{ .Title }}</title>
-    <link href="{{ .Permalink }}"/>
-    <updated>{{ .Date | dateFormat "2006-01-02T15:04:05Z07:00" }}</updated>
-    <content type="html">{{ .Content | html }}</content>
+    <title>{{ .Title  }}</title>
+    <link href="{{ .Permalink  }}"/>
+    <updated>{{ .Date | dateFormat "2006-01-02T15:04:05Z07:00"  }}</updated>
+    <content type="html">{{ .Content | html  }}</content>
   </entry>
-  {{ end }}
+  {{ end  }}
 </feed>
 ```
 
@@ -206,14 +206,14 @@ image: "/images/post-cover.png"
 
 ```html
 <!-- Open Graph meta tags -->
-<meta property="og:image" content="{{ .ImageURL }}" />
-<meta property="og:title" content="{{ .Title }}" />
-<meta property="og:description" content="{{ .Summary }}" />
+<meta property="og:image" content="{{ .ImageURL  }}" />
+<meta property="og:title" content="{{ .Title  }}" />
+<meta property="og:description" content="{{ .Summary  }}" />
 
 <!-- Twitter Card meta tags -->
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:image" content="{{ .ImageURL }}" />
-<meta name="twitter:title" content="{{ .Title }}" />
+<meta name="twitter:image" content="{{ .ImageURL  }}" />
+<meta name="twitter:title" content="{{ .Title  }}" />
 ```
 
 ### Fallback Images
@@ -235,12 +235,12 @@ Gozzi automatically calculates useful content metrics for display and internal u
 Access word counts in templates:
 
 ```html
-<p>{{ .WordCount }} words</p>
+<p>{{ .WordCount  }} words</p>
 
 <!-- Conditional display -->
-{{ if gt .WordCount 1000 }}
+{{ if gt .WordCount 1000  }}
   <span class="long-read">Long read</span>
-{{ end }}
+{{ end  }}
 ```
 
 ### Reading Time
@@ -248,11 +248,11 @@ Access word counts in templates:
 Estimated reading time based on average reading speed:
 
 ```html
-<p>{{ .ReadingTime }} min read</p>
+<p>{{ .ReadingTime  }} min read</p>
 
 <!-- Detailed breakdown -->
 <div class="reading-info">
-  {{ .WordCount }} words • {{ .ReadingTime }} min read
+  {{ .WordCount  }} words • {{ .ReadingTime  }} min read
 </div>
 ```
 
@@ -306,13 +306,13 @@ Include KaTeX in your template head:
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script>
 
-{{ if .HasMath }}
+{{ if .HasMath  }}
 <script>
   document.addEventListener("DOMContentLoaded", function() {
     renderMathInElement(document.body);
   });
 </script>
-{{ end }}
+{{ end  }}
 ```
 
 ## Mermaid Diagrams
@@ -348,7 +348,7 @@ graph TD
 <!-- Mermaid JavaScript -->
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.0.0/dist/mermaid.min.js"></script>
 
-{{ if .HasMermaid }}
+{{ if .HasMermaid  }}
 <script>
   mermaid.initialize({
     startOnLoad: true,
@@ -356,7 +356,7 @@ graph TD
     securityLevel: 'loose'
   });
 </script>
-{{ end }}
+{{ end  }}
 ```
 
 ### Example Diagrams

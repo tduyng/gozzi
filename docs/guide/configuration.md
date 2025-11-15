@@ -479,10 +479,10 @@ gozzi serve --config config.dev.toml --port 3000
 
 ## Next Steps
 
-- [CLI Reference](cli.md) - Learn command-line options
-- [Content Structure](content_structure.md) - Organize your content
-- [Templates](templates.md) - Customize your site's appearance
-- [HTML Functions](htmlfunc.md) - Use template functions
+- [CLI Reference](/reference/cli) - Learn command-line options
+- [Content Structure](/guide/content-structure) - Organize your content
+- [Templates](/guide/templates) - Customize your site's appearance
+- [HTML Functions](/reference/template-functions) - Use template functions
 
 ## References
 

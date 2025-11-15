@@ -1,12 +1,11 @@
-VERSION_FILE := VERSION
 CHANGELOG    := CHANGELOG.md
 
 BIN_NAME     := gozzi
-DEV_VERSION  := $(shell git describe --tags --always | sed 's/^v//')
+VERSION      := $(shell git describe --tags --always | sed 's/^v//')
 BUILD_TIME   := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 GIT_COMMIT   := $(shell git rev-parse --short HEAD)
 LD_FLAGS     := -ldflags "\
-    -X 'main.version=$(DEV_VERSION)' \
+    -X 'main.version=$(VERSION)' \
     -X 'main.buildTime=$(BUILD_TIME)' \
     -X 'main.commit=$(GIT_COMMIT)' \
     -w -s"
@@ -14,6 +13,35 @@ GO_FILES := $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 GREEN := \033[0;32m
 YELLOW := \033[1;33m
 RESET := \033[0m
+
+.DEFAULT_GOAL := help
+
+## help: Display this help message
+.PHONY: help
+help:
+	@echo "Gozzi Makefile Commands:"
+	@echo ""
+	@echo "Development:"
+	@echo "  make build-dev    - Build development binary"
+	@echo "  make install-dev  - Install to GOPATH/bin"
+	@echo "  make test         - Run tests"
+	@echo "  make coverage     - Generate coverage report"
+	@echo ""
+	@echo "Quality:"
+	@echo "  make audit        - Run security and quality checks"
+	@echo "  make lint         - Run linter"
+	@echo "  make fmt          - Format code"
+	@echo "  make vet          - Run go vet"
+	@echo ""
+	@echo "Release:"
+	@echo "  make tag VER=0.0.11     - Create git tag (will generate changelog)"
+	@echo "  make release            - Build release binaries (requires goreleaser)"
+	@echo ""
+	@echo "Maintenance:"
+	@echo "  make tidy         - Tidy go modules"
+	@echo "  make clean        - Remove build artifacts"
+	@echo ""
+	@echo "Version: $(VERSION)"
 
 # ==================================================================================== #
 # QUALITY CONTROL
@@ -42,7 +70,7 @@ check-tools:
 ## build: Build development binary
 .PHONY: build-dev
 build-dev: check-tools
-	@echo "Building $(BIN_NAME) version $(DEV_VERSION)..."
+	@echo "Building $(BIN_NAME) version $(VERSION)..."
 	@go build -tags=development -v $(LD_FLAGS) -o $(BIN_NAME) main.go
 
 ## install: Install system-wide
@@ -100,27 +128,23 @@ changelog:
 	@git cliff --latest --strip all --output LATEST_CHANGELOG.md
 	@echo "Changelog written to $(CHANGELOG)"
 
-.PHONY: bump-version
-bump-version:
-	@if [ -z "$(VER)" ]; then \
-	  echo "Error: VER environment variable not set. Usage: make bump-version VER=0.0.1"; \
-	  exit 1; \
-	fi; \
-	echo "$(VER)" > VERSION; \
-	echo "Version set to $(VER)"
-
 ## tag: Create new version tag (format: vX.Y.Z)
 .PHONY: tag
-tag: bump-version
+tag:
+	@if [ -z "$(VER)" ]; then \
+	  echo "Error: VER environment variable not set. Usage: make tag VER=0.0.11"; \
+	  exit 1; \
+	fi
+	@echo "Creating tag v$(VER)..."
+	@echo "Updating package.json version..."
+	@sed -i '' 's/"version": "[^"]*"/"version": "$(VER)"/' package.json
 	@git tag -a v$(VER) -m "Release v$(VER)"
 	@make changelog
-	@git add .
-	@GIT_COMMIT_MSG="chore: bump version to v$(VER)" ; \
-	 git commit -m "$$GIT_COMMIT_MSG"
+	@git add $(CHANGELOG) LATEST_CHANGELOG.md package.json
+	@git commit -m "chore: release v$(VER)"
 	@git tag -d v$(VER)
 	@git tag -a v$(VER) -m "Release v$(VER)"
-	@git push
-	@git push origin v$(VER)
+	@echo "Tag v$(VER) created. Push with: git push && git push origin v$(VER)"
 	
 ## release: Build production binaries for multiple platforms
 .PHONY: release

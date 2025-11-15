@@ -46,5 +46,12 @@ debug
 # Project-specific build output
 /dist/
 public
+!**/docs/public/*
 examples/gozzi
 gozzi
+**/.vitepress/cache/*
+**/.vitepress/dist/*
+
+# Node/Bun dependencies
+node_modules/
+bun.lockb

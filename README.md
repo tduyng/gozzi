@@ -6,7 +6,9 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/tduyng/gozzi)](https://github.com/tduyng/gozzi/releases)
 
-**Gozzi** started as a learning project to understand modern static site generators. What began as "let's see how Hugo, Zola works" became my daily driver for [tduyng.com](https://tduyng.com).
+I built **Gozzi** to learn how static site generators work. Now I use it for [tduyng.com](https://tduyng.com).
+
+Gozzi is simple, fast, and helps you learn Go along the way.
 
 ## ✨ Key Features
 
@@ -107,18 +109,16 @@ Visit `http://localhost:3000` to see your site!
 
 ## 📚 Documentation
 
-Comprehensive guides are available in the [`docs/`](docs/) folder:
+📖 **[Complete Documentation](https://tduyng.github.io/gozzi/)** - Visit our full documentation site
 
-| Guide                                              | Description                                   |
-| -------------------------------------------------- | --------------------------------------------- |
-| **[Installation](docs/installation.md)**           | Platform-specific installation instructions   |
-| **[CLI Reference](docs/cli.md)**                   | Complete command-line interface documentation |
-| **[Configuration](docs/configuration.md)**         | Site, page, and section configuration options |
-| **[Content Structure](docs/content_structure.md)** | Organizing your content and front matter      |
-| **[Templates](docs/templates.md)**                 | Template system, variables, and live reload   |
-| **[Template Functions](docs/htmlfunc.md)**         | 40+ helper functions for templates            |
-| **[Built-in Features](docs/other_features.md)**    | TOC, tags, pagination, feeds, SEO, and more   |
+Quick links:
 
+- 🚀 [Getting Started Guide](https://tduyng.github.io/gozzi/guide/getting-started)
+- ⚙️ [Installation](https://tduyng.github.io/gozzi/guide/installation)
+- 📝 [Configuration](https://tduyng.github.io/gozzi/guide/configuration)
+- 🎨 [Templates](https://tduyng.github.io/gozzi/guide/templates)
+- 💻 [CLI Reference](https://tduyng.github.io/gozzi/reference/cli)
+- 📖 [Examples](https://tduyng.github.io/gozzi/examples/quick-start)
 
 ## 🔧 Advanced Usage
 

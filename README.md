@@ -2,9 +2,18 @@
 
 **A Go static site generator born from curiosity**
 
-[![Go Version](https://img.shields.io/badge/Go-1.25%2B-blue.svg)](https://golang.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/tduyng/gozzi)](https://github.com/tduyng/gozzi/releases)
+<p align="left">
+  <a href="https://golang.org/">
+    <img alt="Go Version" title="Go 1.25+" src="https://custom-icon-badges.demolab.com/badge/Go-1.25+-00ADD8?style=for-the-badge&logo=go&logoColor=white&labelColor=302D41"/></a>
+  <a href="https://github.com/tduyng/gozzi/actions/workflows/ci.yml">
+    <img alt="Build Status" title="CI Status" src="https://img.shields.io/github/actions/workflow/status/tduyng/gozzi/ci.yml?branch=main&style=for-the-badge&logo=github-actions&logoColor=white&labelColor=302D41&color=89B4FA"/></a>
+  <a href="LICENSE">
+    <img alt="License" title="MIT License" src="https://custom-icon-badges.demolab.com/badge/License-MIT-A6E3A1?style=for-the-badge&logo=law&logoColor=white&labelColor=302D41"/></a>
+  <a href="https://github.com/tduyng/gozzi/releases">
+    <img alt="Release" title="Latest Release" src="https://custom-icon-badges.demolab.com/github/v/release/tduyng/gozzi?style=for-the-badge&logo=rocket&color=DDB6F2&logoColor=white&labelColor=302D41"/></a>
+  <a href="https://github.com/tduyng/gozzi/stargazers">
+    <img alt="Stars" title="Star on GitHub" src="https://custom-icon-badges.demolab.com/github/stars/tduyng/gozzi?style=for-the-badge&logo=star&color=F5E0DC&logoColor=white&labelColor=302D41"/></a>
+</p>
 
 I built **Gozzi** to learn how static site generators work. Now I use it for [tduyng.com](https://tduyng.com).
 

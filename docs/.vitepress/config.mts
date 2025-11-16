@@ -82,6 +82,7 @@ export default defineConfig({
                     items: [
                         { text: 'CLI Commands', link: '/reference/cli' },
                         { text: 'Template Functions', link: '/reference/template-functions' },
+                        { text: 'Architecture', link: '/reference/architecture' },
                     ],
                 },
             ],

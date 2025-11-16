@@ -213,11 +213,11 @@ gozzi serve
 You should see:
 
 ```
-Starting server on http://localhost:3000
+Starting server on http://localhost:1313
 Watching for changes...
 ```
 
-Open your browser to [http://localhost:3000/blog/hello-world/](http://localhost:3000/blog/hello-world/) 🎉
+Open your browser to [http://localhost:1313/blog/hello-world/](http://localhost:3000/blog/hello-world/) 🎉
 
 ::: tip Live Reload
 Try editing your post or template - the browser will automatically refresh!

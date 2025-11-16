@@ -5,6 +5,7 @@ Build a complete blog with Gozzi in under 10 minutes.
 ## What We'll Build
 
 A fully-functional blog with:
+
 - ✅ Homepage with featured posts
 - ✅ Blog listing page
 - ✅ Individual blog posts
@@ -87,7 +88,7 @@ package main
 import "fmt"
 
 func main() {
-    fmt.Println("Hello from Gozzi!")
+fmt.Println("Hello from Gozzi!")
 }
 \`\`\`
 
@@ -154,18 +155,24 @@ Create `templates/partials/_head.html`:
 
 ```html
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ priority .Page.Config.title .Section.Config.title .Site.Config.title }}</title>
-    
-    {{ $description := priority .Page.Config.description .Section.Config.description .Site.Config.description }}
-    <meta name="description" content="{{ $description }}">
-    
+
+    {{ $description := priority .Page.Config.description .Section.Config.description
+    .Site.Config.description }}
+    <meta name="description" content="{{ $description }}" />
+
     <!-- Styles -->
-    <link rel="stylesheet" href="/css/main.css">
-    
+    <link rel="stylesheet" href="/css/main.css" />
+
     <!-- RSS Feed -->
-    <link rel="alternate" type="application/atom+xml" title="{{ .Site.Config.title }}" href="/atom.xml">
+    <link
+        rel="alternate"
+        type="application/atom+xml"
+        title="{{ .Site.Config.title }}"
+        href="/atom.xml"
+    />
 </head>
 ```
 
@@ -175,7 +182,7 @@ Create `templates/partials/_header.html`:
 <header class="site-header">
     <nav class="container">
         <a href="/" class="site-title">{{ .Site.Config.title }}</a>
-        
+
         <ul class="nav-links">
             {{ range .Site.Config.extra.sections }}
             <li><a href="{{ .path }}">{{ .name }}</a></li>
@@ -191,7 +198,7 @@ Create `templates/partials/_footer.html`:
 <footer class="site-footer">
     <div class="container">
         <p>&copy; 2024 {{ .Site.Config.extra.name }}. Built with Gozzi.</p>
-        
+
         <div class="social-links">
             {{ range .Site.Config.extra.links }}
             <a href="{{ .url }}" target="_blank" rel="noopener">{{ .name }}</a>
@@ -208,56 +215,56 @@ Create `templates/home.html`:
 ```html
 <!DOCTYPE html>
 <html lang="{{ .Site.Config.language }}">
-{{ template "partials/_head.html" . }}
-<body class="home">
-    {{ template "partials/_header.html" . }}
-    
-    <main class="container">
-        <section class="hero">
-            <h1>{{ .Site.Config.title }}</h1>
-            <p class="lead">{{ .Site.Config.description }}</p>
-        </section>
-        
-        <section class="featured-posts">
-            <h2>Featured Posts</h2>
-            
-            {{ $blog := get_section "blog" }}
-            {{ $featured := where $blog.Children "Config.featured" true }}
-            
-            <div class="post-grid">
-                {{ range $featured }}
-                <article class="post-card">
-                    <h3><a href="{{ .Permalink }}">{{ .Config.title }}</a></h3>
-                    <time>{{ date .Config.date "January 2, 2006" }}</time>
-                    <p>{{ .Config.description }}</p>
-                    
-                    <div class="tags">
-                        {{ range .Config.tags }}
-                        <span class="tag">#{{ . }}</span>
-                        {{ end }}
-                    </div>
-                </article>
-                {{ end }}
-            </div>
-        </section>
-        
-        <section class="recent-posts">
-            <h2>Recent Posts</h2>
-            
-            {{ $recent := first 5 (reverse $blog.Children) }}
-            <ul class="post-list">
-                {{ range $recent }}
-                <li>
-                    <a href="{{ .Permalink }}">{{ .Config.title }}</a>
-                    <time>{{ date .Config.date "Jan 2, 2006" }}</time>
-                </li>
-                {{ end }}
-            </ul>
-        </section>
-    </main>
-    
-    {{ template "partials/_footer.html" . }}
-</body>
+    {{ template "partials/_head.html" . }}
+    <body class="home">
+        {{ template "partials/_header.html" . }}
+
+        <main class="container">
+            <section class="hero">
+                <h1>{{ .Site.Config.title }}</h1>
+                <p class="lead">{{ .Site.Config.description }}</p>
+            </section>
+
+            <section class="featured-posts">
+                <h2>Featured Posts</h2>
+
+                {{ $blog := get_section "blog" }} {{ $featured := where $blog.Children
+                "Config.featured" true }}
+
+                <div class="post-grid">
+                    {{ range $featured }}
+                    <article class="post-card">
+                        <h3><a href="{{ .Permalink }}">{{ .Config.title }}</a></h3>
+                        <time>{{ date .Config.date "January 2, 2006" }}</time>
+                        <p>{{ .Config.description }}</p>
+
+                        <div class="tags">
+                            {{ range .Config.tags }}
+                            <span class="tag">#{{ . }}</span>
+                            {{ end }}
+                        </div>
+                    </article>
+                    {{ end }}
+                </div>
+            </section>
+
+            <section class="recent-posts">
+                <h2>Recent Posts</h2>
+
+                {{ $recent := first 5 (reverse $blog.Children) }}
+                <ul class="post-list">
+                    {{ range $recent }}
+                    <li>
+                        <a href="{{ .Permalink }}">{{ .Config.title }}</a>
+                        <time>{{ date .Config.date "Jan 2, 2006" }}</time>
+                    </li>
+                    {{ end }}
+                </ul>
+            </section>
+        </main>
+
+        {{ template "partials/_footer.html" . }}
+    </body>
 </html>
 ```
 
@@ -268,44 +275,44 @@ Create `templates/blog.html`:
 ```html
 <!DOCTYPE html>
 <html lang="{{ .Site.Config.language }}">
-{{ template "partials/_head.html" . }}
-<body class="blog-list">
-    {{ template "partials/_header.html" . }}
-    
-    <main class="container">
-        <header class="section-header">
-            <h1>{{ .Section.Config.title }}</h1>
-            <p>{{ .Section.Config.description }}</p>
-        </header>
-        
-        <div class="posts">
-            {{ range .Section.Children }}
-            <article class="post-card">
-                <h2><a href="{{ .Permalink }}">{{ .Config.title }}</a></h2>
-                
-                <div class="meta">
-                    <time>{{ date .Config.date "January 2, 2006" }}</time>
-                    {{ if .Config.featured }}
-                    <span class="badge featured">Featured</span>
+    {{ template "partials/_head.html" . }}
+    <body class="blog-list">
+        {{ template "partials/_header.html" . }}
+
+        <main class="container">
+            <header class="section-header">
+                <h1>{{ .Section.Config.title }}</h1>
+                <p>{{ .Section.Config.description }}</p>
+            </header>
+
+            <div class="posts">
+                {{ range .Section.Children }}
+                <article class="post-card">
+                    <h2><a href="{{ .Permalink }}">{{ .Config.title }}</a></h2>
+
+                    <div class="meta">
+                        <time>{{ date .Config.date "January 2, 2006" }}</time>
+                        {{ if .Config.featured }}
+                        <span class="badge featured">Featured</span>
+                        {{ end }}
+                    </div>
+
+                    <p>{{ .Config.description }}</p>
+
+                    {{ if .Config.tags }}
+                    <div class="tags">
+                        {{ range .Config.tags }}
+                        <a href="/tags/{{ . | urlize }}" class="tag">#{{ . }}</a>
+                        {{ end }}
+                    </div>
                     {{ end }}
-                </div>
-                
-                <p>{{ .Config.description }}</p>
-                
-                {{ if .Config.tags }}
-                <div class="tags">
-                    {{ range .Config.tags }}
-                    <a href="/tags/{{ . | urlize }}" class="tag">#{{ . }}</a>
-                    {{ end }}
-                </div>
+                </article>
                 {{ end }}
-            </article>
-            {{ end }}
-        </div>
-    </main>
-    
-    {{ template "partials/_footer.html" . }}
-</body>
+            </div>
+        </main>
+
+        {{ template "partials/_footer.html" . }}
+    </body>
 </html>
 ```
 
@@ -319,18 +326,18 @@ Create `templates/post.html`:
 {{ template "partials/_head.html" . }}
 <body class="post">
     {{ template "partials/_header.html" . }}
-    
+
     <main class="container">
         <article class="prose">
             <header class="post-header">
                 <h1>{{ .Page.Config.title }}</h1>
-                
+
                 <div class="meta">
                     <time datetime="{{ .Page.Config.date.Format "2006-01-02" }}">
                         {{ date .Page.Config.date "January 2, 2006" }}
                     </time>
                 </div>
-                
+
                 {{ if .Page.Config.tags }}
                 <div class="tags">
                     {{ range .Page.Config.tags }}
@@ -339,11 +346,11 @@ Create `templates/post.html`:
                 </div>
                 {{ end }}
             </header>
-            
+
             <div class="content">
                 {{ .Page.Content }}
             </div>
-            
+
             <footer class="post-footer">
                 <div class="post-nav">
                     {{ with .Page.Higher }}
@@ -351,7 +358,7 @@ Create `templates/post.html`:
                         ← {{ .Config.title }}
                     </a>
                     {{ end }}
-                    
+
                     {{ with .Page.Lower }}
                     <a href="{{ .Permalink }}" class="next">
                         {{ .Config.title }} →
@@ -361,7 +368,7 @@ Create `templates/post.html`:
             </footer>
         </article>
     </main>
-    
+
     {{ template "partials/_footer.html" . }}
 </body>
 </html>
@@ -382,7 +389,8 @@ Create `static/css/main.css`:
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     line-height: 1.6;
     color: #333;
     background: #fff;
@@ -468,7 +476,8 @@ body {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.post-card h2, .post-card h3 {
+.post-card h2,
+.post-card h3 {
     margin-bottom: 0.5rem;
 }
 
@@ -629,7 +638,7 @@ Start the development server:
 gozzi serve
 ```
 
-Visit [http://localhost:3000](http://localhost:3000)
+Visit [http://localhost:1313](http://localhost:1313)
 
 ### 12. Production Build
 
@@ -696,7 +705,7 @@ Congratulations! You now have a complete blog with:
 ✅ Tag system for categorization  
 ✅ RSS feed for subscribers  
 ✅ Responsive design  
-✅ SEO optimization  
+✅ SEO optimization
 
 ## Next Steps
 

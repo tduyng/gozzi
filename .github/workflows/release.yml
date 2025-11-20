@@ -36,10 +36,13 @@ jobs:
       - name: Set up git-cliff
         uses: kenji-miyake/setup-git-cliff@v2
 
-      - name: Run make tag
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Run just tag
         env:
           VER: ${{ github.event.inputs.strategy }}
-        run: make tag
+        run: just tag $VER
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6

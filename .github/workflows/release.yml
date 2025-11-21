@@ -47,6 +47,10 @@ jobs:
         run: |
           VERSION="${{ github.event.inputs.strategy }}"
           just tag $VERSION
+          
+          # Use PAT to trigger docs workflow automatically when package.json changes
+          # PAT bypasses the github-actions[bot] restriction
+          git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git
           git push origin HEAD:main
           git push origin v$VERSION
 
@@ -66,8 +70,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-docs:
-    name: Deploy Docs
+    name: Deploy Docs (fallback if PAT not configured)
     needs: release
+    if: github.event_name == 'push' # Only for tag push events
     uses: ./.github/workflows/docs.yml
     permissions:
       contents: read

@@ -1,10 +1,8 @@
-## [0.0.10](https://github.com/tduyng/gozzi/compare/v0.0.9..v0.0.10) - 2025-11-14
+## [0.0.14](https://github.com/tduyng/gozzi/compare/v0.0.13..v0.0.14) - 2025-11-21
 
-### 🚀 Features
+### ⚙️ Miscellaneous Tasks
 
-- Make incremental build - ([c717e75](https://github.com/tduyng/gozzi/commit/c717e7515e2da0f17de2392878c3713f256eed23))
-
-### 📚 Documentation
-
-- Add concat and sort_by template function documentation - ([aa63643](https://github.com/tduyng/gozzi/commit/aa636438dfece64fe0903494000a21dd160cbeba))
+- Release v0.0.14 - ([6de4430](https://github.com/tduyng/gozzi/commit/6de44304f8b95d3da9821c4f016b7bfa21ba1de7))
+- Always run job update package.json when make release - ([6b0a71c](https://github.com/tduyng/gozzi/commit/6b0a71c3f87be2928e66b84e13a40438edc7d5b7))
+- Release v0.0.13 - ([f66ad6e](https://github.com/tduyng/gozzi/commit/f66ad6e33d24e3180c5d15d948d1739208a240a9))
 

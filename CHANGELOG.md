@@ -1,5 +1,88 @@
 # What's changed
 
+## [0.0.14](https://github.com/tduyng/gozzi/compare/v0.0.13..v0.0.14) - 2025-11-21
+
+### ⚙️ Miscellaneous Tasks
+
+- Release v0.0.14 - ([6de4430](https://github.com/tduyng/gozzi/commit/6de44304f8b95d3da9821c4f016b7bfa21ba1de7))
+- Always run job update package.json when make release - ([6b0a71c](https://github.com/tduyng/gozzi/commit/6b0a71c3f87be2928e66b84e13a40438edc7d5b7))
+- Release v0.0.13 - ([f66ad6e](https://github.com/tduyng/gozzi/commit/f66ad6e33d24e3180c5d15d948d1739208a240a9))
+
+## [0.0.13](https://github.com/tduyng/gozzi/compare/v0.0.12..v0.0.13) - 2025-11-21
+
+### 📚 Documentation
+
+- Add missing changelog for v0.0.11 - ([40d3a38](https://github.com/tduyng/gozzi/commit/40d3a381688b9b1b2c162fbc8aa60a58c9cd94a7))
+
+### ⚙️ Miscellaneous Tasks
+
+- Release v0.0.13 - ([68928d8](https://github.com/tduyng/gozzi/commit/68928d8abfcec800a78bb90123406f51df7136e8))
+- Push release commit to main after running just tag - ([f7a0001](https://github.com/tduyng/gozzi/commit/f7a0001becfa635f7c6325100fa71b744f3a5f6d))
+- Fix release workflow to handle manual tag creation - ([de03131](https://github.com/tduyng/gozzi/commit/de0313178021a293f6a37c0345828cfa27cbf880))
+
+## [0.0.13](https://github.com///compare/v0.0.12..v0.0.13) - 2025-11-21
+
+### 📚 Documentation
+
+- Add missing changelog for v0.0.11 - ([40d3a38](https://github.com///commit/40d3a381688b9b1b2c162fbc8aa60a58c9cd94a7))
+
+### ⚙️ Miscellaneous Tasks
+
+- Release v0.0.13 - ([68928d8](https://github.com///commit/68928d8abfcec800a78bb90123406f51df7136e8))
+- Push release commit to main after running just tag - ([f7a0001](https://github.com///commit/f7a0001becfa635f7c6325100fa71b744f3a5f6d))
+- Fix release workflow to handle manual tag creation - ([de03131](https://github.com///commit/de0313178021a293f6a37c0345828cfa27cbf880))
+
+## [0.0.13](https://github.com/tduyng/gozzi/compare/v0.0.12..v0.0.13) - 2025-11-21
+
+### 📚 Documentation
+
+- Add missing changelog for v0.0.11 - ([40d3a38](https://github.com/tduyng/gozzi/commit/40d3a381688b9b1b2c162fbc8aa60a58c9cd94a7))
+
+### ⚙️ Miscellaneous Tasks
+
+- Fix release workflow to handle manual tag creation - ([de03131](https://github.com/tduyng/gozzi/commit/de0313178021a293f6a37c0345828cfa27cbf880))
+
+## [0.0.12](https://github.com/tduyng/gozzi/compare/v0.0.11..v0.0.12) - 2025-11-21
+
+### 🚀 Features
+
+- *(funcs)* Add ends_with as alias of has_suffix - ([5670023](https://github.com/tduyng/gozzi/commit/56700235490e9fff78d233ac276a0458802f6ee0))
+- *(funcs)* Add starts_with as alias of has_prefix - ([f524b0c](https://github.com/tduyng/gozzi/commit/f524b0c92331b9ae2e1f66a1f81d14f7a5f4ec13))
+
+### 📚 Documentation
+
+- Update template functions reference with starts_with and ends_with - ([9dd546f](https://github.com/tduyng/gozzi/commit/9dd546f06752108405c533f331d500d216c83fc7))
+- Add architecture references - ([745f908](https://github.com/tduyng/gozzi/commit/745f908354ba4c46cfd44b671f09351b64b1bd9e))
+- Correct server url - ([48d5b31](https://github.com/tduyng/gozzi/commit/48d5b3108a2bc388747daed4aa079ce2803a180f))
+- Update badge scheme color - ([f406834](https://github.com/tduyng/gozzi/commit/f40683417ddf52b0e1b5784bc581e250ced8ad01))
+- Add favicon files for all platforms - ([fb85371](https://github.com/tduyng/gozzi/commit/fb853712de7f5ebe015ceeb9a709c517a4ecb6dc))
+- Fix server deploy url - ([fc40571](https://github.com/tduyng/gozzi/commit/fc4057192176624709057395aa01800cec06e829))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(just)* Make each commands more clear and display all command by "just --list" - ([db0ad19](https://github.com/tduyng/gozzi/commit/db0ad1932ec00f696a824cbb080bb656356e61fe))
+- Replace make by just - ([2c9e6e4](https://github.com/tduyng/gozzi/commit/2c9e6e415b1eeaa832c908363d31b7bc8643f8da))
+- Make docs deployment smart and flexible - ([85cb096](https://github.com/tduyng/gozzi/commit/85cb09694fc87b7bbf590e18fddee2c05d8a55f3))
+
+## [0.0.11](https://github.com/tduyng/gozzi/compare/v0.0.10..v0.0.11) - 2025-11-15
+
+### 🐛 Bug Fixes
+
+- Make tag sed command for cross-platform compatibility - ([8fc8adc](https://github.com/tduyng/gozzi/commit/8fc8adcf70ff88a7e6c05df04eec2cbf2031bdf0))
+
+### 📚 Documentation
+
+- Setup docs with vitepress and bun - ([be29f8e](https://github.com/tduyng/gozzi/commit/be29f8ecde5a9bdc2e2eb56ca9e5775af69c8c53))
+- Now use package.json to mark version of project - ([cd6dd3d](https://github.com/tduyng/gozzi/commit/cd6dd3d94f8536f87fd2b6fb0e4b4e34f35c8c92))
+- Fix base of website for gozzi - ([ea5ef9d](https://github.com/tduyng/gozzi/commit/ea5ef9d29e9b5c94b6017a5e85a32d0a8aeb23ea))
+- Correct build timing - ([bede1ea](https://github.com/tduyng/gozzi/commit/bede1ea1f3f4ff88f87a30b75ae6c1d4c73e5a81))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(examples)* Fetch latest examples - ([1466a4c](https://github.com/tduyng/gozzi/commit/1466a4cf74ac4d3b90354e4b6ed2c86ea1a1c2dc))
+- *(examples)* Fetch latest examples - ([b11af73](https://github.com/tduyng/gozzi/commit/b11af738c6a5e5f3f6c0862b8ea9db1e0df11a1f))
+- Deploy docs only when release new version - ([ff508b9](https://github.com/tduyng/gozzi/commit/ff508b95a08c0fb1bc2c87b04b7be6aa9f0e2076))
+
 ## [0.0.10](https://github.com/tduyng/gozzi/compare/v0.0.9..v0.0.10) - 2025-11-14
 
 ### 🚀 Features

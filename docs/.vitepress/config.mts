@@ -1,12 +1,15 @@
 import { defineConfig } from 'vitepress'
-import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
-// Read version from git tags (the Go way!)
+// Read version from package.json
 const getVersion = () => {
     try {
-        return execSync('git describe --tags --abbrev=0').toString().trim()
+        const packagePath = join(process.cwd(), 'package.json')
+        const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'))
+        return `v${packageJson.version}`
     } catch {
-        return 'v0.0.10' // Fallback
+        return 'v0.0.14' // Fallback
     }
 }
 

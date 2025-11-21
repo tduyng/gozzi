@@ -184,7 +184,7 @@ func TestCreateDefaultRegistry(t *testing.T) {
 		"first", "last", "contains", "reverse", "concat", "sort_by", "limit", "where", "group_by",
 		// Strings
 		"lower", "upper", "trim", "replace", "split", "join",
-		"has_prefix", "has_suffix", "urlize", "default", "priority", "pluralize",
+		"has_prefix", "has_suffix", "starts_with", "urlize", "default", "priority", "pluralize",
 		// Date
 		"date", "to_date", "now",
 		// Data

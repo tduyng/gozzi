@@ -122,6 +122,7 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("join", FuncDef{Fn: funcs.Join, Description: "Join strings"})
 	r.MustRegister("has_prefix", FuncDef{Fn: funcs.HasPrefix, Description: "Check string prefix"})
 	r.MustRegister("has_suffix", FuncDef{Fn: funcs.HasSuffix, Description: "Check string suffix"})
+	r.MustRegister("starts_with", FuncDef{Fn: funcs.StartsWith, Description: "Check string prefix (alias for has_prefix)"})
 	r.MustRegister("urlize", FuncDef{Fn: funcs.Urlize, Description: "Convert to URL slug"})
 	r.MustRegister("default", FuncDef{Fn: funcs.Default, Description: "Default value if empty"})
 	r.MustRegister("priority", FuncDef{Fn: funcs.Priority, Description: "First non-empty value"})

@@ -48,6 +48,11 @@ func HasSuffix(s, suffix string) bool {
 	return strings.HasSuffix(s, suffix)
 }
 
+// StartsWith is an alias for HasPrefix.
+func StartsWith(s, prefix string) bool {
+	return HasPrefix(s, prefix)
+}
+
 // Urlize converts a string to a URL-safe slug.
 func Urlize(s string) string {
 	s = strings.ToLower(s)

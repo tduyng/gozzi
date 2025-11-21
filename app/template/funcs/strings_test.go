@@ -193,6 +193,30 @@ func TestHasSuffix(t *testing.T) {
 	}
 }
 
+func TestStartsWith(t *testing.T) {
+	tests := []struct {
+		name   string
+		s      string
+		prefix string
+		want   bool
+	}{
+		{"has prefix", "hello world", "hello", true},
+		{"no prefix", "hello world", "world", false},
+		{"empty prefix", "hello", "", true},
+		{"longer prefix", "hi", "hello", false},
+		{"exact match", "hello", "hello", true},
+		{"case sensitive", "Hello", "hello", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := StartsWith(tt.s, tt.prefix); got != tt.want {
+				t.Errorf("StartsWith() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestUrlize(t *testing.T) {
 	tests := []struct {
 		name  string

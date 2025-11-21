@@ -6,21 +6,18 @@ on:
       strategy:
         description: 'Valid semver number syntax <x.x.x> (ex: 0.0.1)'
         required: true
-  push:
-    tags:
-      - 'v*.*.*'
 
 permissions:
   contents: write
   pages: write
   id-token: write
 
-run-name: Release v${{ github.event.inputs.strategy || github.ref_name }}
+run-name: Release v${{ github.event.inputs.strategy }}
 
 jobs:
   release:
     runs-on: ubuntu-22.04
-    if: ${{ github.actor == 'tduyng' || github.event_name == 'push' }}
+    if: ${{ github.actor == 'tduyng' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,24 +39,14 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v2
 
-      - name: Create release (manual trigger)
-        if: github.event_name == 'workflow_dispatch'
+      - name: Create release tag and commit
         run: |
           VERSION="${{ github.event.inputs.strategy }}"
+          echo "Creating release v$VERSION..."
           just tag $VERSION
-          
-          # Use PAT to trigger docs workflow automatically when package.json changes
-          # PAT bypasses the github-actions[bot] restriction
-          git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git
           git push origin HEAD:main
           git push origin v$VERSION
-
-      - name: Generate changelog (tag push)
-        if: github.event_name == 'push'
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          echo "Generating changelog for existing tag $GITHUB_REF_NAME..."
-          git cliff --latest --strip all --output LATEST_CHANGELOG.md
+          echo "✓ Release v$VERSION created and pushed"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
@@ -70,9 +57,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-docs:
-    name: Deploy Docs (fallback if PAT not configured)
+    name: Deploy Docs
     needs: release
-    if: github.event_name == 'push' # Only for tag push events
     uses: ./.github/workflows/docs.yml
     permissions:
       contents: read

@@ -8,7 +8,7 @@ Gozzi provides 40+ custom template functions in addition to Go's built-in templa
 |----------|-----------|
 | **Math** | `add`, `sub` |
 | **Logic** | `and`, `or`, `eq`, `ne`, `default` |
-| **Strings** | `contains`, `has_prefix`, `has_suffix`, `replace`, `split`, `join`, `lower`, `upper`, `trim`, `urlize` |
+| **Strings** | `contains`, `has_prefix`, `has_suffix`, `starts_with`, `ends_with`, `replace`, `split`, `join`, `lower`, `upper`, `trim`, `urlize` |
 | **Dates** | `to_date`, `date`, `now` |
 | **Content** | `markdown`, `get_section`, `priority` |
 | **Assets** | `asset`, `load`, `load_attribute` |
@@ -77,6 +77,46 @@ Checks if substring is in string.
 
 ```go
 {{ contains "needle" "needle in hay" }}
+```
+
+#### `has_prefix` / `starts_with`
+Checks if string starts with a prefix. `starts_with` is an alias for `has_prefix`.
+
+```go
+{{ has_prefix "hello world" "hello" }}  // Output: true
+{{ starts_with "hello world" "hello" }}  // Output: true
+{{ starts_with "hello world" "world" }}  // Output: false
+```
+
+#### `has_suffix` / `ends_with`
+Checks if string ends with a suffix. `ends_with` is an alias for `has_suffix`.
+
+```go
+{{ has_suffix "hello world" "world" }}  // Output: true
+{{ ends_with "hello world" "world" }}  // Output: true
+{{ ends_with "hello world" "hello" }}  // Output: false
+```
+
+#### `replace`
+Replaces all occurrences of a substring.
+
+```go
+{{ replace "hello world" "world" "gopher" }}  // Output: hello gopher
+```
+
+#### `split` / `join`
+Split string into slice or join slice into string.
+
+```go
+{{ split "a,b,c" "," }}  // Output: [a b c]
+{{ join (split "a,b,c" ",") "-" }}  // Output: a-b-c
+```
+
+#### `trim`
+Removes leading and trailing whitespace.
+
+```go
+{{ trim "  hello  " }}  // Output: hello
 ```
 
 #### `urlize`
@@ -222,6 +262,29 @@ Loads external file.
   <a href="{{ .path }}" class="{{ $current }}">
     {{ .name }}
   </a>
+{{ end }}
+```
+
+### URL Path Matching with String Functions
+
+```go
+{{ $url := .Page.Permalink }}
+
+<!-- Check if URL is external -->
+{{ if or (starts_with $url "http://") (starts_with $url "https://") }}
+  <a href="{{ $url }}" target="_blank" rel="noopener">External Link</a>
+{{ end }}
+
+<!-- Check file extensions -->
+{{ if ends_with $url ".pdf" }}
+  <a href="{{ $url }}" class="pdf-link">📄 PDF Document</a>
+{{ else if ends_with $url ".zip" }}
+  <a href="{{ $url }}" class="download-link">📦 Download</a>
+{{ end }}
+
+<!-- Check if current page -->
+{{ if or (eq $url $.Page.Permalink) (starts_with $.Page.Permalink $url) }}
+  <span class="current-page">You are here</span>
 {{ end }}
 ```
 

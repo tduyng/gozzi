@@ -27,6 +27,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: main  # Always checkout latest main branch
           fetch-depth: 0
 
       - name: Setup Bun

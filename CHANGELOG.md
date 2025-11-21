@@ -22,6 +22,25 @@
 - Replace make by just - ([2c9e6e4](https://github.com/tduyng/gozzi/commit/2c9e6e415b1eeaa832c908363d31b7bc8643f8da))
 - Make docs deployment smart and flexible - ([85cb096](https://github.com/tduyng/gozzi/commit/85cb09694fc87b7bbf590e18fddee2c05d8a55f3))
 
+## [0.0.11](https://github.com/tduyng/gozzi/compare/v0.0.10..v0.0.11) - 2025-11-15
+
+### 🐛 Bug Fixes
+
+- Make tag sed command for cross-platform compatibility - ([8fc8adc](https://github.com/tduyng/gozzi/commit/8fc8adcf70ff88a7e6c05df04eec2cbf2031bdf0))
+
+### 📚 Documentation
+
+- Setup docs with vitepress and bun - ([be29f8e](https://github.com/tduyng/gozzi/commit/be29f8ecde5a9bdc2e2eb56ca9e5775af69c8c53))
+- Now use package.json to mark version of project - ([cd6dd3d](https://github.com/tduyng/gozzi/commit/cd6dd3d94f8536f87fd2b6fb0e4b4e34f35c8c92))
+- Fix base of website for gozzi - ([ea5ef9d](https://github.com/tduyng/gozzi/commit/ea5ef9d29e9b5c94b6017a5e85a32d0a8aeb23ea))
+- Correct build timing - ([bede1ea](https://github.com/tduyng/gozzi/commit/bede1ea1f3f4ff88f87a30b75ae6c1d4c73e5a81))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(examples)* Fetch latest examples - ([1466a4c](https://github.com/tduyng/gozzi/commit/1466a4cf74ac4d3b90354e4b6ed2c86ea1a1c2dc))
+- *(examples)* Fetch latest examples - ([b11af73](https://github.com/tduyng/gozzi/commit/b11af738c6a5e5f3f6c0862b8ea9db1e0df11a1f))
+- Deploy docs only when release new version - ([ff508b9](https://github.com/tduyng/gozzi/commit/ff508b95a08c0fb1bc2c87b04b7be6aa9f0e2076))
+
 ## [0.0.10](https://github.com/tduyng/gozzi/compare/v0.0.9..v0.0.10) - 2025-11-14
 
 ### 🚀 Features

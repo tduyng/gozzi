@@ -1,6 +1,6 @@
-## [0.0.17](https://github.com/tduyng/gozzi/compare/v0.0.16..v0.0.17) - 2025-11-21
+## [0.0.18](https://github.com/tduyng/gozzi/compare/v0.0.17..v0.0.18) - 2025-11-21
 
 ### ⚙️ Miscellaneous Tasks
 
-- Use PAT for pushing to auto-trigger docs workflow - ([a817a5f](https://github.com/tduyng/gozzi/commit/a817a5fc15ab768ec7793a2af0841464befe5470))
+- Simplify release workflow to manual trigger only with forced docs deployment - ([a46c482](https://github.com/tduyng/gozzi/commit/a46c482326198a13e4c55fb51ed826fef02daa5c))
 

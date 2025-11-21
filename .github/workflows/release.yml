@@ -42,41 +42,20 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v2
 
-      - name: Determine version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "version=${{ github.event.inputs.strategy }}" >> $GITHUB_OUTPUT
-          else
-            # Extract version from tag (remove 'v' prefix)
-            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Update package.json and changelog
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          echo "Updating package.json to version $VERSION..."
-          sed -i 's/"version": "[^"]*"/"version": "'$VERSION'"/' package.json
-          
-          echo "Generating changelog..."
-          git cliff --latest --prepend CHANGELOG.md
-          git cliff --latest --strip all --output LATEST_CHANGELOG.md
-          
-          # Check if there are changes to commit
-          if ! git diff --quiet package.json CHANGELOG.md LATEST_CHANGELOG.md; then
-            git add CHANGELOG.md LATEST_CHANGELOG.md package.json
-            git commit -m "chore: release v$VERSION"
-            git push origin HEAD:main
-          fi
-
-      - name: Run just tag (for workflow_dispatch only)
+      - name: Create release (manual trigger)
         if: github.event_name == 'workflow_dispatch'
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
         run: |
+          VERSION="${{ github.event.inputs.strategy }}"
           just tag $VERSION
-          # Push the release commit to main
           git push origin HEAD:main
+          git push origin v$VERSION
+
+      - name: Generate changelog (tag push)
+        if: github.event_name == 'push'
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Generating changelog for existing tag $GITHUB_REF_NAME..."
+          git cliff --latest --strip all --output LATEST_CHANGELOG.md
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6

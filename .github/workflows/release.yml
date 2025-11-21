@@ -6,18 +6,21 @@ on:
       strategy:
         description: 'Valid semver number syntax <x.x.x> (ex: 0.0.1)'
         required: true
+  push:
+    tags:
+      - 'v*.*.*'
 
 permissions:
   contents: write
   pages: write
   id-token: write
 
-run-name: Release v${{ github.event.inputs.strategy }}
+run-name: Release v${{ github.event.inputs.strategy || github.ref_name }}
 
 jobs:
   release:
     runs-on: ubuntu-22.04
-    if: ${{ github.actor == 'tduyng' }}
+    if: ${{ github.actor == 'tduyng' || github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,9 +42,38 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v2
 
-      - name: Run just tag
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.strategy }}" >> $GITHUB_OUTPUT
+          else
+            # Extract version from tag (remove 'v' prefix)
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update package.json and changelog
+        if: github.event_name == 'push'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "Updating package.json to version $VERSION..."
+          sed -i 's/"version": "[^"]*"/"version": "'$VERSION'"/' package.json
+          
+          echo "Generating changelog..."
+          git cliff --latest --prepend CHANGELOG.md
+          git cliff --latest --strip all --output LATEST_CHANGELOG.md
+          
+          # Check if there are changes to commit
+          if ! git diff --quiet package.json CHANGELOG.md LATEST_CHANGELOG.md; then
+            git add CHANGELOG.md LATEST_CHANGELOG.md package.json
+            git commit -m "chore: release v$VERSION"
+            git push origin HEAD:main
+          fi
+
+      - name: Run just tag (for workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
         env:
-          VER: ${{ github.event.inputs.strategy }}
+          VER: ${{ steps.version.outputs.version }}
         run: just tag $VER
 
       - name: Run GoReleaser

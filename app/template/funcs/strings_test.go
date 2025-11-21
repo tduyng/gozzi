@@ -217,6 +217,30 @@ func TestStartsWith(t *testing.T) {
 	}
 }
 
+func TestEndsWith(t *testing.T) {
+	tests := []struct {
+		name   string
+		s      string
+		suffix string
+		want   bool
+	}{
+		{"has suffix", "hello world", "world", true},
+		{"no suffix", "hello world", "hello", false},
+		{"empty suffix", "hello", "", true},
+		{"longer suffix", "hi", "hello", false},
+		{"exact match", "hello", "hello", true},
+		{"case sensitive", "World", "world", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := EndsWith(tt.s, tt.suffix); got != tt.want {
+				t.Errorf("EndsWith() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestUrlize(t *testing.T) {
 	tests := []struct {
 		name  string

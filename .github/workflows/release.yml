@@ -72,9 +72,9 @@ jobs:
       - name: Run just tag (for workflow_dispatch only)
         if: github.event_name == 'workflow_dispatch'
         env:
-          VER: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          just tag $VER
+          just tag $VERSION
           # Push the release commit to main
           git push origin HEAD:main
 

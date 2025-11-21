@@ -146,17 +146,17 @@ changelog:
     @echo "Changelog written to {{changelog}}"
 
 # [release] Create new version tag (format: vX.Y.Z)
-tag VER:
-    @echo "Creating tag v{{VER}}..."
+tag VERSION:
+    @echo "Creating tag v{{VERSION}}..."
     @echo "Updating package.json version..."
-    @sed -i.bak 's/"version": "[^"]*"/"version": "{{VER}}"/' package.json && rm -f package.json.bak
-    @git tag -a v{{VER}} -m "Release v{{VER}}"
+    @sed -i.bak 's/"version": "[^"]*"/"version": "{{VERSION}}"/' package.json && rm -f package.json.bak
+    @git tag -a v{{VERSION}} -m "Release v{{VERSION}}"
     @just changelog
     @git add {{changelog}} LATEST_CHANGELOG.md package.json
-    @git commit -m "chore: release v{{VER}}"
-    @git tag -d v{{VER}}
-    @git tag -a v{{VER}} -m "Release v{{VER}}"
-    @echo "Tag v{{VER}} created. Push with: git push && git push origin v{{VER}}"
+    @git commit -m "chore: release v{{VERSION}}"
+    @git tag -d v{{VERSION}}
+    @git tag -a v{{VERSION}} -m "Release v{{VERSION}}"
+    @echo "Tag v{{VERSION}} created. Push with: git push && git push origin v{{VERSION}}"
 
 # [release] Build production binaries for multiple platforms
 release: check-tools audit

@@ -1,6 +1,6 @@
-## [0.0.18](https://github.com/tduyng/gozzi/compare/v0.0.17..v0.0.18) - 2025-11-21
+## [0.0.19](https://github.com/tduyng/gozzi/compare/v0.0.18..v0.0.19) - 2025-11-21
 
 ### ⚙️ Miscellaneous Tasks
 
-- Simplify release workflow to manual trigger only with forced docs deployment - ([a46c482](https://github.com/tduyng/gozzi/commit/a46c482326198a13e4c55fb51ed826fef02daa5c))
+- Force docs workflow to checkout latest main branch - ([fd77380](https://github.com/tduyng/gozzi/commit/fd7738025144e1be00ed22f6667a7e310331889d))
 

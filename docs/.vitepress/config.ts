@@ -1,21 +1,6 @@
 import { defineConfig } from 'vitepress'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import pkg from '../../package.json'
 
-// Read version from package.json
-const getVersion = () => {
-    try {
-        const packagePath = join(process.cwd(), 'package.json')
-        const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'))
-        return `v${packageJson.version}`
-    } catch {
-        return 'v0.0.14' // Fallback
-    }
-}
-
-const version = getVersion()
-
-// https://vitepress.dev/reference/site-config
 export default defineConfig({
     title: 'Gozzi',
     description:
@@ -25,9 +10,18 @@ export default defineConfig({
 
     head: [
         ['link', { rel: 'icon', type: 'image/x-icon', href: '/gozzi/favicon.ico' }],
-        ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/gozzi/favicon-32x32.png' }],
-        ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/gozzi/favicon-16x16.png' }],
-        ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/gozzi/apple-touch-icon.png' }],
+        [
+            'link',
+            { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/gozzi/favicon-32x32.png' },
+        ],
+        [
+            'link',
+            { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/gozzi/favicon-16x16.png' },
+        ],
+        [
+            'link',
+            { rel: 'apple-touch-icon', sizes: '180x180', href: '/gozzi/apple-touch-icon.png' },
+        ],
         ['meta', { name: 'theme-color', content: '#10b981' }],
         ['meta', { name: 'og:type', content: 'website' }],
         ['meta', { name: 'og:locale', content: 'en' }],
@@ -45,7 +39,7 @@ export default defineConfig({
             { text: 'Reference', link: '/reference/cli' },
             { text: 'Examples', link: '/examples/quick-start' },
             {
-                text: version,
+                text: `v${pkg.version}`,
                 items: [
                     {
                         text: 'Changelog',
@@ -130,8 +124,5 @@ export default defineConfig({
         lineNumbers: true,
     },
 
-    ignoreDeadLinks: [
-        /^http:\/\/localhost/,
-        './README'
-    ]
+    ignoreDeadLinks: [/^http:\/\/localhost/, './README'],
 })

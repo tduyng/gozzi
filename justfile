@@ -54,6 +54,50 @@ install-dev: build-dev
     @echo "Installing to $(go env GOPATH)/bin..."
     @mv {{bin_name}} $(go env GOPATH)/bin
 
+# [production] Build production binary (optionally from specific version tag)
+build VERSION="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Determine version to build
+    if [ -z "{{VERSION}}" ]; then
+        TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.1")
+    else
+        TAG="v{{VERSION}}"
+        TAG="${TAG#vv}" # Remove double 'v' if present
+        TAG="v${TAG#v}" # Ensure single 'v' prefix
+    fi
+    
+    VERSION=${TAG#v}
+    BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    
+    echo "Building {{bin_name}} version ${VERSION} from tag ${TAG}..."
+    git fetch --tags --quiet
+    
+    # Save current branch/commit
+    CURRENT_REF=$(git symbolic-ref -q HEAD || git rev-parse --short HEAD)
+    
+    # Checkout and build
+    git checkout ${TAG} --quiet
+    GIT_COMMIT=$(git rev-parse --short HEAD)
+    go build -v \
+        -ldflags "-X main.version=${VERSION} -X main.buildTime=${BUILD_TIME} -X main.commit=${GIT_COMMIT} -w -s" \
+        -o {{bin_name}} main.go
+    
+    # Return to original branch/commit
+    if [[ ${CURRENT_REF} == refs/heads/* ]]; then
+        git checkout ${CURRENT_REF#refs/heads/} --quiet
+    else
+        git checkout ${CURRENT_REF} --quiet
+    fi
+    
+    echo "✓ Built {{bin_name}} ${VERSION}"
+
+# [production] Install production binary (optionally specific version)
+install VERSION="": (build VERSION)
+    @mv {{bin_name}} $(go env GOPATH)/bin
+    @echo "✓ Installed {{bin_name}} to $(go env GOPATH)/bin"
+
 # [maintenance] Remove build artifacts
 clean:
     @rm -rf dist/ {{bin_name}} coverage/

@@ -47,6 +47,7 @@ func NewParser(cfg *config.Site) *ContentParser {
 					highlight.WithStyle("dracula"),
 				),
 				markdown.NewMathExtension(),
+				markdown.NewMermaidExtension(),
 				markdown.NewTocExtension(),
 			),
 			goldmark.WithParserOptions(

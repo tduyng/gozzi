@@ -713,7 +713,8 @@ Enhance your blog:
 
 - [Add pagination](/guide/features) for large post collections
 - [Customize templates](/guide/templates) with advanced features
-- [Add math support](/guide/features#mathematical-expressions-katex) for technical posts
+- [Use math expressions](/guide/features#mathematical-expressions-katex) with native KaTeX support
+- [Create diagrams](/guide/features#mermaid-diagrams) with native Mermaid support
 - [Enable comments](/guide/templates#adding-comments) with Giscus
 - [Set up analytics](/guide/templates#analytics) with Plausible
 

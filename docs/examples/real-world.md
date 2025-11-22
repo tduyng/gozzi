@@ -10,8 +10,8 @@ A personal blog and notes site with:
 
 - 100+ blog posts (technical articles)
 - 20+ quick notes (TILs, short learnings)
-- Math expressions (KaTeX)
-- Diagrams (Mermaid)
+- Math expressions (native KaTeX)
+- Diagrams (native Mermaid)
 - Full-text search
 - Comments (Giscus)
 
@@ -233,7 +233,7 @@ jobs:
 1. **Simple folder structure** - Easy to find content
 2. **Config per environment** - Different settings for dev/prod
 3. **Partial templates** - Reuse header/footer everywhere
-4. **KaTeX for math** - Works great for technical posts
+4. **Native KaTeX & Mermaid** - Server-side rendering, no runtime JS
 5. **Tag-based organization** - Natural content discovery
 
 ### What Works Well

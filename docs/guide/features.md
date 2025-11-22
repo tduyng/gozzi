@@ -119,30 +119,81 @@ title = "My Blog Feed"
 
 ## Mathematical Expressions (KaTeX)
 
-Render beautiful math using KaTeX.
+Gozzi has **native support** for mathematical expressions using KaTeX. Math is rendered **server-side during build**, resulting in faster page loads with no JavaScript dependency for rendering.
 
 ### Basic Usage
 
-```markdown
-Inline math: $E = mc^2$
+Simply write math expressions in your markdown using standard delimiters:
 
-Block math:
+**Inline math** - Wrap with single `$`:
+```markdown
+The famous equation $E = mc^2$ shows mass-energy equivalence.
+```
+
+**Block math** - Wrap with double `$$`:
+```markdown
 $$
 \int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
 $$
 ```
 
-### Configuration
+### Example
 
-```toml
-[math]
-enabled = true
-auto_render = true
+::: details Complete Math Example
+```markdown
+# Understanding Geometry
+
+Given the radius $r$ of a circle, the area $A$ is:
+
+$$
+A = \pi \times r^2
+$$
+
+And the circumference $C$ is:
+
+$$
+C = 2 \pi r
+$$
+
+For derivatives, we use $\frac{dy}{dx}$ notation.
 ```
+:::
+
+### Advanced Features
+
+KaTeX supports complex mathematical notation:
+
+- **Fractions**: `$\frac{a}{b}$`
+- **Subscripts/Superscripts**: `$x^2$`, `$a_i$`
+- **Greek letters**: `$\alpha, \beta, \gamma$`
+- **Integrals**: `$\int_0^\infty f(x) dx$`
+- **Summations**: `$\sum_{i=1}^{n} i$`
+- **Matrices**:
+```markdown
+$$
+\begin{bmatrix}
+a & b \\
+c & d
+\end{bmatrix}
+$$
+```
+
+### Styling
+
+The math is rendered as HTML with KaTeX classes. Include KaTeX CSS in your template for proper styling:
+
+```html
+<!-- In your template head -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+```
+
+::: tip
+Unlike other generators, Gozzi renders math **server-side** during build. The CSS is only needed for styling - no JavaScript runtime required!
+:::
 
 ## Mermaid Diagrams
 
-Create diagrams using Mermaid syntax.
+Gozzi has **native support** for Mermaid diagrams. Create beautiful diagrams directly in your markdown.
 
 ### Example
 
@@ -155,12 +206,13 @@ graph TD
 ```
 ````
 
-### Supported Types
-- Flowcharts
-- Sequence Diagrams
-- Gantt Charts
-- Class Diagrams
-- State Diagrams
+### Supported Diagram Types
+- **Flowcharts**: Process flows and decision trees
+- **Sequence Diagrams**: System interactions over time
+- **Gantt Charts**: Project timelines and schedules  
+- **Class Diagrams**: Object-oriented relationships
+- **State Diagrams**: State machine representations
+- **And more**: See [Mermaid documentation](https://mermaid.js.org/) for all types
 
 ## Social Media Integration
 
@@ -174,20 +226,21 @@ image: "/images/post-cover.png"
 
 ## Performance
 
-All features are optimized for speed:
+All built-in features are optimized for speed:
 
-- **Lazy Loading**: Features activate only when needed
-- **Caching**: Generated content cached until changes
-- **Minimal Overhead**: Fast build times
-- **Selective Inclusion**: External resources only when used
+- **Server-Side Rendering**: KaTeX and Mermaid rendered during build time
+- **Fast Builds**: Native features add minimal overhead (still sub-second for most sites)
+- **Caching**: Generated content cached until source changes
+- **No Runtime JS**: Math and diagrams work without JavaScript
 
 ## Feature Integration
 
-Features work seamlessly together:
+Built-in features work seamlessly together:
 - Tag pages include pagination automatically
 - RSS feeds respect tag filtering
 - Social meta tags use calculated reading times
-- TOC generation works with math and diagrams
+- TOC generation works with KaTeX math and Mermaid diagrams
+- All features respect configuration inheritance
 
 For more details, see:
 - [Configuration](/guide/configuration)

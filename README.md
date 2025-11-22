@@ -25,7 +25,7 @@ Gozzi is simple, fast, and helps you learn Go along the way.
 - 📝 **Markdown first** - Write content, organize in folders
 - 🎨 **Go templates** - Flexible HTML templates with 40+ helper functions
 - 🌐 **SEO ready** - RSS, sitemap, Open Graph support
-- 📊 **Rich content** - Native KaTeX math, Mermaid diagrams, syntax highlighting
+- 📊 **Rich content** - Server-side KaTeX math & syntax highlighting, Mermaid diagrams
 
 ## 🚀 Quick Start
 
@@ -78,7 +78,8 @@ Visit **http://localhost:1313** 🎉
 My personal site [tduyng.com](https://tduyng.com) runs on Gozzi:
 
 - 100+ blog posts and notes
-- Native KaTeX math and Mermaid diagrams
+- Server-side KaTeX math rendering (no JS needed)
+- Syntax highlighting with Chroma
 - Full-text search
 - ~100ms builds
 

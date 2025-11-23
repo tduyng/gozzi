@@ -11,8 +11,9 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-      - windows
       - darwin
+    goarch:
+      - arm64
 
 archives:
   - formats: [tar.gz]

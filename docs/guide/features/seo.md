@@ -128,17 +128,17 @@ Improve search result appearance:
 ```html
 <script type="application/ld+json">
     {
-        '@context': 'https://schema.org',
-        '@type': 'BlogPosting',
-        'headline': '{{ .Title }}',
-        'description': '{{ .Description }}',
-        'author': {
-            '@type': 'Person',
-            'name': '{{ .Site.Author }}'
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "{{ .Title }}",
+        "description": "{{ .Description }}",
+        "author": {
+            "@type": "Person",
+            "name": "{{ .Site.Author }}"
         },
-        'datePublished': '{{ .Date.Format "2006-01-02" }}',
-        'dateModified': '{{ .UpdatedDate.Format "2006-01-02" }}',
-        'image': '{{ .FeaturedImage }}'
+        "datePublished": "{{ .Date.Format "2006-01-02" }}",
+        "dateModified": "{{ .UpdatedDate.Format "2006-01-02" }}",
+        "image": "{{ .FeaturedImage }}"
     }
 </script>
 ```
@@ -148,11 +148,11 @@ Improve search result appearance:
 ```html
 <script type="application/ld+json">
     {
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        'name': '{{ .Site.Title }}',
-        'url': '{{ .Site.BaseURL }}',
-        'description': '{{ .Site.Description }}'
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "{{ .Site.Title }}",
+        "url": "{{ .Site.BaseURL }}",
+        "description": "{{ .Site.Description }}"
     }
 </script>
 ```
@@ -176,7 +176,7 @@ Prevent duplicate content issues:
 
 ### Best Practices
 
-1. **Use descriptive titles**: `{{ .Title }} | {{ .Site.Title }}`
+1. **Use descriptive titles**: <code v-pre>{{ .Title }} | {{ .Site.Title }}</code>
 2. **Write meta descriptions**: 150-160 characters optimal
 3. **Optimize images**: Use appropriate formats and sizes
 4. **Use semantic HTML**: Proper heading hierarchy

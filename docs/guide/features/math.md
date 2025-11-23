@@ -247,4 +247,8 @@ A: Server-side rendering means:
 
 ---
 
+## Real-World Example
+
+See KaTeX in action on tduyng.com: [Native KaTeX Support](https://tduyng.com/notes/katex-support/)
+
 **Next:** Learn about [Mermaid Diagrams](/guide/features/diagrams)

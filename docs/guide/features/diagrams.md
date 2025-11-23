@@ -317,6 +317,10 @@ A: No, client-side Mermaid requires JavaScript. Consider adding a fallback messa
 
 ---
 
+## Real-World Example
+
+See Mermaid diagrams in action on tduyng.com: [Mermaid Support](https://tduyng.com/notes/mermaid-support/)
+
 **Related:**
 - [Mathematical Expressions](/guide/features/math)
 - [Syntax Highlighting](/guide/features/syntax-highlighting)

@@ -143,9 +143,14 @@ export default defineConfig({
                     ],
                 },
                 {
-                    text: 'Reference',
+                    text: 'Architecture',
+                    collapsed: false,
                     items: [
-                        { text: 'Architecture', link: '/reference/architecture' },
+                        { text: 'Overview', link: '/reference/architecture/' },
+                        { text: 'Build Flow', link: '/reference/architecture/build-flow' },
+                        { text: 'Serve Flow', link: '/reference/architecture/serve-flow' },
+                        { text: 'Content Processing', link: '/reference/architecture/content-processing' },
+                        { text: 'Template System', link: '/reference/architecture/templates' },
                     ],
                 },
             ],

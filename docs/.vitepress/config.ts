@@ -130,9 +130,21 @@ export default defineConfig({
                     ],
                 },
                 {
+                    text: 'Template Functions',
+                    collapsed: false,
+                    items: [
+                        { text: 'Overview', link: '/reference/template-functions/' },
+                        { text: 'Math & Logic', link: '/reference/template-functions/math-logic' },
+                        { text: 'Strings', link: '/reference/template-functions/strings' },
+                        { text: 'Dates', link: '/reference/template-functions/dates' },
+                        { text: 'Content', link: '/reference/template-functions/content' },
+                        { text: 'Collections', link: '/reference/template-functions/collections' },
+                        { text: 'Assets', link: '/reference/template-functions/assets' },
+                    ],
+                },
+                {
                     text: 'Reference',
                     items: [
-                        { text: 'Template Functions', link: '/reference/template-functions' },
                         { text: 'Architecture', link: '/reference/architecture' },
                     ],
                 },

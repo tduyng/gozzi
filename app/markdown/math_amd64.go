@@ -1,5 +1,8 @@
+//go:build amd64
+
 // Package markdown provides a Goldmark extension for math notation support in markdown content.
 // Provides native KaTeX rendering for mathematical expressions using goldmark-katex.
+// This version uses quickjs (requires CGO) and only works on amd64.
 package markdown
 
 import (

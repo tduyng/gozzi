@@ -7,10 +7,13 @@ before:
 
 builds:
   - id: gozzi
+    env:
+      - CGO_ENABLED=1
     goos:
       - linux
       - darwin
     goarch:
+      - amd64
       - arm64
 
 archives:

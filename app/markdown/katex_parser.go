@@ -1,5 +1,4 @@
 // Package markdown provide parser for KaTeX math expressions in markdown content.
-
 package markdown
 
 import (

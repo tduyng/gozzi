@@ -1,5 +1,4 @@
 // Package markdown provide AST node types for inline and block KaTeX math expressions.
-
 package markdown
 
 import (

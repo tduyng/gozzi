@@ -22,29 +22,39 @@ func (r *KaTeXHTMLRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegistere
 }
 
 // renderInline renders inline math expressions as \(...\).
-func (r *KaTeXHTMLRenderer) renderInline(w util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
+func (r *KaTeXHTMLRenderer) renderInline(
+	w util.BufWriter,
+	source []byte,
+	n ast.Node,
+	entering bool,
+) (ast.WalkStatus, error) {
 	if entering {
 		node := n.(*KaTeXInline)
 
 		// Write LaTeX inline delimiters
-		w.WriteString(`\(`)
-		w.Write(node.Equation)
-		w.WriteString(`\)`)
+		_, _ = w.WriteString(`\(`)
+		_, _ = w.Write(node.Equation)
+		_, _ = w.WriteString(`\)`)
 	}
 	return ast.WalkContinue, nil
 }
 
 // renderBlock renders block math expressions as <div>\[...\]</div>.
-func (r *KaTeXHTMLRenderer) renderBlock(w util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
+func (r *KaTeXHTMLRenderer) renderBlock(
+	w util.BufWriter,
+	source []byte,
+	n ast.Node,
+	entering bool,
+) (ast.WalkStatus, error) {
 	if entering {
 		node := n.(*KaTeXBlock)
 
 		// Write LaTeX block delimiters wrapped in a div
-		w.WriteString("<div>")
-		w.WriteString(`\[`)
-		w.Write(node.Equation)
-		w.WriteString(`\]`)
-		w.WriteString("</div>")
+		_, _ = w.WriteString("<div>")
+		_, _ = w.WriteString(`\[`)
+		_, _ = w.Write(node.Equation)
+		_, _ = w.WriteString(`\]`)
+		_, _ = w.WriteString("</div>")
 	}
 	return ast.WalkContinue, nil
 }

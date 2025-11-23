@@ -1,6 +1,6 @@
-## [0.0.22](https://github.com/tduyng/gozzi/compare/v0.0.21..v0.0.22) - 2025-11-23
+## [0.0.23](https://github.com/tduyng/gozzi/compare/v0.0.22..v0.0.23) - 2025-11-23
 
-### ⚙️ Miscellaneous Tasks
+### 🐛 Bug Fixes
 
-- Update go.mod - ([205121d](https://github.com/tduyng/gozzi/commit/205121d22c53e5d5a53ffe98dcfc6a308ed33a98))
+- Make KaTeX math rendering architecture-specific (amd64 only) - ([e934903](https://github.com/tduyng/gozzi/commit/e93490369c393cb3ef28be85f252cf92444781aa))
 

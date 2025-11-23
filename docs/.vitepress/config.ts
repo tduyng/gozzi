@@ -36,7 +36,7 @@ export default defineConfig({
         nav: [
             { text: 'Home', link: '/' },
             { text: 'Guide', link: '/guide/introduction' },
-            { text: 'Reference', link: '/reference/cli' },
+            { text: 'Reference', link: '/reference/cli/' },
             { text: 'Examples', link: '/examples/quick-start' },
             {
                 text: `v${pkg.version}`,
@@ -66,7 +66,7 @@ export default defineConfig({
                 {
                     text: 'Core Concepts',
                     items: [
-                        { text: 'Content Structure', link: '/guide/content-structure' },
+                        { text: 'Content Structure', link: '/guide/concepts/content-structure' },
                     ],
                 },
                 {
@@ -108,7 +108,10 @@ export default defineConfig({
                         { text: 'Overview', link: '/guide/features/' },
                         { text: 'Mathematical Expressions', link: '/guide/features/math' },
                         { text: 'Mermaid Diagrams', link: '/guide/features/diagrams' },
-                        { text: 'Syntax Highlighting', link: '/guide/features/syntax-highlighting' },
+                        {
+                            text: 'Syntax Highlighting',
+                            link: '/guide/features/syntax-highlighting',
+                        },
                         { text: 'Content Features', link: '/guide/features/content-features' },
                         { text: 'SEO Automation', link: '/guide/features/seo' },
                     ],
@@ -116,9 +119,19 @@ export default defineConfig({
             ],
             '/reference/': [
                 {
+                    text: 'CLI Reference',
+                    collapsed: false,
+                    items: [
+                        { text: 'Overview', link: '/reference/cli/' },
+                        { text: 'Build Command', link: '/reference/cli/build' },
+                        { text: 'Serve Command', link: '/reference/cli/serve' },
+                        { text: 'Usage Patterns', link: '/reference/cli/usage-patterns' },
+                        { text: 'Troubleshooting', link: '/reference/cli/troubleshooting' },
+                    ],
+                },
+                {
                     text: 'Reference',
                     items: [
-                        { text: 'CLI Commands', link: '/reference/cli' },
                         { text: 'Template Functions', link: '/reference/template-functions' },
                         { text: 'Architecture', link: '/reference/architecture' },
                     ],

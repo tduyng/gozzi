@@ -158,6 +158,30 @@ tag VERSION:
     @git tag -a v{{VERSION}} -m "Release v{{VERSION}}"
     @echo "Tag v{{VERSION}} created. Push with: git push && git push origin v{{VERSION}}"
 
+# [release] Test goreleaser build locally (without publishing)
+release-test:
+    @echo -e "{{YELLOW}}Testing goreleaser build...{{RESET}}"
+    @goreleaser build --snapshot --clean
+    @echo -e "{{GREEN}}✓ Build test successful! Binaries in dist/{{RESET}}"
+
+# [release] Test goreleaser release process (without publishing)
+release-dry-run:
+    @echo -e "{{YELLOW}}Testing goreleaser release (dry run)...{{RESET}}"
+    @goreleaser release --snapshot --clean --skip=publish
+    @echo -e "{{GREEN}}✓ Release dry run successful! Artifacts in dist/{{RESET}}"
+
+# [release] Test specific architecture build
+release-test-arch ARCH:
+    @echo -e "{{YELLOW}}Testing {{ARCH}} build...{{RESET}}"
+    @GOARCH={{ARCH}} go build -o /tmp/gozzi-{{ARCH}} .
+    @echo -e "{{GREEN}}✓ {{ARCH}} build successful!{{RESET}}"
+    @rm /tmp/gozzi-{{ARCH}}
+
+# [release] Test all architectures
+release-test-all-arch:
+    @just release-test-arch amd64
+    @just release-test-arch arm64
+
 # [release] Build production binaries for multiple platforms
 release: check-tools audit
     #!/usr/bin/env bash

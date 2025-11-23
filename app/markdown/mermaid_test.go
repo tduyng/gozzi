@@ -49,11 +49,12 @@ func TestMermaidExtensionIntegration(t *testing.T) {
 				"<pre",
 				"class=\"mermaid\"",
 				"graph TD",
-				"--&gt;",  // HTML entities are escaped
-				"<script", // MermaidJS auto-injected
-				"mermaid.initialize",
+				"--&gt;", // HTML entities are escaped
 			},
-			notContain: []string{},
+			notContain: []string{
+				"<script",            // No auto-injection (NoScript: true)
+				"mermaid.initialize", // Users manage their own JS
+			},
 		},
 		{
 			name:  "sequence diagram",
@@ -180,12 +181,12 @@ console.log('not mermaid');
 		t.Error("Expected regular text in output")
 	}
 
-	// Should include MermaidJS script (auto-injected)
-	if !strings.Contains(output, "<script") {
-		t.Error("Expected MermaidJS <script> tag in output")
+	// Should NOT include MermaidJS script (NoScript: true - users manage their own JS)
+	if strings.Contains(output, "<script") {
+		t.Error("Expected NO <script> tag in output (NoScript: true)")
 	}
 
-	if !strings.Contains(output, "mermaid.initialize") {
-		t.Error("Expected mermaid.initialize() call in output")
+	if strings.Contains(output, "mermaid.initialize") {
+		t.Error("Expected NO mermaid.initialize() in output (NoScript: true)")
 	}
 }

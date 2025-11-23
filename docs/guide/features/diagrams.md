@@ -14,10 +14,15 @@ HTML: <pre class="mermaid">graph TD; A-->B;</pre>
 Rendered: Beautiful SVG diagram
 ```
 
+**Build Time vs Browser:**
+
+- **Build time:** Gozzi converts mermaid code blocks to `<pre class="mermaid">...</pre>` HTML
+- **Browser:** MermaidJS library renders the diagram code as interactive SVG
+
 **What You Need:**
 
-- ✅ **Mermaid syntax in markdown** - Standard mermaid code blocks
-- ✅ **MermaidJS library** - Loaded via CDN or self-hosted (see [Setup](#setup) below)
+1. **Mermaid syntax in markdown** - Standard mermaid code blocks
+2. **MermaidJS library** - Must be included in your templates (see [Setup](#setup))
 
 **What You Get:**
 
@@ -27,12 +32,12 @@ Rendered: Beautiful SVG diagram
 - ✅ Dynamic rendering
 
 ::: tip Why Client-Side?
-Unlike KaTeX (which renders server-side), Mermaid uses **client-side rendering** because:
+Mermaid uses **client-side rendering** because:
 
 - **Interactive features** - Hover tooltips, click events, pan/zoom
 - **Theme integration** - Automatically matches your site's light/dark theme
 - **Simpler builds** - No Node.js/Mermaid CLI dependency for building
-- **Still "native"** - Built into Gozzi's markdown parser, just renders in browser
+- **Cross-platform** - Works everywhere without system dependencies
 
 Trade-off: Requires JavaScript (~200KB) but enables richer diagram interactions.
 :::
@@ -79,28 +84,87 @@ Gozzi supports all Mermaid diagram types:
 
 ## Setup
 
-**Good news:** Gozzi automatically handles MermaidJS for you! No template configuration needed.
+To render Mermaid diagrams, you need to include the MermaidJS library in your templates.
 
-### How It Works
+### Option 1: CDN (Recommended for Most Users)
 
-When you use mermaid code blocks in your markdown, Gozzi:
+Add to your template's `<head>` or before `</body>`:
 
-1. Wraps your diagram code in `<pre class="mermaid">` tags
-2. Automatically injects the MermaidJS library from CDN
-3. Adds initialization code: `mermaid.initialize({startOnLoad: true})`
+```html
+<!-- Load MermaidJS from CDN -->
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+</script>
+```
 
-**Zero configuration required!** Just write your diagrams in markdown and Gozzi handles the rest.
+**Quick setup example** (`templates/partials/_scripts.html`):
 
-### Advanced: Custom MermaidJS Setup (Optional)
+```html
+<!-- MermaidJS for diagram rendering -->
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+        startOnLoad: true,
+        theme: 'default' // or 'dark', 'forest', 'neutral'
+    });
+</script>
+```
 
-If you want to customize MermaidJS behavior (themes, configuration), you can disable auto-injection and manage it yourself:
+**Benefits:**
+- ✅ Always latest stable version
+- ✅ Fast CDN delivery
+- ✅ No local file management
+- ✅ Automatic caching
 
-**Note:** This is only needed for advanced customization. Most users don't need this!
+### Option 2: Self-Hosted
 
-1. Gozzi's automatic injection uses the latest MermaidJS from CDN with default settings
-2. If you need custom themes or configuration, you'll need to modify `app/markdown/mermaid.go`
+For full control or offline usage, download MermaidJS:
 
-For most use cases, the automatic setup works perfectly.
+1. **Download:** Get mermaid from [npm](https://www.npmjs.com/package/mermaid) or [GitHub releases](https://github.com/mermaid-js/mermaid/releases)
+
+2. **Add to static directory:**
+   ```
+   static/
+     js/
+       mermaid.min.js
+   ```
+
+3. **Include in template:**
+   ```html
+   <script src="/js/mermaid.min.js"></script>
+   <script>
+       mermaid.initialize({ startOnLoad: true });
+   </script>
+   ```
+
+**Benefits:**
+- ✅ Full version control
+- ✅ Works offline
+- ✅ No external dependencies
+- ✅ Custom build options
+
+### Verify Setup
+
+After adding MermaidJS to your templates:
+
+1. **Add a test diagram** to any markdown file:
+   ````markdown
+   ```mermaid
+   graph LR
+       A[Setup] --> B[Working!]
+   ```
+   ````
+
+2. **Build and serve:**
+   ```bash
+   gozzi build
+   gozzi serve
+   ```
+
+3. **Check browser console** (F12) - should see no MermaidJS errors
+
+If you see the diagram rendered as SVG, you're all set! If you see code blocks instead, check the [Troubleshooting](#troubleshooting) section.
 
 ## Advanced Configuration
 
@@ -130,6 +194,15 @@ Customize Mermaid's behavior with initialization options:
     });
 </script>
 ```
+
+**Common configuration options:**
+
+- `theme` - Built-in themes: `default`, `dark`, `forest`, `neutral`
+- `themeVariables` - Custom color overrides
+- `startOnLoad` - Auto-render on page load (keep `true`)
+- `logLevel` - Debug level: `1` (debug), `2` (info), `3` (warn), `4` (error)
+
+See [Mermaid configuration docs](https://mermaid.js.org/config/setup/modules/mermaidAPI.html) for all options.
 
 ## Example
 
@@ -195,24 +268,59 @@ Mermaid diagrams automatically inherit your site's theme when configured properl
 }
 ```
 
+## Dynamic Theme Switching
+
+Match Mermaid theme to your site's light/dark mode:
+
+```html
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    
+    // Detect theme from data attribute or media query
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+                   window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    mermaid.initialize({ 
+        startOnLoad: true,
+        theme: isDark ? 'dark' : 'default'
+    });
+    
+    // Re-render on theme change
+    document.addEventListener('themechange', (e) => {
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: e.detail.theme === 'dark' ? 'dark' : 'default'
+        });
+        mermaid.contentLoaded();
+    });
+</script>
+```
+
 ## Quick Start Checklist
 
-1. **Write diagram in markdown** (that's it!)
+1. **Add MermaidJS to your templates:**
+   ```html
+   <script type="module">
+       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+       mermaid.initialize({ startOnLoad: true });
+   </script>
+   ```
 
-    ````markdown
-    ```mermaid
-    graph LR
-        A --> B
-    ```
-    ````
+2. **Write diagram in markdown:**
+   ````markdown
+   ```mermaid
+   graph LR
+       A --> B
+   ```
+   ````
 
-2. **Build and view**
-    ```bash
-    gozzi build
-    gozzi serve
-    ```
+3. **Build and view:**
+   ```bash
+   gozzi build
+   gozzi serve
+   ```
 
-That's it! Gozzi automatically handles the MermaidJS library - no template configuration needed.
+That's it! Your diagrams will render as interactive SVG in the browser.
 
 ## Troubleshooting
 
@@ -222,15 +330,38 @@ That's it! Gozzi automatically handles the MermaidJS library - no template confi
 
 **Possible causes:**
 
-1. **JavaScript disabled** - MermaidJS requires JavaScript to run
-2. **Browser console errors** - Check browser dev tools for errors
-3. **Outdated browser** - MermaidJS requires modern browser features
+1. **MermaidJS not loaded** - Check if script is included in your template
+2. **JavaScript disabled** - MermaidJS requires JavaScript to run
+3. **Browser console errors** - Check dev tools for loading/parsing errors
 
 **Solution:**
 
+- Verify MermaidJS script is in your template's `<head>` or before `</body>`
 - Check browser console (F12) for error messages
 - Ensure JavaScript is enabled
 - Try a different browser (Chrome, Firefox, Safari)
+
+### Browser console shows "mermaid is not defined"
+
+**Problem:** Script tag has wrong syntax or didn't load.
+
+**Solution:**
+
+Make sure you're using the correct module import syntax:
+
+```html
+<!-- ✅ Correct -->
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+</script>
+
+<!-- ❌ Wrong - missing type="module" -->
+<script>
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+</script>
+```
 
 ### Diagrams render with wrong theme
 
@@ -242,12 +373,7 @@ That's it! Gozzi automatically handles the MermaidJS library - no template confi
 mermaid.initialize({ startOnLoad: true, theme: 'dark' });
 ```
 
-Or dynamically detect theme:
-
-```javascript
-const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default';
-mermaid.initialize({ startOnLoad: true, theme: theme });
-```
+Or dynamically detect theme (see [Dynamic Theme Switching](#dynamic-theme-switching)).
 
 ### Diagrams flicker on page load
 
@@ -284,21 +410,24 @@ mermaid.initialize({ startOnLoad: true, theme: theme });
 }
 ```
 
+### CDN fails to load (network issues)
+
+**Problem:** Corporate firewall or network blocks CDN access.
+
+**Solution:** Use self-hosted MermaidJS (see [Option 2: Self-Hosted](#option-2-self-hosted)).
+
 ## FAQ
 
-**Q: Why not render Mermaid server-side like KaTeX?**  
-A: Server-side Mermaid would require:
-
--   Node.js + Mermaid CLI installed on build server
--   ~500MB dependencies
--   Slower builds
--   Loss of interactive features (hover, click, pan/zoom)
--   No dynamic theme switching
-
-Client-side rendering is simpler and more feature-rich for diagrams.
+**Q: Why client-side rendering instead of build-time?**  
+A: Client-side Mermaid provides:
+- Interactive features (hover, click, pan/zoom)
+- Dynamic theme switching
+- No build dependencies (Node.js, Mermaid CLI)
+- Simpler cross-platform builds
+- ~200KB JavaScript is reasonable for modern web
 
 **Q: Can I use Mermaid offline/without CDN?**  
-A: Currently, Gozzi uses the CDN version automatically. For offline use, you would need to modify `app/markdown/mermaid.go` to point to a self-hosted version. This is an advanced customization.
+A: Yes! Use the self-hosted option. Download MermaidJS and include it from your `static/` directory. See [Option 2: Self-Hosted](#option-2-self-hosted).
 
 **Q: Does this work with all Mermaid diagram types?**  
 A: Yes! Gozzi uses standard mermaid code blocks, so all [Mermaid diagram types](https://mermaid.js.org/intro/syntax-reference.html) are supported.
@@ -314,6 +443,28 @@ A: No, client-side Mermaid requires JavaScript. Consider adding a fallback messa
     <p>Interactive diagrams require JavaScript to display. Please enable JavaScript to view diagrams.</p>
 </noscript>
 ```
+
+**Q: Can I use a specific version of MermaidJS?**  
+A: Yes! Specify the version in the CDN URL:
+
+```html
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+</script>
+```
+
+**Q: How do I debug mermaid rendering issues?**  
+A: Enable debug logging:
+
+```javascript
+mermaid.initialize({ 
+    startOnLoad: true, 
+    logLevel: 1 // 1=debug, 2=info, 3=warn, 4=error
+});
+```
+
+Check browser console for detailed error messages.
 
 ---
 

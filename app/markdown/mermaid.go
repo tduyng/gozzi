@@ -16,12 +16,11 @@ func NewMermaidExtension() goldmark.Extender {
 		// Container tag for diagrams
 		ContainerTag: "pre",
 
-		// Automatically include MermaidJS script from CDN
-		// Set to true if users want to manage the script themselves
-		NoScript: false,
+		// Don't auto-inject script - users manage MermaidJS in their templates
+		// This gives users full control over version, CDN choice, and configuration
+		NoScript: true,
 
-		// Use latest version from CDN (can be overridden)
-		// Leave empty to use default (latest from cdn.jsdelivr.net)
+		// MermaidURL not used when NoScript is true
 		MermaidURL: "",
 	}
 }

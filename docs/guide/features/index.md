@@ -4,8 +4,8 @@ Gozzi includes comprehensive features that enhance your static site without requ
 
 ## Content Enhancement
 
-- **[Mathematical Expressions](/guide/features/math)** - Server-side KaTeX rendering for beautiful math equations
-- **[Mermaid Diagrams](/guide/features/diagrams)** - Client-side diagram rendering with automatic script injection
+- **[Mathematical Expressions](/guide/features/math)** - Client-side KaTeX rendering for beautiful math equations
+- **[Mermaid Diagrams](/guide/features/diagrams)** - Client-side diagram rendering with browser-based MermaidJS
 - **[Syntax Highlighting](/guide/features/syntax-highlighting)** - Server-side code highlighting with Chroma
 
 ## Content Organization
@@ -26,11 +26,11 @@ Gozzi includes comprehensive features that enhance your static site without requ
 
 All built-in features are optimized for speed:
 
-- **Server-Side Rendering** - KaTeX and syntax highlighting rendered during build time
-- **Client-Side Rendering** - Mermaid diagrams render in browser for interactivity
+- **Server-Side Rendering** - Syntax highlighting rendered during build time
+- **Client-Side Rendering** - KaTeX math and Mermaid diagrams render in browser for flexibility and interactivity
 - **Fast Builds** - Native features add minimal overhead (still sub-second for most sites)
 - **Caching** - Generated content cached until source changes
-- **Minimal JS** - Only Mermaid requires JavaScript (~200KB); math and code work without JS
+- **Minimal JS** - KaTeX (~120KB) and Mermaid (~200KB) render in browser; syntax highlighting works without JS
 
 ## Feature Integration
 
@@ -40,8 +40,8 @@ Built-in features work seamlessly together:
 - RSS feeds respect tag filtering
 - Social meta tags use calculated reading times
 - TOC generation works with KaTeX math, Mermaid diagrams, and syntax highlighting
-- Server-side features (KaTeX, syntax highlighting) have zero runtime overhead
-- Client-side features (Mermaid) load asynchronously without blocking page render
+- Server-side features (syntax highlighting) have zero runtime overhead
+- Client-side features (KaTeX, Mermaid) load asynchronously without blocking page render
 - All features respect configuration inheritance
 
 ---

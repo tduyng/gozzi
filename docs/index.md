@@ -106,8 +106,8 @@ gozzi serve
 I built Gozzi to learn, and now I use it daily for [tduyng.com](https://tduyng.com):
 
 - 100+ blog posts and notes
-- Native KaTeX math expressions
-- Native Mermaid diagrams
+- KaTeX math expressions
+- Mermaid diagrams
 - Full-text search
 - Builds in ~100ms
 

@@ -135,10 +135,49 @@ jobs:
             -o gozzi \
             main.go
 
+  build-cross-platform:
+    name: Build Cross-Platform
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+          - goos: windows
+            goarch: amd64
+          - goos: windows
+            goarch: arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache: true
+
+      - name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          echo "Building for $GOOS/$GOARCH..."
+          go build -o gozzi-${{ matrix.goos }}-${{ matrix.goarch }} .
+          echo "✓ Build successful for $GOOS/$GOARCH"
+
   status-check:
     name: CI Status Check
     runs-on: ubuntu-latest
-    needs: [lint, test, security, build]
+    needs: [lint, test, security, build, build-cross-platform]
     if: always()
     steps:
       - name: Check CI status
@@ -146,7 +185,8 @@ jobs:
           if [ "${{ needs.lint.result }}" != "success" ] || \
              [ "${{ needs.test.result }}" != "success" ] || \
              [ "${{ needs.security.result }}" != "success" ] || \
-             [ "${{ needs.build.result }}" != "success" ]; then
+             [ "${{ needs.build.result }}" != "success" ] || \
+             [ "${{ needs.build-cross-platform.result }}" != "success" ]; then
             echo "CI checks failed"
             exit 1
           fi

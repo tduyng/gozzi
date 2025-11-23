@@ -236,4 +236,4 @@ Access environment-specific settings in templates:
 **Related:**
 - [Site Configuration](/guide/configuration/site)
 - [Extended Configuration](/guide/configuration/extended)
-- [CLI Reference](/reference/cli)
+- [CLI Reference](/reference/cli/)

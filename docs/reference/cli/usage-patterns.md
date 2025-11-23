@@ -435,5 +435,5 @@ Usage:
 ## Next Steps
 
 - [Configuration Guide](/guide/configuration/) - Configure environments
-- [Content Structure](/guide/content-structure) - Organize content
+- [Content Structure](/guide/concepts/content-structure) - Organize content
 - [Templates](/guide/templates/) - Develop templates

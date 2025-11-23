@@ -256,5 +256,5 @@ build:
 ## Next Steps
 
 - [Configuration Guide](/guide/configuration/) - Configure your builds
-- [Content Structure](/guide/content-structure) - Organize your content
+- [Content Structure](/guide/concepts/content-structure) - Organize your content
 - [Templates](/guide/templates/) - Customize output

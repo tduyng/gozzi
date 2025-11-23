@@ -395,4 +395,4 @@ tags = ["a", "b", "c"]  # Include all desired values
 - [Site Configuration](/guide/configuration/site)
 - [Extended Configuration](/guide/configuration/extended)
 - [Template Variables](/guide/templates/variables)
-- [Template Functions](/reference/template-functions)
+- [Template Functions](/reference/template-functions/)

@@ -469,5 +469,5 @@ tags = ["go", "tutorial"]
 **Related:**
 - [Front Matter](/guide/configuration/frontmatter)
 - [Sections Configuration](/guide/configuration/sections)
-- [Content Structure](/guide/content-structure)
+- [Content Structure](/guide/concepts/content-structure)
 - [Template Variables](/guide/templates/variables)

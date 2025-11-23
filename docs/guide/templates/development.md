@@ -349,4 +349,4 @@ open http://localhost:8000
 **Related:**
 - [Template Structure](/guide/templates/structure)
 - [Template Variables](/guide/templates/variables)
-- [CLI Reference](/reference/cli)
+- [CLI Reference](/reference/cli/)

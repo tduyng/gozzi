@@ -516,5 +516,5 @@ Combine functions with pipes:
 
 **Related:**
 - [Template Variables](/guide/templates/variables)
-- [Template Functions Reference](/reference/template-functions)
+- [Template Functions Reference](/reference/template-functions/)
 - [Advanced Patterns](/guide/templates/advanced)

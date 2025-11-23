@@ -335,5 +335,5 @@ Sections use template mapping:
 **Related:**
 - [Pages Configuration](/guide/configuration/pages)
 - [Front Matter](/guide/configuration/frontmatter)
-- [Content Structure](/guide/content-structure)
+- [Content Structure](/guide/concepts/content-structure)
 - [Template Mapping](/guide/templates/mapping)

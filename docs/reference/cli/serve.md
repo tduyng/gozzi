@@ -326,5 +326,5 @@ The server will:
 ## Next Steps
 
 - [Templates Development](/guide/templates/development) - Develop templates with live reload
-- [Content Structure](/guide/content-structure) - Organize your content
+- [Content Structure](/guide/concepts/content-structure) - Organize your content
 - [Configuration](/guide/configuration/) - Configure your development environment

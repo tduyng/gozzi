@@ -385,4 +385,4 @@ tags = ["go", "tutorial"]
 **Related:**
 - [Configuration Inheritance](/guide/configuration/inheritance)
 - [Template Variables](/guide/templates/variables)
-- [Content Structure](/guide/content-structure)
+- [Content Structure](/guide/concepts/content-structure)

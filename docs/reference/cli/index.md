@@ -161,5 +161,5 @@ gozzi build --clean --config config.prod.toml
 ## Related Resources
 
 - [Configuration Guide](/guide/configuration/) - Configure your site
-- [Content Structure](/guide/content-structure) - Organize your content  
+- [Content Structure](/guide/concepts/content-structure) - Organize your content  
 - [Templates](/guide/templates/) - Customize your site appearance

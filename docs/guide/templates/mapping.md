@@ -318,5 +318,5 @@ templates/
 **Related:**
 - [Template Structure](/guide/templates/structure)
 - [Template Variables](/guide/templates/variables)
-- [Content Structure](/guide/content-structure)
+- [Content Structure](/guide/concepts/content-structure)
 - [Front Matter Configuration](/guide/configuration/frontmatter)

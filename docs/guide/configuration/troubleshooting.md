@@ -459,4 +459,4 @@ If you've found a bug:
 - [Site Configuration](/guide/configuration/site)
 - [Front Matter](/guide/configuration/frontmatter)
 - [Configuration Inheritance](/guide/configuration/inheritance)
-- [CLI Reference](/reference/cli)
+- [CLI Reference](/reference/cli/)

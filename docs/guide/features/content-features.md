@@ -239,5 +239,5 @@ All content features are optimized for speed:
 
 **Related:**
 - [Configuration](/guide/configuration/)
-- [Template Functions](/reference/template-functions)
+- [Template Functions](/reference/template-functions/)
 - [Front Matter](/guide/configuration/frontmatter)

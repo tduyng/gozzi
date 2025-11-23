@@ -252,20 +252,20 @@ Now that you have a basic site running, explore more features:
 
 ### Learn the Basics
 
-- [Content Structure](/guide/content-structure) - Organize pages and sections
-- [Configuration](/guide/configuration) - Customize your site
-- [Templates](/guide/templates) - Build custom layouts
+- [Content Structure](/guide/concepts/content-structure) - Organize pages and sections
+- [Configuration](/guide/configuration/) - Customize your site
+- [Templates](/guide/templates/) - Build custom layouts
 
 ### Add Features
 
-- [Tags & Pagination](/guide/features) - Organize content
-- [RSS & SEO](/guide/features) - Optimize for search engines
-- [Built-in Features](/guide/features) - TOC, math, diagrams
+- [Tags & Pagination](/guide/features/) - Organize content
+- [RSS & SEO](/guide/features/) - Optimize for search engines
+- [Built-in Features](/guide/features/) - TOC, math, diagrams
 
 ### See Examples
 
 - [Blog Setup](/examples/quick-start) - Complete blog example
-- [Custom Templates](/guide/templates) - Advanced templating
+- [Custom Templates](/guide/templates/) - Advanced templating
 - [Real-World Sites](/examples/real-world) - Production examples
 
 ## Common Next Steps

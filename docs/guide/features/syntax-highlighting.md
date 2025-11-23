@@ -232,4 +232,4 @@ A: Inline code (`backticks`) is not syntax-highlighted by default. Use code bloc
 **Related:**
 - [Mermaid Diagrams](/guide/features/diagrams)
 - [Mathematical Expressions](/guide/features/math)
-- [Template Functions](/reference/template-functions)
+- [Template Functions](/reference/template-functions/)

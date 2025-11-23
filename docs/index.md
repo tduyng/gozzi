@@ -117,9 +117,9 @@ See the [real-world example](/examples/real-world) to learn from my setup.
 
 - **[Getting Started](/guide/getting-started)** - Build your first site
 - **[Installation](/guide/installation)** - Platform-specific install
-- **[Configuration](/guide/configuration)** - Configure your site
-- **[Templates](/guide/templates)** - Create layouts
-- **[CLI Reference](/reference/cli)** - Command-line tools
+- **[Configuration](/guide/configuration/)** - Configure your site
+- **[Templates](/guide/templates/)** - Create layouts
+- **[CLI Reference](/reference/cli/)** - Command-line tools
 
 ## Open Source
 

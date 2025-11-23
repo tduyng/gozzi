@@ -64,9 +64,14 @@ export default defineConfig({
                     ],
                 },
                 {
-                    text: 'Guides',
+                    text: 'Core Concepts',
                     items: [
                         { text: 'Content Structure', link: '/guide/content-structure' },
+                    ],
+                },
+                {
+                    text: 'Guides',
+                    items: [
                         { text: 'Configuration', link: '/guide/configuration' },
                         { text: 'Templates', link: '/guide/templates' },
                         { text: 'Built-in Features', link: '/guide/features' },

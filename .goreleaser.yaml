@@ -7,8 +7,6 @@ before:
 
 builds:
   - id: gozzi
-    env:
-      - CGO_ENABLED=0
     goos:
       - linux
       - darwin

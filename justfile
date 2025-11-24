@@ -6,12 +6,6 @@ git_commit := `git rev-parse --short HEAD`
 ld_flags := '-ldflags "-X main.version=' + version + ' -X main.buildTime=' + build_time + ' -X main.commit=' + git_commit + ' -w -s"'
 go_files := `find . -type f -name '*.go' -not -path "./vendor/*"`
 
-# Colors
-
-GREEN := '\033[0;32m'
-YELLOW := '\033[1;33m'
-RESET := '\033[0m'
-
 # Display all available commands (default when running 'just')
 default:
     @just --list --unsorted
@@ -20,12 +14,14 @@ default:
 # QUALITY CONTROL
 # ==================================================================================== #
 
-# [quality] Verify required tools are installed
+# Verify required tools are installed
+[group('quality')]
 check-tools:
     @which staticcheck >/dev/null || (echo "Installing staticcheck..." && go install honnef.co/go/tools/cmd/staticcheck@latest)
     @which govulncheck >/dev/null || (echo "Installing govulncheck..." && go install golang.org/x/vuln/cmd/govulncheck@latest)
 
-# [quality] Run security and quality checks
+# Run security and quality checks
+[group('quality')]
 audit: check-tools
     @echo "Running security checks..."
     @go vet ./...
@@ -35,10 +31,11 @@ audit: check-tools
     @test -z "$(gofmt -s -l $(find . -type f -name '*.go' -not -path './vendor/*'))"
 
 # ==================================================================================== #
-# BUILD TARGETS
+# DEVELOPMENT
 # ==================================================================================== #
 
-# [development] Build development binary
+# Build development binary
+[group('development')]
 build-dev: check-tools
     #!/usr/bin/env bash
     set -euo pipefail
@@ -50,12 +47,58 @@ build-dev: check-tools
         -ldflags "-X main.version=${VERSION} -X main.buildTime=${BUILD_TIME} -X main.commit=${GIT_COMMIT} -w -s" \
         -o {{ bin_name }} main.go
 
-# [development] Install system-wide to GOPATH/bin
+# Install system-wide to GOPATH/bin
+[group('development')]
 install-dev: build-dev
     @echo "Installing to $(go env GOPATH)/bin..."
     @mv {{ bin_name }} $(go env GOPATH)/bin
 
-# [production] Build production binary (optionally from specific version tag)
+# Remove build artifacts
+[group('development')]
+clean:
+    @rm -rf dist/ {{ bin_name }} coverage/
+
+# Run all Go tests
+[group('development')]
+test:
+    @echo -e "{{ GREEN }}Running tests...{{ NORMAL }}"
+    @go test ./...
+
+# Generate HTML coverage report
+[group('development')]
+coverage:
+    @echo -e "{{ YELLOW }}Generating coverage report...{{ NORMAL }}"
+    @mkdir -p coverage
+    @go test -coverprofile=coverage/coverage.out ./...
+    @go tool cover -html=coverage/coverage.out -o coverage/index.html
+    @echo -e "{{ GREEN }}Coverage report generated at coverage/index.html{{ NORMAL }}"
+
+# Run linter (requires golangci-lint)
+[group('development')]
+lint:
+    @echo -e "{{ YELLOW }}Running linter...{{ NORMAL }}"
+    @golangci-lint run
+
+# Format code with gofmt
+[group('development')]
+fmt:
+    @echo -e "{{ YELLOW }}Formatting code...{{ NORMAL }}"
+    @go fmt ./...
+
+# Run go vet for static analysis
+[group('development')]
+vet:
+    @echo -e "{{ YELLOW }}Running go vet...{{ NORMAL }}"
+    @go vet ./...
+
+# Update go.mod and go.sum
+[group('development')]
+tidy:
+    @echo -e "{{ YELLOW }}Tidying modules...{{ NORMAL }}"
+    @go mod tidy
+
+# Build production binary (optionally from specific version tag)
+[group('production')]
 build VERSION="":
     #!/usr/bin/env bash
     set -euo pipefail
@@ -94,49 +137,14 @@ build VERSION="":
 
     echo "✓ Built {{ bin_name }} ${VERSION}"
 
-# [production] Install production binary (optionally specific version)
+# Install production binary (optionally specific version)
+[group('production')]
 install VERSION="": (build VERSION)
     @mv {{ bin_name }} $(go env GOPATH)/bin
     @echo "✓ Installed {{ bin_name }} to $(go env GOPATH)/bin"
 
-# [maintenance] Remove build artifacts
-clean:
-    @rm -rf dist/ {{ bin_name }} coverage/
-
-# [development] Run all Go tests
-test:
-    @echo -e "{{ GREEN }}Running tests...{{ RESET }}"
-    @go test ./...
-
-# [development] Generate HTML coverage report
-coverage:
-    @echo -e "{{ YELLOW }}Generating coverage report...{{ RESET }}"
-    @mkdir -p coverage
-    @go test -coverprofile=coverage/coverage.out ./...
-    @go tool cover -html=coverage/coverage.out -o coverage/index.html
-    @echo -e "{{ GREEN }}Coverage report generated at coverage/index.html{{ RESET }}"
-
-# [quality] Run linter (requires golangci-lint)
-lint:
-    @echo -e "{{ YELLOW }}Running linter...{{ RESET }}"
-    @golangci-lint run
-
-# [quality] Format code with gofmt
-fmt:
-    @echo -e "{{ YELLOW }}Formatting code...{{ RESET }}"
-    @go fmt ./...
-
-# [quality] Run go vet for static analysis
-vet:
-    @echo -e "{{ YELLOW }}Running go vet...{{ RESET }}"
-    @go vet ./...
-
-# [maintenance] Update go.mod and go.sum
-tidy:
-    @echo -e "{{ YELLOW }}Tidying modules...{{ RESET }}"
-    @go mod tidy
-
-# [release] Generate changelog with git-cliff
+# Generate changelog with git-cliff
+[group('release')]
 changelog:
     @echo "→ Generating changelog with git‑cliff…"
     @if [ ! -f cliff.toml ]; then \
@@ -146,7 +154,8 @@ changelog:
     @git cliff --latest --strip all --output LATEST_CHANGELOG.md
     @echo "Changelog written to {{ changelog }}"
 
-# [release] Create new version tag (format: vX.Y.Z)
+# Create new version tag (format: vX.Y.Z)
+[group('release')]
 tag VERSION:
     @echo "Creating tag v{{ VERSION }}..."
     @echo "Updating package.json version..."
@@ -159,31 +168,36 @@ tag VERSION:
     @git tag -a v{{ VERSION }} -m "Release v{{ VERSION }}"
     @echo "Tag v{{ VERSION }} created. Push with: git push && git push origin v{{ VERSION }}"
 
-# [release] Test goreleaser build locally (without publishing)
+# Test goreleaser build locally (without publishing)
+[group('release')]
 release-test:
-    @echo -e "{{ YELLOW }}Testing goreleaser build...{{ RESET }}"
+    @echo -e "{{ YELLOW }}Testing goreleaser build...{{ NORMAL }}"
     @goreleaser build --snapshot --clean
-    @echo -e "{{ GREEN }}✓ Build test successful! Binaries in dist/{{ RESET }}"
+    @echo -e "{{ GREEN }}✓ Build test successful! Binaries in dist/{{ NORMAL }}"
 
-# [release] Test goreleaser release process (without publishing)
+# Test goreleaser release process (without publishing)
+[group('release')]
 release-dry-run:
-    @echo -e "{{ YELLOW }}Testing goreleaser release (dry run)...{{ RESET }}"
+    @echo -e "{{ YELLOW }}Testing goreleaser release (dry run)...{{ NORMAL }}"
     @goreleaser release --snapshot --clean --skip=publish
-    @echo -e "{{ GREEN }}✓ Release dry run successful! Artifacts in dist/{{ RESET }}"
+    @echo -e "{{ GREEN }}✓ Release dry run successful! Artifacts in dist/{{ NORMAL }}"
 
-# [release] Test specific architecture build
+# Test specific architecture build
+[group('release')]
 release-test-arch ARCH:
-    @echo -e "{{ YELLOW }}Testing {{ ARCH }} build...{{ RESET }}"
+    @echo -e "{{ YELLOW }}Testing {{ ARCH }} build...{{ NORMAL }}"
     @GOARCH={{ ARCH }} go build -o /tmp/gozzi-{{ ARCH }} .
-    @echo -e "{{ GREEN }}✓ {{ ARCH }} build successful!{{ RESET }}"
+    @echo -e "{{ GREEN }}✓ {{ ARCH }} build successful!{{ NORMAL }}"
     @rm /tmp/gozzi-{{ ARCH }}
 
-# [release] Test all architectures
+# Test all architectures
+[group('release')]
 release-test-all-arch:
     @just release-test-arch amd64
     @just release-test-arch arm64
 
-# [release] Build production binaries for multiple platforms
+# Build production binaries for multiple platforms
+[group('release')]
 release: check-tools audit
     #!/usr/bin/env bash
     set -euo pipefail

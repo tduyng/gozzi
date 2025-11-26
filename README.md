@@ -15,7 +15,7 @@
     <img alt="Stars" title="Star on GitHub" src="https://custom-icon-badges.demolab.com/github/stars/tduyng/gozzi?style=for-the-badge&logo=star&color=F5E0DC&logoColor=white&labelColor=302D41"/></a>
 </p>
 
-I built **Gozzi** to learn how static site generators work. Now I use it for [tduyng.com](https://tduyng.com).
+I built **Gozzi** to [learn how static site generators work](https://tduyng.com/blog/why-i-built-my-own-static-site-generator/). Now I use it for [tduyng.com](https://tduyng.com).
 
 Gozzi is simple, fast, and helps you learn Go along the way.
 

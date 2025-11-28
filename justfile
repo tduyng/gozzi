@@ -158,13 +158,13 @@ changelog:
 [group('release')]
 tag VERSION:
     @echo "Creating tag v{{ VERSION }}..."
+    @git checkout main
+    @git pull origin main
     @echo "Updating package.json version..."
     @sed -i.bak 's/"version": "[^"]*"/"version": "{{ VERSION }}"/' package.json && rm -f package.json.bak
-    @git tag -a v{{ VERSION }} -m "Release v{{ VERSION }}"
     @just changelog
     @git add {{ changelog }} LATEST_CHANGELOG.md package.json
     @git commit -m "chore: release v{{ VERSION }}"
-    @git tag -d v{{ VERSION }}
     @git tag -a v{{ VERSION }} -m "Release v{{ VERSION }}"
     @echo "Tag v{{ VERSION }} created. Push with: git push && git push origin v{{ VERSION }}"
 

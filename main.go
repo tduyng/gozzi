@@ -77,6 +77,9 @@ func handleBuildCommand(args []string) {
 	startTime := time.Now()
 	site, contentParser, gen := initApp(*configPath, *contentDir)
 
+	// Set the build time so templates can access it
+	site.BuildTime = startTime
+
 	// Clean output directory if requested
 	if *cleanOutput {
 		log.Printf("Cleaning output directory: %s", site.OutputDir)
@@ -103,6 +106,9 @@ func handleServeCommand(args []string) {
 	}
 
 	site, contentParser, gen := initApp(*configPath, *contentDir)
+
+	// Set the build time so templates can access it
+	site.BuildTime = time.Now()
 	srv, err := server.NewDevServer(
 		*configPath,
 		*contentDir,

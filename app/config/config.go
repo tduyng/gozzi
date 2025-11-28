@@ -23,6 +23,7 @@ type Site struct {
 	OutputDir       string         `toml:"output_dir"`
 	Title           string         `toml:"title"`
 	StrictTemplates bool           `toml:"strict_templates"`
+	BuildTime       time.Time      // Time when the build started
 }
 
 // FrontMatter represents the TOML front matter in markdown content files.
@@ -71,6 +72,7 @@ func (site *Site) ToConfig() map[string]any {
 		siteConfig["lang"] = site.Lang
 		siteConfig["generate_feed"] = site.GenerateFeed
 		siteConfig["strict_templates"] = site.StrictTemplates
+		siteConfig["build_time"] = site.BuildTime
 		siteConfig["extra"] = MergeExtra(make(map[string]any), site.Extra)
 	}
 	if site.OutputDir == "" {

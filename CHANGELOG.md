@@ -1,5 +1,26 @@
 # What's changed
 
+## [0.0.24](https://github.com/tduyng/gozzi/compare/v0.0.23..v0.0.24) - 2025-11-23
+
+### 🚀 Features
+
+- Replace external KaTeX dependency with custom implementation - ([cd4520e](https://github.com/tduyng/gozzi/commit/cd4520e6eaa3b52c3fda415f743a97d2a0561604))
+
+### 🐛 Bug Fixes
+
+- Resolve linter issues in KaTeX implementation - ([0dabf0b](https://github.com/tduyng/gozzi/commit/0dabf0b788300dd31c7cbe0ff9897cd41c672c39))
+
+### 📚 Documentation
+
+- Align Mermaid documentation with client-side rendering approach - ([f5527f0](https://github.com/tduyng/gozzi/commit/f5527f0953a3249431d976d4c50d221e73ac4e1f))
+- Update KaTeX documentation for client-side rendering - ([338c95a](https://github.com/tduyng/gozzi/commit/338c95a9110765bb32b002cdffdc86c6b834590c))
+
+### ⚙️ Miscellaneous Tasks
+
+- Update examples submodule with MermaidJS setup - ([2173ad7](https://github.com/tduyng/gozzi/commit/2173ad71e012c968e300a8d27c550fc1f82b461a))
+- Simplify plateform test, use only linux/darwin arm - ([2087966](https://github.com/tduyng/gozzi/commit/20879662f15bc17a9c7c85a6f891e54176799d15))
+- Update examples submodule with KaTeX client-side setup - ([ac352cd](https://github.com/tduyng/gozzi/commit/ac352cdb8aab15ff0b472c2ba8b9dd9bf6c4aa6c))
+
 ## [0.0.23](https://github.com/tduyng/gozzi/compare/v0.0.22..v0.0.23) - 2025-11-23
 
 ### 🐛 Bug Fixes
@@ -39,9 +60,9 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- *(examples)* Fetch latest commits - ([4741bf9](https://github.com/tduyng/gozzi/commit/4741bf9493f025497b97d74acf876929db89bd88))
-- *(examples)* Fetch latest change - ([1e1ab9e](https://github.com/tduyng/gozzi/commit/1e1ab9e1a452772b7afeba7f78b5764e3ebb3951))
-- *(examples)* Fetch latest examples - ([74504f2](https://github.com/tduyng/gozzi/commit/74504f29c6211302ac4ae617a03e02f9ba9a39db))
+- _(examples)_ Fetch latest commits - ([4741bf9](https://github.com/tduyng/gozzi/commit/4741bf9493f025497b97d74acf876929db89bd88))
+- _(examples)_ Fetch latest change - ([1e1ab9e](https://github.com/tduyng/gozzi/commit/1e1ab9e1a452772b7afeba7f78b5764e3ebb3951))
+- _(examples)_ Fetch latest examples - ([74504f2](https://github.com/tduyng/gozzi/commit/74504f29c6211302ac4ae617a03e02f9ba9a39db))
 
 ## [0.0.18](https://github.com/tduyng/gozzi/compare/v0.0.17..v0.0.18) - 2025-11-21
 
@@ -65,14 +86,14 @@
 
 ### 🚀 Features
 
-- *(just)* Add production build and install commands - ([9ba3843](https://github.com/tduyng/gozzi/commit/9ba38431976a1fb37d1153a30e779dca10b76a00))
-- *(just)* Add production build and install commands - ([7447d99](https://github.com/tduyng/gozzi/commit/7447d99f9950b0bcdff7e87c5638c3e24bad1b2e))
+- _(just)_ Add production build and install commands - ([9ba3843](https://github.com/tduyng/gozzi/commit/9ba38431976a1fb37d1153a30e779dca10b76a00))
+- _(just)_ Add production build and install commands - ([7447d99](https://github.com/tduyng/gozzi/commit/7447d99f9950b0bcdff7e87c5638c3e24bad1b2e))
 
 ### 🚜 Refactor
 
-- *(just)* Use VERSION consistently across all commands - ([c8a7ba9](https://github.com/tduyng/gozzi/commit/c8a7ba9c8b8de303937b01d57a432f48fe7e404c))
-- *(just)* Simplify build/install commands with optional version parameter - ([09da4b6](https://github.com/tduyng/gozzi/commit/09da4b665ef950cfcc6dc70ea7c7eb39a693c5e3))
-- *(vitepress)* Import directly version from package.json - ([3598a40](https://github.com/tduyng/gozzi/commit/3598a406d8b215062a872b80d1152f278a7c6a48))
+- _(just)_ Use VERSION consistently across all commands - ([c8a7ba9](https://github.com/tduyng/gozzi/commit/c8a7ba9c8b8de303937b01d57a432f48fe7e404c))
+- _(just)_ Simplify build/install commands with optional version parameter - ([09da4b6](https://github.com/tduyng/gozzi/commit/09da4b665ef950cfcc6dc70ea7c7eb39a693c5e3))
+- _(vitepress)_ Import directly version from package.json - ([3598a40](https://github.com/tduyng/gozzi/commit/3598a406d8b215062a872b80d1152f278a7c6a48))
 
 ### 📚 Documentation
 
@@ -137,8 +158,8 @@
 
 ### 🚀 Features
 
-- *(funcs)* Add ends_with as alias of has_suffix - ([5670023](https://github.com/tduyng/gozzi/commit/56700235490e9fff78d233ac276a0458802f6ee0))
-- *(funcs)* Add starts_with as alias of has_prefix - ([f524b0c](https://github.com/tduyng/gozzi/commit/f524b0c92331b9ae2e1f66a1f81d14f7a5f4ec13))
+- _(funcs)_ Add ends_with as alias of has_suffix - ([5670023](https://github.com/tduyng/gozzi/commit/56700235490e9fff78d233ac276a0458802f6ee0))
+- _(funcs)_ Add starts_with as alias of has_prefix - ([f524b0c](https://github.com/tduyng/gozzi/commit/f524b0c92331b9ae2e1f66a1f81d14f7a5f4ec13))
 
 ### 📚 Documentation
 
@@ -151,7 +172,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- *(just)* Make each commands more clear and display all command by "just --list" - ([db0ad19](https://github.com/tduyng/gozzi/commit/db0ad1932ec00f696a824cbb080bb656356e61fe))
+- _(just)_ Make each commands more clear and display all command by "just --list" - ([db0ad19](https://github.com/tduyng/gozzi/commit/db0ad1932ec00f696a824cbb080bb656356e61fe))
 - Replace make by just - ([2c9e6e4](https://github.com/tduyng/gozzi/commit/2c9e6e415b1eeaa832c908363d31b7bc8643f8da))
 - Make docs deployment smart and flexible - ([85cb096](https://github.com/tduyng/gozzi/commit/85cb09694fc87b7bbf590e18fddee2c05d8a55f3))
 
@@ -170,8 +191,8 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- *(examples)* Fetch latest examples - ([1466a4c](https://github.com/tduyng/gozzi/commit/1466a4cf74ac4d3b90354e4b6ed2c86ea1a1c2dc))
-- *(examples)* Fetch latest examples - ([b11af73](https://github.com/tduyng/gozzi/commit/b11af738c6a5e5f3f6c0862b8ea9db1e0df11a1f))
+- _(examples)_ Fetch latest examples - ([1466a4c](https://github.com/tduyng/gozzi/commit/1466a4cf74ac4d3b90354e4b6ed2c86ea1a1c2dc))
+- _(examples)_ Fetch latest examples - ([b11af73](https://github.com/tduyng/gozzi/commit/b11af738c6a5e5f3f6c0862b8ea9db1e0df11a1f))
 - Deploy docs only when release new version - ([ff508b9](https://github.com/tduyng/gozzi/commit/ff508b95a08c0fb1bc2c87b04b7be6aa9f0e2076))
 
 ## [0.0.10](https://github.com/tduyng/gozzi/compare/v0.0.9..v0.0.10) - 2025-11-14
@@ -188,8 +209,8 @@
 
 ### 🚀 Features
 
-- *(funcs)* Add concat funcs helper - ([5d38f45](https://github.com/tduyng/gozzi/commit/5d38f45b8f0da411490b0be6d5acc4194c40d75e))
-- *(template)* Add sort_by func helper - ([62894a7](https://github.com/tduyng/gozzi/commit/62894a79d9029bb1b23c20e8cf575b8cdf9f8d40))
+- _(funcs)_ Add concat funcs helper - ([5d38f45](https://github.com/tduyng/gozzi/commit/5d38f45b8f0da411490b0be6d5acc4194c40d75e))
+- _(template)_ Add sort_by func helper - ([62894a7](https://github.com/tduyng/gozzi/commit/62894a79d9029bb1b23c20e8cf575b8cdf9f8d40))
 
 ### 🧪 Testing
 
@@ -197,8 +218,8 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- *(examples)* Fetch examples - ([c3450ad](https://github.com/tduyng/gozzi/commit/c3450ad363236f25a20ed4e515791cc0d68a5110))
-- *(examples)* Update submodule with deploy debug logging - ([29526ae](https://github.com/tduyng/gozzi/commit/29526ae998c6f6d9eab5338d5f8e0adc8f2b1fa1))
+- _(examples)_ Fetch examples - ([c3450ad](https://github.com/tduyng/gozzi/commit/c3450ad363236f25a20ed4e515791cc0d68a5110))
+- _(examples)_ Update submodule with deploy debug logging - ([29526ae](https://github.com/tduyng/gozzi/commit/29526ae998c6f6d9eab5338d5f8e0adc8f2b1fa1))
 - Remove test on window platform - ([0fdc5b5](https://github.com/tduyng/gozzi/commit/0fdc5b52335c7eca4f3bf89b7bf6e5beb27b7bb6))
 - Remove artifact upload - ([4b4860c](https://github.com/tduyng/gozzi/commit/4b4860ca7869f3fd3a8abd8a8d5fb5657892793c))
 - Add basic CI - ([d362dcb](https://github.com/tduyng/gozzi/commit/d362dcb571f4d03508238dde646bd5a64f562229))
@@ -207,7 +228,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- *(examples)* Update latest examples - ([724c339](https://github.com/tduyng/gozzi/commit/724c339af3c4abd4f3849aa79a64e27bf0933f21))
+- _(examples)_ Update latest examples - ([724c339](https://github.com/tduyng/gozzi/commit/724c339af3c4abd4f3849aa79a64e27bf0933f21))
 - Add missing changelog for v0.0.6 - ([7e9e1a0](https://github.com/tduyng/gozzi/commit/7e9e1a0b041090141d1c276ecb83950c12a6ccfb))
 
 ## [0.0.7](https://github.com/tduyng/gozzi/compare/v0.0.6..v0.0.7) - 2025-11-05

@@ -97,8 +97,6 @@ go build -o gozzi .
 go test ./...
 ```
 
-**Contributing:** PRs welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) for details.

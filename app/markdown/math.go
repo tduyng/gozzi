@@ -1,6 +1,4 @@
-// ABOUTME: Goldmark extension for client-side KaTeX math rendering.
-// ABOUTME: Parses $...$ (inline) and $$...$$ (block) math notations without external dependencies.
-
+// Package markdown provides math rendering for client-side KaTeX
 package markdown
 
 import (

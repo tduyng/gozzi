@@ -1,6 +1,4 @@
-// ABOUTME: HTML renderer for KaTeX math expressions.
-// ABOUTME: Converts AST nodes to LaTeX delimiters for client-side rendering.
-
+// Package markdown provides HTML renderer for KaTeX math expressions.
 package markdown
 
 import (

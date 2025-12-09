@@ -1,5 +1,4 @@
-// ABOUTME: This file contains tests for the client-side KaTeX math extension.
-// ABOUTME: Tests verify that math delimiters are preserved for browser-side rendering.
+// This file contains tests for the client-side KaTeX math extension.
 
 package markdown
 

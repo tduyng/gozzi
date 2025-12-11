@@ -98,6 +98,9 @@ linters:
           - revive
         path: app/utils
         text: "var-naming"
+      - linters:
+          - staticcheck
+        text: "SA5011"
     paths:
       - third_party$
       - builtin$

@@ -173,7 +173,7 @@ func TestRelatedPostsFinder_TagIndexEfficiency(t *testing.T) {
 
 	// Create 100 posts with various tags
 	posts := make([]*Node, 100)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		var tags []string
 		if i%10 == 0 {
 			tags = []string{"go", "testing"}
@@ -229,7 +229,7 @@ func TestRelatedPostsFinder_Randomization(t *testing.T) {
 	results := make(map[string]int)
 	runs := 50
 
-	for i := 0; i < runs; i++ {
+	for range runs {
 		related := finder.FindRelated(posts[0])
 		for _, r := range related {
 			results[r.Permalink]++

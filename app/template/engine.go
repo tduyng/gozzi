@@ -112,7 +112,10 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("limit", FuncDef{Fn: funcs.Limit, Description: "Limit number of items"})
 	r.MustRegister("where", FuncDef{Fn: funcs.Where, Description: "Filter items by field value"})
 	r.MustRegister("group_by", FuncDef{Fn: funcs.GroupBy, Description: "Group nodes by date field"})
-	r.MustRegister("related_posts", FuncDef{Fn: funcs.RelatedPosts, Description: "Find related posts using tag-based scoring"})
+	r.MustRegister("related_posts", FuncDef{
+		Fn:          funcs.RelatedPosts,
+		Description: "Find related posts using tag-based scoring",
+	})
 
 	// String functions
 	r.MustRegister("lower", FuncDef{Fn: funcs.Lower, Description: "Convert to lowercase"})

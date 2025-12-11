@@ -191,3 +191,38 @@ func GroupBy(key string, nodes []*content.Node) ([]Group, error) {
 
 	return result, nil
 }
+
+// RelatedPosts finds related posts using intelligent tag-based scoring with randomization.
+// Returns up to 6 candidates from top 10 matches for client-side random selection.
+func RelatedPosts(pageData any, allPosts []*content.Node) []*content.Node {
+	// Convert template map to Node if necessary
+	var page *content.Node
+
+	switch v := pageData.(type) {
+	case *content.Node:
+		page = v
+	case map[string]any:
+		// Create a pseudo-node from template data
+		page = &content.Node{
+			Config: v,
+		}
+		// Extract nested config if it exists
+		if config, ok := v["Config"].(map[string]any); ok {
+			page.Config = config
+		}
+		// Extract permalink
+		if permalink, ok := v["Permalink"].(string); ok {
+			page.Permalink = permalink
+		}
+	default:
+		return []*content.Node{} // Unsupported type
+	}
+
+	config := content.DefaultRelatedConfig()
+	// Return 6 candidates for client randomization (will show 3)
+	config.ResultLimit = 6
+	config.MaxCandidates = 10
+
+	finder := content.NewRelatedPostsFinder(allPosts, config)
+	return finder.FindRelated(page)
+}

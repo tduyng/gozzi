@@ -10,7 +10,7 @@ Gozzi provides 40+ custom template functions in addition to Go's built-in templa
 | **Logic** | `and`, `or`, `eq`, `ne`, `default` |
 | **Strings** | `contains`, `has_prefix`, `has_suffix`, `starts_with`, `ends_with`, `replace`, `split`, `join`, `lower`, `upper`, `trim`, `urlize` |
 | **Dates** | `to_date`, `date`, `now` |
-| **Content** | `markdown`, `get_section`, `priority` |
+| **Content** | `markdown`, `get_section`, `priority`, `related_posts` |
 | **Assets** | `asset`, `load`, `load_attribute` |
 | **Collections** | `dict`, `first`, `last`, `limit`, `reverse`, `concat`, `sort_by`, `group_by`, `where` |
 | **Utilities** | `pluralize`, `pagination`, `safe` |

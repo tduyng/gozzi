@@ -565,3 +565,118 @@ func TestExtractTime(t *testing.T) {
 		})
 	}
 }
+
+func TestRelatedPosts(t *testing.T) {
+	now := time.Now()
+
+	allPosts := []*content.Node{
+		{
+			Slug:      "post1",
+			Permalink: "/post1/",
+			Config: map[string]any{
+				"tags": []string{"go", "testing"},
+				"date": now,
+			},
+		},
+		{
+			Slug:      "post2",
+			Permalink: "/post2/",
+			Config: map[string]any{
+				"tags": []string{"go", "performance"},
+				"date": now.AddDate(0, 0, -10),
+			},
+		},
+		{
+			Slug:      "post3",
+			Permalink: "/post3/",
+			Config: map[string]any{
+				"tags": []string{"go", "testing", "ci"},
+				"date": now.AddDate(0, 0, -5),
+			},
+		},
+		{
+			Slug:      "post4",
+			Permalink: "/post4/",
+			Config: map[string]any{
+				"tags": []string{"python"},
+				"date": now.AddDate(0, 0, -1),
+			},
+		},
+	}
+
+	currentPage := allPosts[0] // post1 with tags: go, testing
+
+	related := RelatedPosts(currentPage, allPosts)
+
+	// Should return related posts (not empty if matches exist)
+	if len(related) == 0 {
+		t.Fatal("Expected related posts but got none")
+	}
+
+	// Should not include current post itself
+	for _, r := range related {
+		if r.Permalink == currentPage.Permalink {
+			t.Error("RelatedPosts should not include current post itself")
+		}
+	}
+
+	// Should not include posts with no tag overlap
+	for _, r := range related {
+		if r.Permalink == "/post4/" {
+			t.Error("Should not include post4 (no tag overlap)")
+		}
+	}
+
+	// Should return at most 6 posts (configured for client randomization)
+	if len(related) > 6 {
+		t.Errorf("Expected at most 6 related posts, got %d", len(related))
+	}
+}
+
+func TestRelatedPosts_NoTags(t *testing.T) {
+	now := time.Now()
+
+	allPosts := []*content.Node{
+		{
+			Slug:      "post1",
+			Permalink: "/post1/",
+			Config: map[string]any{
+				"date": now,
+			},
+		},
+		{
+			Slug:      "post2",
+			Permalink: "/post2/",
+			Config: map[string]any{
+				"tags": []string{"go"},
+				"date": now,
+			},
+		},
+	}
+
+	currentPage := allPosts[0] // post1 with no tags
+
+	related := RelatedPosts(currentPage, allPosts)
+
+	// Should return no related posts when current page has no tags
+	if len(related) != 0 {
+		t.Errorf("Expected no related posts for page with no tags, got %d", len(related))
+	}
+}
+
+func TestRelatedPosts_EmptyInput(t *testing.T) {
+	currentPage := &content.Node{
+		Slug:      "post1",
+		Permalink: "/post1/",
+		Config: map[string]any{
+			"tags": []string{"go"},
+		},
+	}
+
+	// Empty posts list
+	related := RelatedPosts(currentPage, []*content.Node{})
+
+	if len(related) != 0 {
+		t.Errorf("Expected no related posts with empty posts list, got %d", len(related))
+	}
+}

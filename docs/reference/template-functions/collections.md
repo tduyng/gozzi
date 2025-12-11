@@ -85,6 +85,76 @@ Groups by date field.
 {{ end }}
 ```
 
+### `related_posts`
+
+Finds related posts using intelligent tag-based scoring with randomization.
+
+**Algorithm Features:**
+- **O(k) Performance**: Uses tag index instead of O(n²) brute force comparison
+- **Smart Scoring**: Ranks by tag overlap (10 points per match) with recency bonus
+- **Randomization**: Adds 0-2 random points per post for variety on each build
+- **Configurable**: Returns top 6 candidates from 10 best matches
+
+**Scoring Formula:**
+```
+Score = (MatchingTags × 10) - (DaysDifference ÷ 30) + Random(0-2)
+```
+
+**Usage:**
+
+```go
+{{ $section := get_section "blog" }}
+{{ $related := related_posts .Page $section.Children }}
+{{ range $related }}
+  <article>
+    <a href="{{ .Permalink }}">
+      <h3>{{ .Config.title }}</h3>
+      <p>{{ .Config.description }}</p>
+    </a>
+  </article>
+{{ end }}
+```
+
+**Parameters:**
+- `page`: Current page (requires tags in config)
+- `posts`: Array of posts to search within
+
+**Returns:**
+- Array of up to 6 related posts (excludes current page)
+- Empty array if no tags or no matches found
+
+**Performance:**
+- Efficient for 100+ posts (O(k) where k = avg posts per tag)
+- Faster than template-based tag comparison loops
+
+**Example with Client Randomization:**
+
+```html
+<section id="related-posts" data-posts='[
+  {{ range $i, $post := $related }}
+    {{ if $i }},{{ end }}
+    {
+      "title": {{ .Config.title | quote }},
+      "url": "{{ .Permalink }}",
+      "desc": {{ .Config.description | quote }}
+    }
+  {{ end }}
+]'>
+  <!-- JS will randomly select 3 from 6 candidates -->
+</section>
+
+<script>
+  const allRelated = JSON.parse(document.querySelector('#related-posts').dataset.posts);
+  const shuffled = allRelated.sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, 3);
+  // Render selected posts
+</script>
+```
+
+**See Also:**
+- [Content Features](/guide/features/content-features.md) - Tag management
+- [Template Variables](/guide/templates/variables.md) - Page properties
+
 ## Array Manipulation
 
 ### `concat`

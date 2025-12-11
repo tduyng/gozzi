@@ -34,6 +34,33 @@ Returns first defined value.
 {{ priority .Description .Summary "No description" }}
 ```
 
+### `related_posts`
+
+Finds related posts using intelligent tag-based scoring.
+
+**Key Features:**
+- **O(k) Performance**: Tag index lookup, not O(n²) comparison
+- **Smart Ranking**: Scores by tag overlap + recency + randomization
+- **Variety**: Returns 6 candidates for client-side random selection
+
+```go
+{{ $section := get_section "blog" }}
+{{ $related := related_posts .Page $section.Children }}
+
+{{ if $related }}
+<section id="related-posts">
+  <h3>Related Posts</h3>
+  {{ range $related }}
+    <article>
+      <a href="{{ .Permalink }}">{{ .Config.title }}</a>
+    </article>
+  {{ end }}
+</section>
+{{ end }}
+```
+
+**See [Collections](/reference/template-functions/collections#related_posts) for detailed documentation.**
+
 ## Examples
 
 ### Section Listing

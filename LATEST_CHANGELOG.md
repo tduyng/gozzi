@@ -1,20 +1,23 @@
-## [0.0.25](https://github.com/tduyng/gozzi/compare/v0.0.24..v0.0.25) - 2025-11-28
+## [0.0.26](https://github.com/tduyng/gozzi/compare/v0.0.25..v0.0.26) - 2025-12-11
 
 ### 🚀 Features
 
-- Generate time when build the site - ([1b71c52](https://github.com/tduyng/gozzi/commit/1b71c523c5839cc0ae577abbeb76d3acd2f5bd9b))
+- *(template)* Add intelligent related_posts function with O(k) performance - ([290e836](https://github.com/tduyng/gozzi/commit/290e83687efa4f54ae474487c5984dd2a361f583))
 
-### 📚 Documentation
+### 🐛 Bug Fixes
 
-- Add article about gozzi - ([1de3930](https://github.com/tduyng/gozzi/commit/1de39309f5eac51f08dbf2e9c5c66d585dcd8a8e))
+- *(ci)* Add --unreleased flag to git cliff commands - ([1c937f5](https://github.com/tduyng/gozzi/commit/1c937f54f2f7f72f9d50affd7846513f960e6325))
+- *(just)* Use --tag flag in changelog generation for correct version - ([5310ab7](https://github.com/tduyng/gozzi/commit/5310ab7533fed7f3902a2d7de74f53f33eaab669))
+
+### 🎨 Styling
+
+- Fix linter issues for related_posts feature - ([79e121b](https://github.com/tduyng/gozzi/commit/79e121b8165ec1319f7450f922d53ed67b4f4ada))
 
 ### ⚙️ Miscellaneous Tasks
 
-- *(examples)* Fetch latest commits - ([ced0938](https://github.com/tduyng/gozzi/commit/ced09385570fb6ba77844aa7afee96e0e12ae9fb))
-- *(just)* Add group and use native constant color of just - ([c40fca4](https://github.com/tduyng/gozzi/commit/c40fca4b09afd03a5c7f086aec8247b422c68fa0))
-- Release v0.0.25 - ([19b9d21](https://github.com/tduyng/gozzi/commit/19b9d21d6f7fc97f446ae6c0153d204c68af3958))
-- Fix tag command to push the commit release to main branch - ([e4ab982](https://github.com/tduyng/gozzi/commit/e4ab98273353e712a1843db978eda11b1b790419))
-- Update missing changelog - ([4df0924](https://github.com/tduyng/gozzi/commit/4df092401fb7266e81f710675d6d41b51620ff65))
-- Format justfile - ([62b773c](https://github.com/tduyng/gozzi/commit/62b773cfb6cf70ab0b12ab5f44f343ea83784947))
-- Update examples submodule with MermaidJS setup - ([f2415c2](https://github.com/tduyng/gozzi/commit/f2415c22888621d5e89a97496ac527d5072e3c8b))
+- *(examples)* Fetch latest commits - ([4645cba](https://github.com/tduyng/gozzi/commit/4645cba3ce310260071ff72bdb21eadc8a79b1a4))
+- Update packages comments - ([3f71a3b](https://github.com/tduyng/gozzi/commit/3f71a3b90d838fecf2cf4be8be4fe9ceac20c419))
+- Remove the contributing text from readme - ([8c73bad](https://github.com/tduyng/gozzi/commit/8c73bad9a77043e83b20862406792a1c92eb8d1b))
+- Fix changelog duplicate and update for v0.0.25 - ([f153a85](https://github.com/tduyng/gozzi/commit/f153a85475d118997ef88729b171d92f0e4f467f))
+- Correct changelog version - ([00c0cce](https://github.com/tduyng/gozzi/commit/00c0ccee16b93597631ec7542c9383e23c203cf1))
 

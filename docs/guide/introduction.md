@@ -6,6 +6,8 @@
 
 I wanted to understand how tools like Hugo and Zola work under the hood. Instead of just reading about them, I built one. It started as a learning project and evolved into something I actually use daily.
 
+Read the full story: [Why I Built My Own Static Site Generator](https://tduyng.com/blog/why-i-built-my-own-static-site-generator/)
+
 ## What Can You Do With It?
 
 - Build a personal blog

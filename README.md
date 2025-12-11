@@ -1,33 +1,19 @@
-# Gozzi 🍃
+# Gozzi
 
-**A Go static site generator born from curiosity**
+A Go static site generator born from curiosity.
 
-<p align="left">
-  <a href="https://golang.org/">
-    <img alt="Go Version" title="Go 1.25+" src="https://custom-icon-badges.demolab.com/badge/Go-1.25+-00ADD8?style=for-the-badge&logo=go&logoColor=white&labelColor=302D41"/></a>
-  <a href="https://github.com/tduyng/gozzi/actions/workflows/ci.yml">
-    <img alt="Build Status" title="CI Status" src="https://img.shields.io/github/actions/workflow/status/tduyng/gozzi/ci.yml?branch=main&style=for-the-badge&logo=github-actions&logoColor=white&labelColor=302D41&color=89B4FA"/></a>
-  <a href="LICENSE">
-    <img alt="License" title="MIT License" src="https://custom-icon-badges.demolab.com/badge/License-MIT-A6E3A1?style=for-the-badge&logo=law&logoColor=white&labelColor=302D41"/></a>
-  <a href="https://github.com/tduyng/gozzi/releases">
-    <img alt="Release" title="Latest Release" src="https://custom-icon-badges.demolab.com/github/v/release/tduyng/gozzi?style=for-the-badge&logo=rocket&color=DDB6F2&logoColor=white&labelColor=302D41"/></a>
-  <a href="https://github.com/tduyng/gozzi/stargazers">
-    <img alt="Stars" title="Star on GitHub" src="https://custom-icon-badges.demolab.com/github/stars/tduyng/gozzi?style=for-the-badge&logo=star&color=F5E0DC&logoColor=white&labelColor=302D41"/></a>
-</p>
+I built Gozzi to [learn how static site generators work](https://tduyng.com/blog/why-i-built-my-own-static-site-generator/). Now I use it for [tduyng.com](https://tduyng.com).
 
-I built **Gozzi** to [learn how static site generators work](https://tduyng.com/blog/why-i-built-my-own-static-site-generator/). Now I use it for [tduyng.com](https://tduyng.com).
+## Features
 
-Gozzi is simple, fast, and helps you learn Go along the way.
+- Fast builds with live reload
+- Markdown-first content
+- Go templates with 40+ helper functions
+- RSS, sitemap, Open Graph support
+- Server-side KaTeX math & syntax highlighting
+- Mermaid diagrams
 
-## ✨ Features
-
-- 🚀 **Fast builds** - Sub-second for most sites with live reload
-- 📝 **Markdown first** - Write content, organize in folders
-- 🎨 **Go templates** - Flexible HTML templates with 40+ helper functions
-- 🌐 **SEO ready** - RSS, sitemap, Open Graph support
-- 📊 **Rich content** - Server-side KaTeX math & syntax highlighting, Mermaid diagrams
-
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Install
@@ -57,23 +43,22 @@ EOF
 gozzi serve
 ```
 
-Visit **http://localhost:1313** 🎉
+Visit http://localhost:1313
 
-## 📚 Documentation
+## Documentation
 
-📖 **[Read the full documentation →](https://tduyng.github.io/gozzi/)**
+Read the full documentation at [tduyng.github.io/gozzi](https://tduyng.github.io/gozzi/)
 
-- 🚀 [Getting Started](https://tduyng.github.io/gozzi/guide/getting-started)
-- 📖 [Installation](https://tduyng.github.io/gozzi/guide/installation)
-- ⚙️ [Configuration](https://tduyng.github.io/gozzi/guide/configuration)
-- 🎨 [Templates](https://tduyng.github.io/gozzi/guide/templates)
-- 🏗️ [Content Structure](https://tduyng.github.io/gozzi/guide/content-structure)
-- ✨ [Features](https://tduyng.github.io/gozzi/guide/features)
-- 💻 [CLI Reference](https://tduyng.github.io/gozzi/reference/cli)
-- 🔧 [Template Functions](https://tduyng.github.io/gozzi/reference/template-functions)
-- 🌟 [Examples](https://tduyng.github.io/gozzi/examples/quick-start)
+- [Getting Started](https://tduyng.github.io/gozzi/guide/getting-started)
+- [Installation](https://tduyng.github.io/gozzi/guide/installation)
+- [Configuration](https://tduyng.github.io/gozzi/guide/configuration)
+- [Templates](https://tduyng.github.io/gozzi/guide/templates)
+- [Content Structure](https://tduyng.github.io/gozzi/guide/content-structure)
+- [CLI Reference](https://tduyng.github.io/gozzi/reference/cli)
+- [Template Functions](https://tduyng.github.io/gozzi/reference/template-functions)
+- [Examples](https://tduyng.github.io/gozzi/examples/quick-start)
 
-## 🌟 Real-World Example
+## Example
 
 My personal site [tduyng.com](https://tduyng.com) runs on Gozzi:
 
@@ -85,7 +70,7 @@ My personal site [tduyng.com](https://tduyng.com) runs on Gozzi:
 
 [View the source →](https://github.com/tduyng/tduyng.github.io)
 
-## 🛠️ Development
+## Development
 
 ```bash
 # Clone and build
@@ -97,12 +82,6 @@ go build -o gozzi .
 go test ./...
 ```
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-**Built for learning. Shared for learning.** 🍃
-
-[Documentation](https://tduyng.github.io/gozzi/) · [Issues](https://github.com/tduyng/gozzi/issues) · [Discussions](https://github.com/tduyng/gozzi/discussions)

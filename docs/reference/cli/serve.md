@@ -106,7 +106,7 @@ gozzi serve --content notes --port 1315
 
 ## Development Server Features
 
-### 🔄 Live Reload
+### Live Reload
 
 Automatically reloads your browser when files change.
 
@@ -122,7 +122,7 @@ Automatically reloads your browser when files change.
 
 This script is automatically injected into all HTML pages served by the development server.
 
-### 📁 File Watching
+### File Watching
 
 The server monitors multiple directories for changes:
 
@@ -140,7 +140,7 @@ The server monitors multiple directories for changes:
 - Static directory (default: `static/`)
 - Configuration file
 
-### ⚡ Smart Rebuilding
+### Smart Rebuilding
 
 Optimized rebuild process for fast development:
 
@@ -164,7 +164,7 @@ Optimized rebuild process for fast development:
 - See theme changes instantly
 - No caching issues
 
-### 🔧 Development Optimizations
+### Development Optimizations
 
 **Smart Caching:**
 - Serves from output directory
@@ -186,7 +186,7 @@ Optimized rebuild process for fast development:
 - Only injects into HTML pages
 - No manual setup required
 
-### 📊 Build Feedback
+### Build Feedback
 
 Real-time feedback during development:
 

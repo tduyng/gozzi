@@ -18,7 +18,7 @@ gozzi serve --config config.dev.toml
 gozzi serve --verbose
 ```
 
-## 🔥 Live Template Reloading
+## Live Template Reloading
 
 When running `gozzi serve`, the development server provides instant template updates:
 

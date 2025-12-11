@@ -163,8 +163,8 @@ tag VERSION:
     @echo "Updating package.json version..."
     @sed -i.bak 's/"version": "[^"]*"/"version": "{{ VERSION }}"/' package.json && rm -f package.json.bak
     @echo "→ Generating changelog for v{{ VERSION }}…"
-    @git cliff --tag "v{{ VERSION }}" --prepend {{ changelog }}
-    @git cliff --tag "v{{ VERSION }}" --strip all --output LATEST_CHANGELOG.md
+    @git cliff --unreleased --tag "v{{ VERSION }}" --prepend {{ changelog }}
+    @git cliff --unreleased --tag "v{{ VERSION }}" --strip all --output LATEST_CHANGELOG.md
     @git add {{ changelog }} LATEST_CHANGELOG.md package.json
     @git commit -m "chore: release v{{ VERSION }}"
     @git tag -a v{{ VERSION }} -m "Release v{{ VERSION }}"

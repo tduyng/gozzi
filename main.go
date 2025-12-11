@@ -68,6 +68,7 @@ func handleBuildCommand(args []string) {
 	configPath := fs.String("config", "config.toml", "Path to config file")
 	contentDir := fs.String("content", "content", "Content directory")
 	cleanOutput := fs.Bool("clean", false, "Clean output directory before build")
+	buildDrafts := fs.Bool("drafts", false, "Include draft content in build")
 	fs.Usage = func() { buildUsage() }
 
 	if err := fs.Parse(args); err != nil {
@@ -75,7 +76,7 @@ func handleBuildCommand(args []string) {
 	}
 
 	startTime := time.Now()
-	site, contentParser, gen := initApp(*configPath, *contentDir)
+	site, contentParser, gen := initApp(*configPath, *contentDir, *buildDrafts)
 
 	// Set the build time so templates can access it
 	site.BuildTime = startTime
@@ -99,13 +100,14 @@ func handleServeCommand(args []string) {
 	configPath := fs.String("config", "config.toml", "Path to config file")
 	contentDir := fs.String("content", "content", "Content directory")
 	port := fs.Int("port", 1313, "Port to listen on")
+	buildDrafts := fs.Bool("drafts", false, "Include draft content in build")
 	fs.Usage = func() { serveUsage() }
 
 	if err := fs.Parse(args); err != nil {
 		log.Fatal(err)
 	}
 
-	site, contentParser, gen := initApp(*configPath, *contentDir)
+	site, contentParser, gen := initApp(*configPath, *contentDir, *buildDrafts)
 
 	// Set the build time so templates can access it
 	site.BuildTime = time.Now()
@@ -169,7 +171,8 @@ func buildUsage() {
 Options:
   --config string  Path to config file (default "config.toml")
   --content string Content directory (default "content")
-  --clean          Clean output directory before build (removes all files)`)
+  --clean          Clean output directory before build (removes all files)
+  --drafts         Include draft content in build (default false)`)
 }
 
 func serveUsage() {
@@ -178,14 +181,18 @@ func serveUsage() {
 Options:
   --config string  Path to config file (default "config.toml")
   --content string Content directory (default "content")
-  --port int       Port to listen on (default 1313)`)
+  --port int       Port to listen on (default 1313)
+  --drafts         Include draft content in development (default false)`)
 }
 
-func initApp(configPath, contentDir string) (*config.Site, *parser.ContentParser, *builder.Builder) {
+func initApp(configPath, contentDir string, buildDrafts bool) (*config.Site, *parser.ContentParser, *builder.Builder) {
 	site, err := config.LoadSite(configPath)
 	if err != nil {
 		log.Fatalf("Error loading config %s: %v", configPath, err)
 	}
+
+	// Set draft flag from CLI
+	site.BuildDrafts = buildDrafts
 
 	contentParser := parser.NewParser(site)
 	if err := contentParser.Parse(contentDir); err != nil {

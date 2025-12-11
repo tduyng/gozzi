@@ -281,8 +281,8 @@ tags = ["draft"]
 This should be skipped.`,
 			dir: "blog",
 			validate: func(t *testing.T, p *ContentParser, err error) {
-				assert.Error(t, err)
-				// ContentMap should remain empty since no pages or sections were added
+				assert.NoError(t, err) // Drafts are silently skipped, not errors
+				// ContentMap should remain empty since draft page was skipped
 				assert.Equal(t, 0, len(p.ContentMap))
 				assert.Equal(t, 0, len(p.Tags))
 			},

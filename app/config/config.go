@@ -24,6 +24,7 @@ type Site struct {
 	Title           string         `toml:"title"`
 	StrictTemplates bool           `toml:"strict_templates"`
 	BuildTime       time.Time      // Time when the build started
+	BuildDrafts     bool           // Include draft content in build
 }
 
 // FrontMatter represents the TOML front matter in markdown content files.

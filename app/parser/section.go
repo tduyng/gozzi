@@ -4,7 +4,6 @@ package parser
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -35,12 +34,9 @@ func (p *ContentParser) parseSection(path, dir string) error {
 			Path:      path,
 		})
 	}
-	if frontMatter.Draft {
-		return utils.WrapWithContext(utils.ErrContent, fmt.Errorf("section is marked as draft"), utils.ErrorContext{
-			Operation: "validate_section_draft_status",
-			Component: "content_parser",
-			Path:      path,
-		})
+	// Skip draft sections unless BuildDrafts is enabled
+	if frontMatter.Draft && !p.Site.BuildDrafts {
+		return nil // Silently skip draft sections
 	}
 
 	pc := parser.NewContext()

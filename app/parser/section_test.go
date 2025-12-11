@@ -137,8 +137,8 @@ draft = true
 This should be skipped.`,
 			dir: "draft",
 			validate: func(t *testing.T, p *ContentParser, err error) {
-				assert.Error(t, err)
-				// ContentMap should remain empty since no sections were added
+				assert.NoError(t, err) // Drafts are silently skipped, not errors
+				// ContentMap should remain empty since draft section was skipped
 				assert.Equal(t, 0, len(p.ContentMap))
 			},
 		},

@@ -35,12 +35,9 @@ func (p *ContentParser) parsePage(path, dir string) error {
 			Path:      path,
 		})
 	}
-	if pageConfig.Draft {
-		return utils.WrapWithContext(utils.ErrContent, fmt.Errorf("page is marked as draft"), utils.ErrorContext{
-			Operation: "validate_page_draft_status",
-			Component: "content_parser",
-			Path:      path,
-		})
+	// Skip draft pages unless BuildDrafts is enabled
+	if pageConfig.Draft && !p.Site.BuildDrafts {
+		return nil // Silently skip draft pages
 	}
 
 	pc := parser.NewContext()

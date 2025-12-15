@@ -1,0 +1,22 @@
+{{ template "partials/_head.html" . }}
+    
+    <div class="layout">
+        {{ template "partials/_header.html" . }}
+        
+        <div class="layout-inner">
+            {{ template "partials/_sidebar.html" . }}
+            
+            <main class="content">
+                <article class="prose">
+                    <h1>{{ .Page.Config.title }}</h1>
+                    {{ .Page.Content }}
+                </article>
+                
+                {{ template "partials/_footer.html" . }}
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+base_url = "https://tduyng.github.io/gozzi"
+title = "Gozzi Documentation"
+description = "A Go static site generator born from curiosity - Fast, flexible, and built for developers"
+language = "en"
+output_dir = "public"
+
+[extra]
+name = "Gozzi"
+tagline = "Built for learning. Simple by design."
+version = "0.1.0"
+repo_url = "https://github.com/tduyng/gozzi"
+
+# Sidebar - Simplified flat structure
+[[extra.sidebar]]
+title = "Getting Started"
+items = [
+  { text = "What is Gozzi?", link = "/introduction" },
+  { text = "Installation", link = "/installation" },
+  { text = "Your First Site", link = "/getting-started" },
+  { text = "Content Structure", link = "/content-structure" },
+]
+
+[[extra.sidebar]]
+title = "Configuration"
+items = [
+  { text = "Site Settings", link = "/config/site" },
+  { text = "Environment Configs", link = "/config/environment" },
+  { text = "Extended Config", link = "/config/extended" },
+  { text = "Front Matter", link = "/config/frontmatter" },
+  { text = "Sections", link = "/config/sections" },
+  { text = "Pages", link = "/config/pages" },
+  { text = "Inheritance", link = "/config/inheritance" },
+  { text = "Troubleshooting", link = "/config/troubleshooting" },
+]
+
+[[extra.sidebar]]
+title = "Templates"
+items = [
+  { text = "Structure", link = "/templates/structure" },
+  { text = "Template Mapping", link = "/templates/mapping" },
+  { text = "Development", link = "/templates/development" },
+  { text = "Variables", link = "/templates/variables" },
+  { text = "Functions", link = "/templates/functions" },
+  { text = "Inheritance", link = "/templates/inheritance" },
+  { text = "Partials", link = "/templates/partials" },
+  { text = "Macros", link = "/templates/macros" },
+  { text = "Advanced Patterns", link = "/templates/advanced" },
+  { text = "Examples", link = "/templates/examples" },
+]
+
+[[extra.sidebar]]
+title = "Built-in Features"
+items = [
+  { text = "Math Expressions", link = "/features/math" },
+  { text = "Mermaid Diagrams", link = "/features/diagrams" },
+  { text = "Syntax Highlighting", link = "/features/syntax-highlighting" },
+  { text = "Content Features", link = "/features/content-features" },
+  { text = "SEO Automation", link = "/features/seo" },
+]
+
+[[extra.sidebar]]
+title = "CLI Reference"
+items = [
+  { text = "Build Command", link = "/cli/build" },
+  { text = "Serve Command", link = "/cli/serve" },
+  { text = "Usage Patterns", link = "/cli/usage-patterns" },
+  { text = "Troubleshooting", link = "/cli/troubleshooting" },
+]
+
+[[extra.sidebar]]
+title = "Template Functions"
+items = [
+  { text = "Math & Logic", link = "/functions/math-logic" },
+  { text = "Strings", link = "/functions/strings" },
+  { text = "Dates", link = "/functions/dates" },
+  { text = "Content", link = "/functions/content" },
+  { text = "Collections", link = "/functions/collections" },
+  { text = "Assets", link = "/functions/assets" },
+]
+
+[[extra.sidebar]]
+title = "Architecture"
+items = [
+  { text = "Build Flow", link = "/architecture/build-flow" },
+  { text = "Serve Flow", link = "/architecture/serve-flow" },
+  { text = "Content Processing", link = "/architecture/content-processing" },
+  { text = "Template System", link = "/architecture/templates" },
+]
+
+[[extra.sidebar]]
+title = "Examples"
+items = [
+  { text = "Blog Tutorial", link = "/examples/quick-start" },
+  { text = "Real-World Example", link = "/examples/real-world" },
+]

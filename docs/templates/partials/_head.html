@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.Config.lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ if .Page.Config.title }}{{ .Page.Config.title }} | {{ end }}{{ .Site.Config.title }}</title>
+    <meta name="description" content="{{ if .Page.Config.description }}{{ .Page.Config.description }}{{ else }}{{ .Site.Config.description }}{{ end }}">
+    
+    <link rel="stylesheet" href="/css/main.css">
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="{{ if .Page.Config.title }}{{ .Page.Config.title }}{{ else }}{{ .Site.Config.title }}{{ end }}">
+    <meta property="og:description" content="{{ if .Page.Config.description }}{{ .Page.Config.description }}{{ else }}{{ .Site.Config.description }}{{ end }}">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="{{ .Site.Config.base_url }}/images/logo.svg">
+</head>
+<body>

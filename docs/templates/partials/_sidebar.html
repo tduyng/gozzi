@@ -1,0 +1,14 @@
+<aside class="sidebar">
+    {{ range .Site.Config.extra.sidebar }}
+    <div class="sidebar-section">
+        <h3 class="sidebar-title">{{ .title }}</h3>
+        <ul class="sidebar-items">
+            {{ range .items }}
+            <li>
+                <a href="{{ .link }}" class="sidebar-link">{{ .text }}</a>
+            </li>
+            {{ end }}
+        </ul>
+    </div>
+    {{ end }}
+</aside>

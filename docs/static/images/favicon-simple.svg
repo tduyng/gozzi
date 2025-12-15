@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <!-- Light blue gradient (front leaf) -->
+    <linearGradient id="leaf-light" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#38bdf8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0ea5e9;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Dark blue gradient (back leaf) -->
+    <linearGradient id="leaf-dark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0284c7;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Back leaf (darker blue, rotated left) -->
+  <g transform="translate(-4, 1) rotate(-20, 16, 16)">
+    <path d="M 16 4 C 18 4, 22 8, 23 14 C 24 20, 24 25, 23 28 C 22 30, 20 31, 18 31 C 16 31, 16 31, 16 31 C 14 31, 12 30, 11 28 C 10 25, 10 20, 11 14 C 12 8, 14 4, 16 4 Z" 
+          fill="url(#leaf-dark)" 
+          stroke="#0369a1" 
+          stroke-width="0.5"/>
+    <path d="M 16 4 Q 16 17, 16 31" 
+          stroke="#0369a1" 
+          stroke-width="0.8" 
+          fill="none"/>
+  </g>
+  
+  <!-- Front leaf (lighter blue, rotated right) -->
+  <g transform="translate(4, 0) rotate(20, 16, 16)">
+    <path d="M 16 3 C 18 3, 22 7, 23 13 C 24 19, 24 24, 23 27 C 22 29, 20 30, 18 30 C 16 30, 16 30, 16 30 C 14 30, 12 29, 11 27 C 10 24, 10 19, 11 13 C 12 7, 14 3, 16 3 Z" 
+          fill="url(#leaf-light)" 
+          stroke="#0ea5e9" 
+          stroke-width="0.5"/>
+    <path d="M 16 3 Q 16 16, 16 30" 
+          stroke="#0ea5e9" 
+          stroke-width="0.8" 
+          fill="none"/>
+  </g>
+</svg>

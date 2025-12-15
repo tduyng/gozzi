@@ -45,8 +45,8 @@ debug
 
 # Project-specific build output
 /dist/
-public
-!**/docs/public/*
+**/public/**
+docs/public/**
 examples/gozzi
 gozzi
 **/.vitepress/cache/*

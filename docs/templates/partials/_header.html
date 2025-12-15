@@ -1,0 +1,19 @@
+<header class="header">
+    <div class="header-inner">
+        <div class="header-left">
+            <a href="/" class="logo">
+                <img src="/images/logo.svg" alt="Gozzi Logo" class="logo-icon">
+                <span class="logo-text">{{ .Site.Config.extra.name }}</span>
+            </a>
+        </div>
+        <div class="header-right">
+            <a href="{{ .Site.Config.extra.repo_url }}" class="github-link" target="_blank" rel="noopener">
+                <span>GitHub</span>
+            </a>
+            <button class="search-button" id="search-btn">
+                <span>Search</span>
+                <span class="search-kbd">⌘K</span>
+            </button>
+        </div>
+    </div>
+</header>

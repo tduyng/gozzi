@@ -1,0 +1,30 @@
+{{ template "partials/_head.html" . }}
+    
+    <div class="layout">
+        {{ template "partials/_header.html" . }}
+        
+        <div class="layout-inner">
+            {{ template "partials/_sidebar.html" . }}
+            
+            <main class="content">
+                <div class="home-hero">
+                    <h1 class="hero-title">{{ .Site.Config.extra.name }}</h1>
+                    <p class="hero-tagline">{{ .Site.Config.extra.tagline }}</p>
+                    <div class="hero-actions">
+                        <a href="/guide/getting-started" class="btn btn-primary">Get Started</a>
+                        <a href="{{ .Site.Config.extra.repo_url }}" class="btn btn-secondary" target="_blank">View on GitHub</a>
+                    </div>
+                </div>
+                
+                <article class="prose">
+                    {{ .Page.Content }}
+                </article>
+                
+                {{ template "partials/_footer.html" . }}
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

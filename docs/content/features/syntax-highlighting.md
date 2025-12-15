@@ -56,20 +56,17 @@ Gozzi supports 200+ programming languages through Chroma, including:
 
 ## Themes
 
-Gozzi comes with 40+ syntax highlighting themes. Configure in your `config.toml`:
+Gozzi uses [Chroma](https://github.com/alecthomas/chroma) for syntax highlighting. Configure in `config.toml`:
 
 ```toml
-[syntax_highlighting]
-theme = "monokai"  # Default theme
+syntax_theme = "github-dark"  # Default: "dracula"
 ```
 
-### Popular Themes
+### Available Themes
 
-- **Light themes**: `github`, `monokailight`, `xcode`, `tango`
-- **Dark themes**: `monokai`, `dracula`, `nord`, `gruvbox`, `one-dark`
-- **High contrast**: `solarized-dark`, `solarized-light`
+`abap`, `algol`, `algol_nu`, `arduino`, `ashen`, `autumn`, `average`, `base16-snazzy`, `borland`, `bw`, `catppuccin-frappe`, `catppuccin-latte`, `catppuccin-macchiato`, `catppuccin-mocha`, `colorful`, `doom-one`, `doom-one2`, `dracula`, `emacs`, `evergarden`, `friendly`, `fruity`, `github-dark`, `github`, `gruvbox-light`, `gruvbox`, `hr_high_contrast`, `hrdark`, `igor`, `lovelace`, `manni`, `modus-operandi`, `modus-vivendi`, `monokai`, `monokailight`, `murphy`, `native`, `nord`, `nordic`, `onedark`, `onesenterprise`, `paraiso-dark`, `paraiso-light`, `pastie`, `perldoc`, `pygments`, `rainbow_dash`, `rose-pine-dawn`, `rose-pine-moon`, `rose-pine`, `rpgle`, `rrt`, `solarized-dark`, `solarized-dark256`, `solarized-light`, `swapoff`, `tango`, `tokyonight-day`, `tokyonight-moon`, `tokyonight-night`, `tokyonight-storm`, `trac`, `vim`, `vs`, `vulcan`, `witchhazel`, `xcode-dark`, `xcode`
 
-See all available themes in the [Chroma styles gallery](https://xyproto.github.io/splash/docs/).
+**Preview themes:** [Chroma Style Gallery](https://xyproto.github.io/splash/docs/)
 
 ## Advanced Features
 

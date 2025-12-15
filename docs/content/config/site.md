@@ -101,30 +101,15 @@ Gozzi requires two fields in your site configuration:
 
 Without these fields, Gozzi will fail to build.
 
-## Syntax Highlighting Themes
+## Syntax Highlighting
 
-Gozzi uses [Chroma](https://github.com/alecthomas/chroma) for syntax highlighting. You can customize the theme via `syntax_theme`:
+Configure syntax highlighting theme for code blocks:
 
 ```toml
-syntax_theme = "onedark"  # Choose from available Chroma styles
+syntax_theme = "github-dark"  # Default: "dracula"
 ```
 
-**Popular themes:**
-- `dracula` (default) - Vibrant purple/pink theme
-- `onedark` - VSCode OneDark theme, subtle and professional
-- `monokai` - Sublime Text inspired, balanced colors
-- `github` - GitHub's light theme
-- `github-dark` - GitHub's dark theme
-- `native` - Neutral dark theme
-- `nord` - Arctic, bluish palette
-- `solarized-dark` / `solarized-light` - Popular color scheme
-- `gruvbox` / `gruvbox-light` - Retro groove
-
-**Choosing a theme:**
-1. Match your site's color palette (e.g., `onedark` for slate/dark themes)
-2. Consider readability and contrast
-3. Test with your most common code languages
-4. Preview at: [Chroma Style Gallery](https://xyproto.github.io/splash/docs/)
+See [Syntax Highlighting](/features/syntax-highlighting) for complete theme list and examples.
 
 ## Best Practices
 

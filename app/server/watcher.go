@@ -1,5 +1,4 @@
-// Package server provides file watching and automatic rebuild functionality for development server.
-// Monitors content, templates, static files, and config for changes and triggers rebuilds.
+// Package server provides file watching and automatic rebuild for development.
 package server
 
 import (
@@ -59,12 +58,10 @@ func (s *DevServer) watchChanges() {
 				continue
 			}
 
-			// Reset timer on each relevant event
 			if debounceTimer != nil {
 				debounceTimer.Stop()
 			}
 			debounceTimer = time.AfterFunc(debounceDuration, func() {
-				// Only rebuild if enough time passed since last
 				if time.Since(lastRebuildTime) > debounceDuration {
 					s.triggerRebuild()
 					lastRebuildTime = time.Now()
@@ -84,18 +81,16 @@ func (s *DevServer) shouldIgnore(path string) bool {
 	absPath, _ := filepath.Abs(path)
 
 	return strings.HasPrefix(absPath, absOutput) ||
-		strings.Contains(path, "/.") || // Unix hidden
-		strings.Contains(path, "\\.") // Windows hidden
+		strings.Contains(path, "/.") ||
+		strings.Contains(path, "\\.")
 }
 
 func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
-	// Handle config file using base name match
 	base := filepath.Base(event.Name)
 	if base == "config.toml" {
 		return true
 	}
 
-	// Check valid extensions
 	ext := filepath.Ext(event.Name)
 	relevant := map[string]bool{
 		".md":   true,
@@ -153,7 +148,7 @@ func (s *DevServer) reloadConfig() error {
 		})
 	}
 
-	newSite.OutputDir = s.site.OutputDir // Maintain output directory
+	newSite.OutputDir = s.site.OutputDir
 
 	newParser := parser.NewParser(newSite)
 	if err := newParser.Parse(s.contentDir); err != nil {

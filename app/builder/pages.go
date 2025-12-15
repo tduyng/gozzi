@@ -1,5 +1,3 @@
-// Package builder provides page and section generation logic.
-// Handles rendering individual pages and section index pages.
 package builder
 
 import (
@@ -148,16 +146,16 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 func (b *Builder) copyPageAssets(node *content.Node) error {
 	assetsValue, exists := node.Config["assets"]
 	if !exists {
-		return nil // No assets to copy
+		return nil
 	}
 
 	assets, ok := assetsValue.(string)
 	if !ok {
-		return nil // Assets value is not a string
+		return nil
 	}
 
 	if _, err := os.Stat(assets); os.IsNotExist(err) {
-		return nil // Skip missing assets
+		return nil
 	}
 
 	dest := filepath.Join(

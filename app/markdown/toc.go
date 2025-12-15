@@ -1,5 +1,4 @@
-// Package markdown provides a Goldmark extension for automatic table of contents generation from headings.
-// Extracts heading hierarchy and makes it available for template rendering.
+// Package markdown provides table of contents generation for goldmark.
 package markdown
 
 import (
@@ -45,7 +44,6 @@ func (t *tocTransformer) Transform(doc *ast.Document, reader text.Reader, pc par
 			"Level": heading.Level,
 		}
 
-		// Manage hierarchy
 		for len(stack) > 0 && stack[len(stack)-1]["Level"].(int) >= heading.Level {
 			stack = stack[:len(stack)-1]
 		}
@@ -64,7 +62,6 @@ func (t *tocTransformer) Transform(doc *ast.Document, reader text.Reader, pc par
 		return ast.WalkContinue, nil
 	})
 
-	// 0 is a key for get TOC
 	pc.Set(0, toc)
 }
 

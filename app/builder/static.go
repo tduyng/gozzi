@@ -1,5 +1,3 @@
-// Package builder provides static file management and copying utilities for the site builder.
-// Handles copying static assets, directories, and files to output.
 package builder
 
 import (

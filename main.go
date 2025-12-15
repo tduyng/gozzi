@@ -22,15 +22,12 @@ var (
 )
 
 func main() {
-	// Handle global flags
 	flag.Usage = printUsage
 	showVersion := flag.Bool("version", false, "Show version information")
 	showHelp := flag.Bool("help", false, "Show help information")
 
-	// Parse global flags
 	flag.Parse()
 
-	// Handle global flags
 	if *showVersion {
 		printVersion()
 		return
@@ -40,14 +37,12 @@ func main() {
 		return
 	}
 
-	// Get subcommand
 	args := flag.Args()
 	if len(args) < 1 {
 		printUsage()
 		os.Exit(1)
 	}
 
-	// Handle subcommands
 	switch args[0] {
 	case "build":
 		handleBuildCommand(args[1:])
@@ -78,10 +73,8 @@ func handleBuildCommand(args []string) {
 	startTime := time.Now()
 	site, contentParser, gen := initApp(*configPath, *contentDir, *buildDrafts)
 
-	// Set the build time so templates can access it
 	site.BuildTime = startTime
 
-	// Clean output directory if requested
 	if *cleanOutput {
 		log.Printf("Cleaning output directory: %s", site.OutputDir)
 		if err := os.RemoveAll(site.OutputDir); err != nil {
@@ -109,7 +102,6 @@ func handleServeCommand(args []string) {
 
 	site, contentParser, gen := initApp(*configPath, *contentDir, *buildDrafts)
 
-	// Set the build time so templates can access it
 	site.BuildTime = time.Now()
 	srv, err := server.NewDevServer(
 		*configPath,
@@ -191,7 +183,6 @@ func initApp(configPath, contentDir string, buildDrafts bool) (*config.Site, *pa
 		log.Fatalf("Error loading config %s: %v", configPath, err)
 	}
 
-	// Set draft flag from CLI
 	site.BuildDrafts = buildDrafts
 
 	contentParser := parser.NewParser(site)

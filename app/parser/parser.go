@@ -1,5 +1,4 @@
-// Package parser provides content parser orchestration and markdown processing.
-// Main entry point for parsing content directory with concurrent file processing.
+// Package parser provides content parsing and markdown processing with concurrent file processing.
 package parser
 
 import (
@@ -34,7 +33,6 @@ type ContentParser struct {
 
 // NewParser creates a new ContentParser with the given site configuration.
 func NewParser(cfg *config.Site) *ContentParser {
-	// Default to "dracula" theme if not specified
 	syntaxTheme := cfg.SyntaxTheme
 	if syntaxTheme == "" {
 		syntaxTheme = "dracula"
@@ -69,10 +67,9 @@ func NewParser(cfg *config.Site) *ContentParser {
 // Parse walks the content directory and parses all markdown files.
 func (p *ContentParser) Parse(rootDir string) error {
 	p.mu.Lock()
-	p.ContentMap = make(map[string]*content.Node) // Reset ContentMap
+	p.ContentMap = make(map[string]*content.Node)
 	p.mu.Unlock()
 
-	// Collect all files to parse
 	var files []string
 	_ = filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
@@ -84,12 +81,9 @@ func (p *ContentParser) Parse(rootDir string) error {
 		return nil
 	})
 
-	// Create worker pool and process files
 	ctx := context.Background()
 	pool := utils.NewWorkerPool(ctx)
 
-	// Process all markdown files concurrently
-	// Note: Errors are silently ignored to preserve old behavior
 	_ = pool.ProcessFiles(files, func(ctx context.Context, filePath string) error {
 		relPath, _ := filepath.Rel(rootDir, filePath)
 		dir := filepath.Dir(relPath)
@@ -100,7 +94,6 @@ func (p *ContentParser) Parse(rootDir string) error {
 		case filepath.Ext(filePath) == ".md":
 			_ = p.parsePage(filePath, dir)
 		}
-		// Preserve old behavior: silently ignore errors
 		return nil
 	})
 
@@ -110,15 +103,12 @@ func (p *ContentParser) Parse(rootDir string) error {
 }
 
 func calculateReadStats(content string) (int, int) {
-	// Strip HTML tags
 	re := regexp.MustCompile(`<[^>]*>`)
 	plainText := re.ReplaceAllString(content, " ")
 
-	// Count words
 	words := strings.Fields(plainText)
 	wordCount := len(words)
 
-	// Calculate read time (220 words/minute)
 	readTime := max(int(math.Ceil(float64(wordCount)/220)), 1)
 
 	return wordCount, readTime

@@ -172,7 +172,6 @@ func TestMinifyHTML(t *testing.T) {
 func TestMinifyCSS_Compression(t *testing.T) {
 	m := New()
 
-	// Test that minification actually reduces size
 	input := `
 /* Large CSS file with comments and whitespace */
 body {
@@ -224,7 +223,6 @@ body {
 func TestMinifyHTML_Compression(t *testing.T) {
 	m := New()
 
-	// Test that minification actually reduces size
 	input := `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -276,7 +274,6 @@ func TestMinifyHTML_Compression(t *testing.T) {
 	t.Logf("Compression: %d -> %d bytes (%.2f%% reduction)", inputSize, outputSize, compressionRatio)
 }
 
-// Benchmark CSS minification performance.
 func BenchmarkMinifyCSS(b *testing.B) {
 	m := New()
 	input := []byte(`
@@ -298,7 +295,6 @@ body {
 	}
 }
 
-// Benchmark HTML minification performance.
 func BenchmarkMinifyHTML(b *testing.B) {
 	m := New()
 	input := []byte(`<!DOCTYPE html>
@@ -321,11 +317,9 @@ func BenchmarkMinifyHTML(b *testing.B) {
 	}
 }
 
-// Benchmark large CSS file minification.
 func BenchmarkMinifyCSS_Large(b *testing.B) {
 	m := New()
 
-	// Generate a large CSS file
 	var sb strings.Builder
 	for i := 0; i < 1000; i++ {
 		sb.WriteString(".class")
@@ -343,11 +337,9 @@ func BenchmarkMinifyCSS_Large(b *testing.B) {
 	}
 }
 
-// Benchmark large HTML file minification.
 func BenchmarkMinifyHTML_Large(b *testing.B) {
 	m := New()
 
-	// Generate a large HTML file
 	var sb strings.Builder
 	sb.WriteString("<!DOCTYPE html><html><body>")
 	for i := 0; i < 1000; i++ {

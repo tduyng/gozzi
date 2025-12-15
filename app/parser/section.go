@@ -1,5 +1,4 @@
-// Package parser provides section parsing logic for _index.md files.
-// Handles section frontmatter, content rendering, and section node creation.
+// Package parser provides section parsing for _index.md files.
 package parser
 
 import (
@@ -34,9 +33,9 @@ func (p *ContentParser) parseSection(path, dir string) error {
 			Path:      path,
 		})
 	}
-	// Skip draft sections unless BuildDrafts is enabled
+
 	if frontMatter.Draft && !p.Site.BuildDrafts {
-		return nil // Silently skip draft sections
+		return nil
 	}
 
 	pc := parser.NewContext()
@@ -85,7 +84,7 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 	var parent *content.Node
 	var sectionSlug string
 
-	if dir == "." { // Handle root section
+	if dir == "." {
 		sectionSlug = ""
 	} else {
 		parentDir := filepath.Dir(dir)
@@ -93,7 +92,6 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 		baseName := filepath.Base(dir)
 		sectionSlug = content.GenerateSlug(baseName, nil)
 
-		// Combine with parent slug
 		if parent.Slug != "" {
 			sectionSlug = parent.Slug + "/" + sectionSlug
 		}
@@ -101,7 +99,7 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 
 	node := content.NewContentNode(dir, parent)
 	node.Type = content.NodeTypeSection
-	node.Slug = sectionSlug // Override generated slug
+	node.Slug = sectionSlug
 
 	if parent != nil {
 		parent.Children = append(parent.Children, node)

@@ -28,8 +28,6 @@ func (r *KaTeXHTMLRenderer) renderInline(
 ) (ast.WalkStatus, error) {
 	if entering {
 		node := n.(*KaTeXInline)
-
-		// Write LaTeX inline delimiters
 		_, _ = w.WriteString(`\(`)
 		_, _ = w.Write(node.Equation)
 		_, _ = w.WriteString(`\)`)
@@ -46,8 +44,6 @@ func (r *KaTeXHTMLRenderer) renderBlock(
 ) (ast.WalkStatus, error) {
 	if entering {
 		node := n.(*KaTeXBlock)
-
-		// Write LaTeX block delimiters wrapped in a div
 		_, _ = w.WriteString("<div>")
 		_, _ = w.WriteString(`\[`)
 		_, _ = w.Write(node.Equation)

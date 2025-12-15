@@ -1,5 +1,4 @@
-// Package parser provides tag parsing and tracking functionality for content pages.
-// Maintains tag index and associates pages with their tags.
+// Package parser provides tag parsing and tracking for content pages.
 package parser
 
 import (
@@ -13,7 +12,7 @@ import (
 type TagEntry struct {
 	Pages []*content.Node
 	Count int
-	Seen  map[string]struct{} // Track page paths
+	Seen  map[string]struct{}
 }
 
 func (p *ContentParser) parseTags(pageConfig *config.FrontMatter, pageNode *content.Node) {
@@ -29,7 +28,6 @@ func (p *ContentParser) parseTags(pageConfig *config.FrontMatter, pageNode *cont
 		}
 		uniqueTags[tag] = true
 
-		// Get or create tag entry
 		entry, exists := p.Tags[tag]
 		if !exists {
 			entry = &TagEntry{
@@ -38,7 +36,6 @@ func (p *ContentParser) parseTags(pageConfig *config.FrontMatter, pageNode *cont
 			p.Tags[tag] = entry
 		}
 
-		// Add page if not already present
 		if _, exists := entry.Seen[pageNode.Path]; !exists {
 			entry.Pages = append(entry.Pages, pageNode)
 			entry.Seen[pageNode.Path] = struct{}{}

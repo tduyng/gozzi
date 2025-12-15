@@ -1,5 +1,3 @@
-// Package builder handles site generation including templates, feeds, and static files.
-// Main orchestrator for building static sites from content and templates.
 package builder
 
 import (
@@ -16,7 +14,6 @@ import (
 	"github.com/tduyng/gozzi/app/utils"
 )
 
-// Builder handles site generation including templates, feeds, and static files.
 type Builder struct {
 	site   *config.Site
 	templ  *template.Template
@@ -27,7 +24,6 @@ type Builder struct {
 
 // NewBuilder creates a new Builder with loaded templates.
 func NewBuilder(site *config.Site, parser *parser.ContentParser) (*Builder, error) {
-	// Initialize template engine
 	engine := tplengine.NewEngine(&tplengine.EngineConfig{
 		BaseURL:         site.BaseURL,
 		ContentMap:      parser.ContentMap,
@@ -71,7 +67,6 @@ func (b *Builder) ReloadTemplates() error {
 
 // Generate processes the content tree and generates the complete static site.
 func (b *Builder) Generate(contentRoot *content.Node) error {
-	// Create output directory if it doesn't exist, but don't remove it
 	if err := os.MkdirAll(b.site.OutputDir, 0755); err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 			Operation: "create_output_directory",

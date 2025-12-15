@@ -1,4 +1,4 @@
-// Package markdown provide parser for KaTeX math expressions in markdown content.
+// Package markdown provides KaTeX math expression parsing for goldmark.
 package markdown
 
 import (
@@ -28,16 +28,12 @@ func (s *KaTeXParser) Parse(parent ast.Node, block text.Reader, pc parser.Contex
 	var start, end, advance int
 
 	trigger := line[0]
-
-	// Check if this is block math ($$) or inline math ($)
 	display := len(line) > 1 && line[1] == trigger
 
-	if display { // Block math ($$...$$)
+	if display {
 		start = lstart + 2
-
 		offset := 2
 
-		// Look for closing $$ within 20 lines
 	L:
 		for x := 0; x < 20; x++ {
 			for j := offset; j < len(line); j++ {
@@ -64,12 +60,11 @@ func (s *KaTeXParser) Parse(parent ast.Node, block text.Reader, pc parser.Contex
 			}
 		}
 
-	} else { // Inline math ($...$)
+	} else {
 		start = lstart + 1
 
 		for i := 1; i < len(line); i++ {
 			c := line[i]
-			// Skip escaped characters
 			if c == '\\' {
 				i++
 				continue

@@ -1,5 +1,4 @@
-// Package parser provides page parsing logic for individual markdown files.
-// Handles page frontmatter, content rendering, and page node creation with tag support.
+// Package parser provides page parsing for individual markdown files.
 package parser
 
 import (
@@ -35,9 +34,9 @@ func (p *ContentParser) parsePage(path, dir string) error {
 			Path:      path,
 		})
 	}
-	// Skip draft pages unless BuildDrafts is enabled
+
 	if pageConfig.Draft && !p.Site.BuildDrafts {
-		return nil // Silently skip draft pages
+		return nil
 	}
 
 	pc := parser.NewContext()
@@ -63,16 +62,12 @@ func (p *ContentParser) parsePage(path, dir string) error {
 
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, pageConfig.ToConfig())
 
-	// For index.md files, the page should be created at the directory level,
-	// with parent being the directory's parent, not the directory itself
 	var parent *content.Node
 	var pagePath string
 	if filepath.Base(path) == "index.md" {
-		// For blog/first-post/index.md: parent = blog, pagePath = blog/first-post
 		parent = p.GetOrCreateSection(filepath.Dir(dir))
 		pagePath = dir
 	} else {
-		// For blog/post.md: parent = blog, pagePath = blog/post
 		parent = p.GetOrCreateSection(dir)
 		pagePath = strings.TrimSuffix(path, "content/")
 	}
@@ -100,7 +95,6 @@ func (p *ContentParser) parsePage(path, dir string) error {
 
 	parent.Children = append(parent.Children, pageNode)
 
-	// handle tags
 	if len(pageConfig.Tags) > 0 {
 		p.parseTags(pageConfig, pageNode)
 	}

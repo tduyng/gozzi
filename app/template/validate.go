@@ -1,5 +1,4 @@
-// Package template provides validation with source-level error reporting similar to Rust compiler errors.
-// Provides detailed error messages with line numbers and code snippets for debugging.
+// Package template provides validation with detailed error reporting.
 package template
 
 import (
@@ -88,7 +87,6 @@ func (v *Validator) Validate() []Error {
 	return errors
 }
 
-// validateTemplate validates a single template file.
 func (v *Validator) validateTemplate(name, path string) []Error {
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -98,7 +96,6 @@ func (v *Validator) validateTemplate(name, path string) []Error {
 		}}
 	}
 
-	// Try to parse the template
 	tmpl := template.New(name).Funcs(v.funcMap)
 	_, err = tmpl.Parse(string(content))
 	if err != nil {
@@ -108,7 +105,6 @@ func (v *Validator) validateTemplate(name, path string) []Error {
 	return nil
 }
 
-// parseError extracts detailed error information from template parse errors.
 func (v *Validator) parseError(name, content string, err error) []Error {
 	errMsg := err.Error()
 	lines := strings.Split(content, "\n")
@@ -118,14 +114,11 @@ func (v *Validator) parseError(name, content string, err error) []Error {
 	var lineNum int
 	var snippet string
 
-	// Parse error message for line number
-	// Format: "template: name:LINE:COL: message"
 	parts := strings.Split(errMsg, ":")
 	if len(parts) >= 3 {
 		_, _ = fmt.Sscanf(parts[1], "%d", &lineNum)
 	}
 
-	// Extract snippet around error line
 	if lineNum > 0 && lineNum <= len(lines) {
 		snippet = v.buildSnippet(lines, lineNum)
 	}
@@ -139,11 +132,9 @@ func (v *Validator) parseError(name, content string, err error) []Error {
 	}}
 }
 
-// buildSnippet creates a code snippet around the error line.
 func (v *Validator) buildSnippet(lines []string, errorLine int) string {
 	var sb strings.Builder
 
-	// Show 2 lines before and after the error
 	start := max(0, errorLine-3)
 	end := min(len(lines), errorLine+2)
 
@@ -159,9 +150,7 @@ func (v *Validator) buildSnippet(lines []string, errorLine int) string {
 	return sb.String()
 }
 
-// extractMessage extracts the core error message.
 func extractMessage(errMsg string) string {
-	// Remove template file prefix
 	parts := strings.SplitN(errMsg, ":", 4)
 	if len(parts) >= 4 {
 		return strings.TrimSpace(parts[3])
@@ -169,7 +158,6 @@ func extractMessage(errMsg string) string {
 	return errMsg
 }
 
-// suggestFix provides hints based on common error patterns.
 func suggestFix(errMsg string) string {
 	errLower := strings.ToLower(errMsg)
 
@@ -187,18 +175,15 @@ func suggestFix(errMsg string) string {
 	}
 }
 
-// ValidationResult holds the results of template validation.
 type ValidationResult struct {
 	Errors   []Error
 	Warnings []Error
 }
 
-// IsValid returns true if there are no errors.
 func (vr *ValidationResult) IsValid() bool {
 	return len(vr.Errors) == 0
 }
 
-// Report prints the validation results in a human-readable format.
 func (vr *ValidationResult) Report() string {
 	if vr.IsValid() && len(vr.Warnings) == 0 {
 		return "✓ All templates are valid\n"

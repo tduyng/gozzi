@@ -1,5 +1,3 @@
-// Package builder provides Atom feed and sitemap generation for the site builder.
-// Creates XML feeds (Atom) and sitemaps for content discovery.
 package builder
 
 import (
@@ -87,7 +85,6 @@ func (b *Builder) generateAtomFeed() error {
 	slices.SortFunc(entries, func(a, b *content.Node) int {
 		dateA := a.Config["date"].(time.Time)
 		dateB := b.Config["date"].(time.Time)
-		// Sort descending (newest first), so reverse comparison
 		return dateB.Compare(dateA)
 	})
 
@@ -151,7 +148,6 @@ func (b *Builder) generateAtomFeed() error {
 func (b *Builder) generateSitemap() error {
 	var urls []SitemapURL
 
-	// Content pages
 	b.walkNodes(b.parser.ContentMap["."], func(n *content.Node) {
 		if config.GetBool(n.Config, "draft") {
 			return
@@ -179,7 +175,6 @@ func (b *Builder) generateSitemap() error {
 		urls = append(urls, url)
 	})
 
-	// Tag pages
 	if b.hasTemplate("tags.html") {
 		for tag := range b.parser.Tags {
 			loc := b.buildTagURL(b.buildTagPermalink(tag))
@@ -204,12 +199,10 @@ func (b *Builder) writeXMLFile(name string, xslHeader string, data any) error {
 		_ = file.Close()
 	}()
 
-	// Write XML header with XSL
 	if _, err := file.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n" + xslHeader + "\n"); err != nil {
 		return err
 	}
 
-	// Create XML encoder with proper settings
 	enc := xml.NewEncoder(file)
 	enc.Indent("", "  ")
 
@@ -217,7 +210,6 @@ func (b *Builder) writeXMLFile(name string, xslHeader string, data any) error {
 		return err
 	}
 
-	// Final newline
 	_, err = file.WriteString("\n")
 	return err
 }
@@ -225,14 +217,11 @@ func (b *Builder) writeXMLFile(name string, xslHeader string, data any) error {
 func getLastMod(n *content.Node) string {
 	var lastMod time.Time
 
-	// Check for valid updated date
 	if updated, ok := n.Config["updated"].(time.Time); ok && !updated.IsZero() {
 		lastMod = updated
 	} else if date, ok := n.Config["date"].(time.Time); ok && !date.IsZero() {
-		// Fall back to valid date
 		lastMod = date
 	} else {
-		// Fallback to current time if no valid dates
 		lastMod = time.Now()
 	}
 

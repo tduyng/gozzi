@@ -9,10 +9,10 @@ linters:
     - lll
     - makezero
     - misspell
-    - revive
     - staticcheck
     - unused
     - wastedassign
+    # - revive
   settings:
     revive:
       confidence: 0.8

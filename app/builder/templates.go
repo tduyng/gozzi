@@ -1,5 +1,4 @@
-// Package builder provides template loading and management for the site builder.
-// Handles template discovery, parsing, and function registration.
+// Package builder provides template loading and management.
 package builder
 
 import (
@@ -13,12 +12,9 @@ import (
 	"github.com/tduyng/gozzi/app/utils"
 )
 
-// loadTemplates loads all templates with the engine's function map.
 func (b *Builder) loadTemplates() (*template.Template, error) {
-	// Get base function map from engine
 	funcMap := b.engine.CreateFuncMap()
 
-	// Add a placeholder for pagination function (will be replaced after templates are loaded)
 	funcMap["pagination"] = func(data map[string]any) (template.HTML, error) {
 		return "", fmt.Errorf("pagination not yet initialized")
 	}
@@ -76,7 +72,6 @@ func (b *Builder) loadTemplates() (*template.Template, error) {
 		})
 	}
 
-	// Add pagination macro after templates are loaded
 	macroRenderer := funcs.NewMacroRenderer(tmpl)
 	tmpl = tmpl.Funcs(template.FuncMap{
 		"pagination": macroRenderer.RenderPagination(b.site.ToConfig()),

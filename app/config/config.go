@@ -1,4 +1,4 @@
-// Package config handles TOML configuration loading and merging for gozzi.
+// Package config handles TOML configuration loading and merging.
 package config
 
 import (
@@ -154,7 +154,6 @@ func mergeFrontMatter(merged, frontMatter map[string]any) map[string]any {
 	if updated, ok := frontMatter["updated"].(time.Time); ok && !updated.IsZero() {
 		merged["updated"] = updated
 	} else {
-		// Ensure updated field always exists as time.Time, even if zero
 		merged["updated"] = time.Time{}
 	}
 
@@ -167,7 +166,6 @@ func mergeFrontMatter(merged, frontMatter map[string]any) map[string]any {
 		}
 	}
 
-	// Handle extra field merging
 	if frontMatterExtra, exists := frontMatter["extra"]; exists {
 		if extraMap, ok := frontMatterExtra.(map[string]any); ok {
 			if existingExtra, hasExtra := merged["extra"]; hasExtra {
@@ -250,9 +248,9 @@ func parseFrontMatter[T any](content []byte) (*T, []byte, error) {
 	)
 
 	switch len(parts) {
-	case 1: // No front matter
+	case 1:
 		body = content
-	case 2: // Only opening +++
+	case 2:
 		body = bytes.Join(parts, frontMatterDelim)
 	case 3:
 		frontMatter := bytes.TrimSpace(parts[1])

@@ -1,5 +1,3 @@
-// Package builder provides tag page generation for organizing content.
-// Creates tag index pages and individual tag pages with tagged content.
 package builder
 
 import (
@@ -84,7 +82,6 @@ func (b *Builder) generateTagPage(tag string, entry *parser.TagEntry) error {
 	slices.SortFunc(sortedPages, func(a, b *content.Node) int {
 		dateA := a.Config["date"].(time.Time)
 		dateB := b.Config["date"].(time.Time)
-		// Sort descending (newest first), so reverse comparison
 		return dateB.Compare(dateA)
 	})
 

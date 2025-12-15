@@ -1,5 +1,4 @@
-// Package utils provides worker pool and concurrent processing utilities for gozzi.
-// This package contains concurrency primitives like WorkerPool, BatchFileProcessor, and EnhancedWaitGroup.
+// Package utils provides worker pool and concurrent processing utilities.
 package utils
 
 import (
@@ -26,7 +25,6 @@ func NewWorkerPool(ctx context.Context) *WorkerPool {
 
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 
-	// Use container-aware GOMAXPROCS for optimal worker count
 	maxWorkers := runtime.GOMAXPROCS(0)
 
 	return &WorkerPool{
@@ -47,7 +45,6 @@ func (wp *WorkerPool) ProcessFiles(files []string, processor func(ctx context.Co
 	errChan := make(chan error, len(files))
 
 	for _, file := range files {
-		// Acquire semaphore
 		select {
 		case semaphore <- struct{}{}:
 		case <-wp.ctx.Done():
@@ -58,7 +55,7 @@ func (wp *WorkerPool) ProcessFiles(files []string, processor func(ctx context.Co
 		wp.wg.Add(1)
 		go func(filePath string) {
 			defer wp.wg.Done()
-			defer func() { <-semaphore }() // Release semaphore
+			defer func() { <-semaphore }()
 
 			if err := processor(wp.ctx, filePath); err != nil {
 				select {
@@ -69,7 +66,6 @@ func (wp *WorkerPool) ProcessFiles(files []string, processor func(ctx context.Co
 		}(file)
 	}
 
-	// Wait for completion in a separate goroutine
 	go func() {
 		wp.wg.Wait()
 		close(errChan)
@@ -98,7 +94,6 @@ func (wp *WorkerPool) ProcessContentNodes(nodes []any, processor func(ctx contex
 	errChan := make(chan error, len(nodes))
 
 	for _, node := range nodes {
-		// Acquire semaphore
 		select {
 		case semaphore <- struct{}{}:
 		case <-wp.ctx.Done():
@@ -109,7 +104,7 @@ func (wp *WorkerPool) ProcessContentNodes(nodes []any, processor func(ctx contex
 		wp.wg.Add(1)
 		go func(item any) {
 			defer wp.wg.Done()
-			defer func() { <-semaphore }() // Release semaphore
+			defer func() { <-semaphore }()
 
 			if err := processor(wp.ctx, item); err != nil {
 				select {
@@ -120,7 +115,6 @@ func (wp *WorkerPool) ProcessContentNodes(nodes []any, processor func(ctx contex
 		}(node)
 	}
 
-	// Wait for completion in a separate goroutine
 	go func() {
 		wp.wg.Wait()
 		close(errChan)
@@ -138,14 +132,11 @@ func (wp *WorkerPool) ProcessContentNodes(nodes []any, processor func(ctx contex
 	return firstErr
 }
 
-// Close cancels all pending work and waits for completion.
 func (wp *WorkerPool) Close() {
 	wp.cancel()
 	wp.wg.Wait()
 }
 
-// TimeoutProcessor wraps a processor function with timeout using
-// Go 1.25.x context patterns.
 func TimeoutProcessor(
 	timeout time.Duration,
 	processor func(ctx context.Context, item any) error,
@@ -195,7 +186,6 @@ func (bp *BatchFileProcessor) Process(ctx context.Context, files []string) error
 		return nil
 	}
 
-	// Create batches
 	var batches [][]string
 	for i := 0; i < len(files); i += bp.batchSize {
 		end := i + bp.batchSize
@@ -205,11 +195,9 @@ func (bp *BatchFileProcessor) Process(ctx context.Context, files []string) error
 		batches = append(batches, files[i:end])
 	}
 
-	// Process batches concurrently
 	wp := NewWorkerPool(ctx)
 	defer wp.Close()
 
-	// Convert batches to any for ProcessContentNodes
 	var batchNodes []any
 	for _, batch := range batches {
 		batchNodes = append(batchNodes, batch)
@@ -230,21 +218,17 @@ func (bp *BatchFileProcessor) Process(ctx context.Context, files []string) error
 	})
 }
 
-// EnhancedWaitGroup wraps sync.WaitGroup with Go 1.25.x improvements.
 type EnhancedWaitGroup struct {
 	wg  sync.WaitGroup
 	ctx context.Context
 }
 
-// NewEnhancedWaitGroup creates a new enhanced wait group.
 func NewEnhancedWaitGroup(ctx context.Context) *EnhancedWaitGroup {
 	return &EnhancedWaitGroup{
 		ctx: ctx,
 	}
 }
 
-// Go starts a goroutine and automatically calls Done when finished.
-// This simulates the proposed sync.WaitGroup.Go() method from Go 1.25.x.
 func (ewg *EnhancedWaitGroup) Go(f func(ctx context.Context)) {
 	ewg.wg.Add(1)
 	go func() {
@@ -253,12 +237,10 @@ func (ewg *EnhancedWaitGroup) Go(f func(ctx context.Context)) {
 	}()
 }
 
-// Wait waits for all goroutines to complete.
 func (ewg *EnhancedWaitGroup) Wait() {
 	ewg.wg.Wait()
 }
 
-// WaitWithTimeout waits for all goroutines to complete or times out.
 func (ewg *EnhancedWaitGroup) WaitWithTimeout(timeout time.Duration) error {
 	done := make(chan struct{})
 	go func() {

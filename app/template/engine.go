@@ -1,5 +1,4 @@
-// Package template provides a function registry that manages all available template functions and their metadata.
-// Provides a clean way to register, validate, and retrieve template functions.
+// Package template provides template function registry and management.
 package template
 
 import (
@@ -82,7 +81,6 @@ func (r *FuncRegistry) BuildFuncMap(ctx *funcs.SiteContext) template.FuncMap {
 				funcMap[name] = siteFuncs.RenderMarkdown
 			}
 		} else if !def.RequiresCtx {
-			// Add context-free functions directly
 			funcMap[name] = def.Fn
 		}
 	}
@@ -94,7 +92,6 @@ func (r *FuncRegistry) BuildFuncMap(ctx *funcs.SiteContext) template.FuncMap {
 func CreateDefaultRegistry() *FuncRegistry {
 	r := NewFuncRegistry()
 
-	// Core functions
 	r.MustRegister("add", FuncDef{Fn: funcs.Add, Description: "Add two numbers"})
 	r.MustRegister("sub", FuncDef{Fn: funcs.Sub, Description: "Subtract b from a"})
 	r.MustRegister("eq", FuncDef{Fn: funcs.Eq, Description: "Test equality"})
@@ -102,7 +99,6 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("and", FuncDef{Fn: funcs.And, Description: "Logical AND"})
 	r.MustRegister("or", FuncDef{Fn: funcs.Or, Description: "Logical OR"})
 
-	// Collection functions
 	r.MustRegister("first", FuncDef{Fn: funcs.First, Description: "Get first element"})
 	r.MustRegister("last", FuncDef{Fn: funcs.Last, Description: "Get last element"})
 	r.MustRegister("contains", FuncDef{Fn: funcs.Contains, Description: "Check if collection contains value"})
@@ -117,7 +113,6 @@ func CreateDefaultRegistry() *FuncRegistry {
 		Description: "Find related posts using tag-based scoring",
 	})
 
-	// String functions
 	r.MustRegister("lower", FuncDef{Fn: funcs.Lower, Description: "Convert to lowercase"})
 	r.MustRegister("upper", FuncDef{Fn: funcs.Upper, Description: "Convert to uppercase"})
 	r.MustRegister("trim", FuncDef{Fn: funcs.Trim, Description: "Trim whitespace"})
@@ -133,18 +128,15 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("priority", FuncDef{Fn: funcs.Priority, Description: "First non-empty value"})
 	r.MustRegister("pluralize", FuncDef{Fn: funcs.Pluralize, Description: "Pluralize word based on count"})
 
-	// Date functions
 	r.MustRegister("date", FuncDef{Fn: funcs.FormatDate, Description: "Format date"})
 	r.MustRegister("to_date", FuncDef{Fn: funcs.ParseDate, Description: "Parse date string"})
 	r.MustRegister("now", FuncDef{Fn: funcs.Now, Description: "Current time"})
 
-	// Data functions
 	r.MustRegister("dict", FuncDef{Fn: funcs.Dict, Description: "Create map from key-value pairs"})
 	r.MustRegister("safe", FuncDef{Fn: funcs.SafeHTML, Description: "Mark HTML as safe"})
 	r.MustRegister("load", FuncDef{Fn: funcs.LoadData, Description: "Load file as HTML"})
 	r.MustRegister("load_attribute", FuncDef{Fn: funcs.LoadAttribute, Description: "Load file as escaped attribute"})
 
-	// Site-specific functions (require context)
 	r.MustRegister("asset", FuncDef{Fn: nil, RequiresCtx: true, Description: "Generate asset URL"})
 	r.MustRegister("get_section", FuncDef{Fn: nil, RequiresCtx: true, Description: "Get section by path"})
 	r.MustRegister("markdown", FuncDef{Fn: nil, RequiresCtx: true, Description: "Render markdown to HTML"})

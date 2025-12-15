@@ -1,4 +1,4 @@
-// Package funcs provides string manipulation template functions for formatting, URLs, and text processing.
+// Package funcs provides string manipulation template functions.
 package funcs
 
 import (
@@ -6,9 +6,6 @@ import (
 	"strings"
 )
 
-// String manipulation that requires Go stdlib
-
-// Lower converts a string to lowercase.
 func Lower(s string) string {
 	return strings.ToLower(s)
 }

@@ -1,5 +1,4 @@
-// Package markdown provide mermaid diagram rendering extension for goldmark markdown processor.
-// Provides client-side rendering for mermaid code blocks using MermaidJS.
+// Package markdown provides mermaid diagram rendering extension for goldmark.
 package markdown
 
 import (

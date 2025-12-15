@@ -100,15 +100,6 @@ name = "Your Name"
 bio = "Developer and writer"
 ```
 
-::: details What does this config do?
-
-- `base_url`: Your site's URL (used for absolute links)
-- `title`: Site title (appears in browser tabs and feeds)
-- `description`: SEO meta description
-- `generate_feed`: Create RSS/Atom feed automatically
-- `[extra]`: Custom data accessible in templates
-  :::
-
 ## Step 4: Create Your First Post
 
 Create a new blog post:
@@ -140,10 +131,6 @@ This is my first post built with **Gozzi**, a fast static site generator written
 
 Let's build something amazing!
 ```
-
-::: tip Date-based URLs
-The folder name `2024-01-15-hello-world` becomes `/blog/hello-world/` in the URL. Gozzi automatically strips the date prefix.
-:::
 
 ## Step 5: Create a Basic Template
 
@@ -223,10 +210,6 @@ Watching for changes...
 
 Open your browser to [http://localhost:1313/blog/hello-world/](http://localhost:3000/blog/hello-world/) 🎉
 
-::: tip Live Reload
-Try editing your post or template - the browser will automatically refresh!
-:::
-
 ## Step 7: Build for Production
 
 When you're ready to deploy:
@@ -252,67 +235,9 @@ You can now deploy the `public/` folder to any static hosting service!
 
 ## What's Next?
 
-Now that you have a basic site running, explore more features:
-
-### Learn the Basics
-
 - [Content Structure](/content-structure) - Organize pages and sections
 - [Configuration](/config/) - Customize your site
 - [Templates](/templates/) - Build custom layouts
-
-### Add Features
-
-- [Tags & Pagination](/features/) - Organize content
-- [RSS & SEO](/features/) - Optimize for search engines
-- [Built-in Features](/features/) - TOC, math, diagrams
-
-### See Examples
-
-- [Blog Setup](/examples/quick-start) - Complete blog example
-- [Custom Templates](/templates/) - Advanced templating
-- [Real-World Sites](/examples/real-world) - Production examples
-
-## Common Next Steps
-
-### Add More Posts
-
-Create additional posts in the `content/blog/` directory:
-
-```bash
-mkdir -p content/blog/2024-01-16-second-post
-```
-
-### Create a Blog Listing Page
-
-Create `content/blog/_index.md`:
-
-```markdown
-+++
-title = "Blog"
-description = "All my blog posts"
-template = "blog.html"
-+++
-
-Welcome to my blog!
-```
-
-And create `templates/blog.html` to list all posts.
-
-### Add CSS and Images
-
-Put files in `static/`:
-
-```
-static/
-├── css/
-│   └── main.css
-└── img/
-    └── avatar.jpg
-```
-
-Reference in templates:
-
-```html
-<link rel="stylesheet" href="/css/main.css" /> <img src="/img/avatar.jpg" alt="Avatar" />
-```
+- [Features](/features/) - Tags, pagination, math, diagrams
+- [Examples](/examples/quick-start) - Complete blog example
 

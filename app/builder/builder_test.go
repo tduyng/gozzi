@@ -415,3 +415,187 @@ date = 2024-01-01T10:00:00Z
 	// Verify section was generated
 	assert.FileExists(t, filepath.Join(b.site.OutputDir, "blog", "index.html"))
 }
+
+func TestMinifyCSS(t *testing.T) {
+	tests := []struct {
+		name       string
+		minifyCSS  bool
+		cssContent string
+		checkSize  bool
+	}{
+		{
+			name:      "minify_enabled",
+			minifyCSS: true,
+			cssContent: `
+body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+}
+
+/* Comment */
+.container {
+    max-width: 1200px;
+}`,
+			checkSize: true,
+		},
+		{
+			name:      "minify_disabled",
+			minifyCSS: false,
+			cssContent: `
+body {
+    margin: 0;
+}`,
+			checkSize: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			outputDir := filepath.Join(tmpDir, "public")
+			staticDir := filepath.Join(tmpDir, "static")
+			cssDir := filepath.Join(staticDir, "css")
+			templateDir := filepath.Join(tmpDir, "templates")
+			contentDir := filepath.Join(tmpDir, "content")
+
+			require.NoError(t, os.MkdirAll(cssDir, 0755))
+			require.NoError(t, os.MkdirAll(templateDir, 0755))
+			require.NoError(t, os.MkdirAll(contentDir, 0755))
+
+			cssPath := filepath.Join(cssDir, "style.css")
+			require.NoError(t, os.WriteFile(cssPath, []byte(tt.cssContent), 0644))
+
+			require.NoError(t, os.WriteFile(filepath.Join(templateDir, "post.html"),
+				[]byte(`<html><body>{{.Page.Title}}</body></html>`), 0644))
+			require.NoError(t, os.WriteFile(filepath.Join(templateDir, "404.html"),
+				[]byte(`<html><body>404</body></html>`), 0644))
+
+			cfg := &config.Site{
+				BaseURL:   "https://example.com",
+				Title:     "Test",
+				OutputDir: outputDir,
+				MinifyCSS: tt.minifyCSS,
+			}
+
+			require.NoError(t, os.Chdir(tmpDir))
+			defer func() { _ = os.Chdir("../../..") }()
+
+			p := parser.NewParser(cfg)
+			builder, err := NewBuilder(cfg, p)
+			require.NoError(t, err)
+
+			err = builder.copyStaticAssets()
+			require.NoError(t, err)
+
+			outputCSS := filepath.Join(outputDir, "css", "style.css")
+			assert.FileExists(t, outputCSS)
+
+			originalSize := len(tt.cssContent)
+			outputContent, err := os.ReadFile(outputCSS)
+			require.NoError(t, err)
+			outputSize := len(outputContent)
+
+			if tt.checkSize {
+				assert.Less(t, outputSize, originalSize, "Minified CSS should be smaller")
+				assert.NotContains(t, string(outputContent), "/* Comment */")
+			} else {
+				assert.Equal(t, originalSize, outputSize, "CSS size should be unchanged when minify disabled")
+			}
+		})
+	}
+}
+
+func TestMinifyHTML(t *testing.T) {
+	tests := []struct {
+		name       string
+		minifyHTML bool
+		checkSize  bool
+	}{
+		{
+			name:       "minify_enabled",
+			minifyHTML: true,
+			checkSize:  true,
+		},
+		{
+			name:       "minify_disabled",
+			minifyHTML: false,
+			checkSize:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			outputDir := filepath.Join(tmpDir, "public")
+			templateDir := filepath.Join(tmpDir, "templates")
+			contentDir := filepath.Join(tmpDir, "content")
+
+			require.NoError(t, os.MkdirAll(templateDir, 0755))
+			require.NoError(t, os.MkdirAll(contentDir, 0755))
+
+			templateContent := `<!DOCTYPE html>
+<html>
+<head>
+    <title>{{.Page.Title}}</title>
+</head>
+<body>
+    <h1>{{.Page.Title}}</h1>
+    <div class="content">
+        {{.Page.Body}}
+    </div>
+</body>
+</html>`
+			require.NoError(t, os.WriteFile(filepath.Join(templateDir, "post.html"),
+				[]byte(templateContent), 0644))
+			require.NoError(t, os.WriteFile(filepath.Join(templateDir, "404.html"),
+				[]byte(`<html><body>404</body></html>`), 0644))
+
+			postContent := `+++
+title = "Test Post"
+date = 2025-01-01T00:00:00Z
+template = "post.html"
++++
+
+Test content here`
+			require.NoError(t, os.WriteFile(filepath.Join(contentDir, "_index.md"),
+				[]byte(postContent), 0644))
+
+			cfg := &config.Site{
+				BaseURL:    "https://example.com",
+				Title:      "Test",
+				OutputDir:  outputDir,
+				MinifyHTML: tt.minifyHTML,
+			}
+
+			require.NoError(t, os.Chdir(tmpDir))
+			defer func() { _ = os.Chdir("../../..") }()
+
+			p := parser.NewParser(cfg)
+			err := p.Parse("content")
+			require.NoError(t, err)
+
+			builder, err := NewBuilder(cfg, p)
+			require.NoError(t, err)
+
+			contentRoot, exists := p.ContentMap["."]
+			require.True(t, exists)
+
+			err = builder.Generate(contentRoot)
+			require.NoError(t, err)
+
+			outputHTML := filepath.Join(outputDir, "index.html")
+			assert.FileExists(t, outputHTML)
+
+			content, err := os.ReadFile(outputHTML)
+			require.NoError(t, err)
+
+			if tt.checkSize {
+				assert.NotContains(t, string(content), "\n    <")
+				assert.Contains(t, string(content), "<html><head>")
+			} else {
+				assert.Contains(t, string(content), "\n    <")
+			}
+		})
+	}
+}

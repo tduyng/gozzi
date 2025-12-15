@@ -17,6 +17,7 @@ items = [
   { text = "Installation", link = "/installation" },
   { text = "Your First Site", link = "/getting-started" },
   { text = "Content Structure", link = "/content-structure" },
+  { text = "Troubleshooting", link = "/troubleshooting" },
 ]
 
 [[extra.sidebar]]
@@ -27,7 +28,6 @@ items = [
   { text = "Extended Config", link = "/config/extended" },
   { text = "Environment", link = "/config/environment" },
   { text = "Inheritance", link = "/config/inheritance" },
-  { text = "Troubleshooting", link = "/config/troubleshooting" },
 ]
 
 [[extra.sidebar]]
@@ -61,7 +61,6 @@ items = [
   { text = "Build Command", link = "/cli/build" },
   { text = "Serve Command", link = "/cli/serve" },
   { text = "Usage Patterns", link = "/cli/usage-patterns" },
-  { text = "Troubleshooting", link = "/cli/troubleshooting" },
 ]
 
 [[extra.sidebar]]

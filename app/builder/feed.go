@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"bytes"
 	"encoding/xml"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
+	"github.com/tduyng/gozzi/app/minify"
 )
 
 const (
@@ -191,27 +193,44 @@ func (b *Builder) generateSitemap() error {
 
 func (b *Builder) writeXMLFile(name string, xslHeader string, data any) error {
 	path := filepath.Join(b.site.OutputDir, name)
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = file.Close()
-	}()
 
-	if _, err := file.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n" + xslHeader + "\n"); err != nil {
+	// Generate XML to a buffer first
+	var buf bytes.Buffer
+	if _, err := buf.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n" + xslHeader + "\n"); err != nil {
 		return err
 	}
 
-	enc := xml.NewEncoder(file)
-	enc.Indent("", "  ")
+	enc := xml.NewEncoder(&buf)
+	if !b.site.MinifyXML {
+		enc.Indent("", "  ")
+	}
 
 	if err := enc.Encode(data); err != nil {
 		return err
 	}
 
-	_, err = file.WriteString("\n")
-	return err
+	if _, err := buf.WriteString("\n"); err != nil {
+		return err
+	}
+
+	xmlContent := buf.Bytes()
+
+	// Minify if enabled
+	if b.site.MinifyXML {
+		m := minify.New()
+		minified, err := m.MinifyXML(xmlContent)
+		if err == nil {
+			xmlContent = minified
+		}
+		// If minification fails, use original content (graceful fallback)
+	}
+
+	// Write to file
+	if err := os.WriteFile(path, xmlContent, 0644); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func getLastMod(n *content.Node) string {

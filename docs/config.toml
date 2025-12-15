@@ -1,4 +1,4 @@
-base_url = "https://tduyng.github.io/gozzi"
+base_url = ""
 title = "Gozzi Documentation"
 description = "A Go static site generator born from curiosity - Fast, flexible, and built for developers"
 language = "en"

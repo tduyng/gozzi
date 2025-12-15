@@ -210,6 +210,7 @@ base_url = "https://example.com"
 output_dir = "public"
 minify_css = true
 minify_html = true
+minify_js = true
 generate_feed = true
 
 [extra]

@@ -599,3 +599,99 @@ Test content here`
 		})
 	}
 }
+
+func TestMinifyJS(t *testing.T) {
+	tests := []struct {
+		name      string
+		minifyJS  bool
+		jsContent string
+		checkSize bool
+	}{
+		{
+			name:     "minify_enabled",
+			minifyJS: true,
+			jsContent: `
+function hello() {
+    console.log('Hello World');
+}
+
+// This is a comment
+const x = 1;
+const arr = [1, 2, 3];
+
+/* Multi-line
+   comment */
+const obj = {
+    name: 'test',
+    value: 42
+};`,
+			checkSize: true,
+		},
+		{
+			name:     "minify_disabled",
+			minifyJS: false,
+			jsContent: `
+const x = 1;
+// Comment
+console.log('test');`,
+			checkSize: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			outputDir := filepath.Join(tmpDir, "public")
+			staticDir := filepath.Join(tmpDir, "static")
+			jsDir := filepath.Join(staticDir, "js")
+			templateDir := filepath.Join(tmpDir, "templates")
+			contentDir := filepath.Join(tmpDir, "content")
+
+			require.NoError(t, os.MkdirAll(jsDir, 0755))
+			require.NoError(t, os.MkdirAll(templateDir, 0755))
+			require.NoError(t, os.MkdirAll(contentDir, 0755))
+
+			jsPath := filepath.Join(jsDir, "script.js")
+			require.NoError(t, os.WriteFile(jsPath, []byte(tt.jsContent), 0644))
+
+			require.NoError(t, os.WriteFile(filepath.Join(templateDir, "post.html"),
+				[]byte(`<html><body>{{.Page.Title}}</body></html>`), 0644))
+			require.NoError(t, os.WriteFile(filepath.Join(templateDir, "404.html"),
+				[]byte(`<html><body>404</body></html>`), 0644))
+
+			cfg := &config.Site{
+				BaseURL:   "https://example.com",
+				Title:     "Test",
+				OutputDir: outputDir,
+				MinifyJS:  tt.minifyJS,
+			}
+
+			require.NoError(t, os.Chdir(tmpDir))
+			defer func() { _ = os.Chdir("../../..") }()
+
+			p := parser.NewParser(cfg)
+			builder, err := NewBuilder(cfg, p)
+			require.NoError(t, err)
+
+			err = builder.copyStaticAssets()
+			require.NoError(t, err)
+
+			outputJS := filepath.Join(outputDir, "js", "script.js")
+			assert.FileExists(t, outputJS)
+
+			originalSize := len(tt.jsContent)
+			outputContent, err := os.ReadFile(outputJS)
+			require.NoError(t, err)
+			outputSize := len(outputContent)
+
+			if tt.checkSize {
+				assert.Less(t, outputSize, originalSize, "Minified JS should be smaller")
+				assert.NotContains(t, string(outputContent), "// This is a comment")
+				assert.NotContains(t, string(outputContent), "/* Multi-line")
+			} else {
+				assert.Equal(t, originalSize, outputSize, "JS size should be unchanged when minify disabled")
+				assert.Contains(t, string(outputContent), "// Comment")
+			}
+		})
+	}
+}

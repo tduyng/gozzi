@@ -33,6 +33,10 @@ func (b *Builder) copyStaticAssets() error {
 			return b.copyCSSWithMinify(srcPath, destPath)
 		}
 
+		if b.site.MinifyJS && strings.HasSuffix(srcPath, ".js") {
+			return b.copyJSWithMinify(srcPath, destPath)
+		}
+
 		return copyFile(srcPath, destPath)
 	})
 }
@@ -64,6 +68,41 @@ func (b *Builder) copyCSSWithMinify(src, dst string) error {
 	if err := os.WriteFile(dst, minified, 0644); err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 			Operation: "write_minified_css",
+			Component: "builder",
+			Path:      dst,
+		})
+	}
+
+	return nil
+}
+
+func (b *Builder) copyJSWithMinify(src, dst string) error {
+	content, err := os.ReadFile(src)
+	if err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "read_js_file",
+			Component: "builder",
+			Path:      src,
+		})
+	}
+
+	m := minify.New()
+	minified, err := m.MinifyJS(content)
+	if err != nil {
+		minified = content
+	}
+
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "create_directory",
+			Component: "builder",
+			Path:      filepath.Dir(dst),
+		})
+	}
+
+	if err := os.WriteFile(dst, minified, 0644); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "write_minified_js",
 			Component: "builder",
 			Path:      dst,
 		})

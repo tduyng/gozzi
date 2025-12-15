@@ -1,10 +1,11 @@
-// Package minify provides CSS and HTML minification.
+// Package minify provides CSS, HTML, and JavaScript minification.
 package minify
 
 import (
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/css"
 	"github.com/tdewolff/minify/v2/html"
+	"github.com/tdewolff/minify/v2/js"
 )
 
 type Minifier struct {
@@ -21,6 +22,7 @@ func New() *Minifier {
 		KeepEndTags:         true,
 		KeepQuotes:          false,
 	})
+	m.AddFunc("application/javascript", js.Minify)
 	return &Minifier{m: m}
 }
 
@@ -30,4 +32,8 @@ func (m *Minifier) MinifyCSS(input []byte) ([]byte, error) {
 
 func (m *Minifier) MinifyHTML(input []byte) ([]byte, error) {
 	return m.m.Bytes("text/html", input)
+}
+
+func (m *Minifier) MinifyJS(input []byte) ([]byte, error) {
+	return m.m.Bytes("application/javascript", input)
 }

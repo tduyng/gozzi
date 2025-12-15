@@ -104,6 +104,7 @@ base_url = "http://localhost:3000"
 output_dir = "dev-build"
 minify_css = false
 minify_html = false
+minify_js = false
 
 [extra]
 environment = "development"
@@ -116,6 +117,7 @@ base_url = "https://staging.example.com"
 output_dir = "staging-build"
 minify_css = true
 minify_html = true
+minify_js = true
 
 [extra]
 environment = "staging"
@@ -128,6 +130,7 @@ base_url = "https://example.com"
 output_dir = "public"
 minify_css = true
 minify_html = true
+minify_js = true
 
 [extra]
 environment = "production"

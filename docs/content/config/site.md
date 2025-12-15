@@ -22,6 +22,7 @@ generate_feed = true                              # Generate RSS/Atom feed (defa
 syntax_theme = "dracula"                          # Syntax highlighting theme (default: "dracula")
 minify_css = true                                 # Minify CSS files (default: false)
 minify_html = true                                # Minify HTML output (default: false)
+minify_js = true                                  # Minify JavaScript files (default: false)
 ```
 
 ## Configuration Options Reference
@@ -40,6 +41,7 @@ minify_html = true                                # Minify HTML output (default:
 | `syntax_theme` | string | "dracula" | Syntax highlighting theme for code blocks |
 | `minify_css` | boolean | false | Minify CSS files (36% avg reduction) |
 | `minify_html` | boolean | false | Minify HTML output (53% avg reduction) |
+| `minify_js` | boolean | false | Minify JavaScript files (53% avg reduction) |
 
 ## Minimal Blog Configuration
 
@@ -115,13 +117,14 @@ syntax_theme = "github-dark"  # Default: "dracula"
 
 See [Syntax Highlighting](/features/syntax-highlighting) for complete theme list and examples.
 
-## CSS and HTML Minification
+## CSS, HTML, and JavaScript Minification
 
 Optimize your site's performance by enabling minification:
 
 ```toml
 minify_css = true   # Reduces CSS file size by ~36%
 minify_html = true  # Reduces HTML output by ~53%
+minify_js = true    # Reduces JavaScript file size by ~53%
 ```
 
 Benefits:

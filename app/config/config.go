@@ -26,6 +26,7 @@ type Site struct {
 	SyntaxTheme     string         `toml:"syntax_theme"`
 	MinifyCSS       bool           `toml:"minify_css"`
 	MinifyHTML      bool           `toml:"minify_html"`
+	MinifyJS        bool           `toml:"minify_js"`
 	BuildTime       time.Time
 	BuildDrafts     bool
 }

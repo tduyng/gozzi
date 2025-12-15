@@ -140,7 +140,7 @@ func TestMinifyHTML(t *testing.T) {
 			name:  "preserve inline scripts",
 			input: "<script>var x = 1; console.log(x);</script>",
 			validate: func(s string) bool {
-				return strings.Contains(s, "var x = 1")
+				return strings.Contains(s, "var x") && strings.Contains(s, "console.log")
 			},
 			wantErr: false,
 		},
@@ -356,6 +356,192 @@ func BenchmarkMinifyHTML_Large(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := m.MinifyHTML(input)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func TestMinifyJS(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		validate func(string) bool
+		wantErr  bool
+	}{
+		{
+			name:  "basic JS minification",
+			input: "function hello() {\n  console.log('hello');\n}",
+			validate: func(s string) bool {
+				return strings.Contains(s, "function hello(){") && strings.Contains(s, "console.log")
+			},
+			wantErr: false,
+		},
+		{
+			name:  "remove comments",
+			input: "// Comment\nvar x = 1;",
+			validate: func(s string) bool {
+				return !strings.Contains(s, "// Comment") && strings.Contains(s, "var x=1")
+			},
+			wantErr: false,
+		},
+		{
+			name:  "compress whitespace",
+			input: "var  x  =  1  ;  var  y  =  2  ;",
+			validate: func(s string) bool {
+				return strings.Contains(s, "var x=1") && strings.Contains(s, "y=2")
+			},
+			wantErr: false,
+		},
+		{
+			name:  "empty JS",
+			input: "",
+			validate: func(s string) bool {
+				return s == ""
+			},
+			wantErr: false,
+		},
+		{
+			name:  "arrow functions",
+			input: "const add = (a, b) => {\n  return a + b;\n}",
+			validate: func(s string) bool {
+				return strings.Contains(s, "const add=") && strings.Contains(s, "=>")
+			},
+			wantErr: false,
+		},
+		{
+			name:  "template literals",
+			input: "const msg = `Hello ${name}`;",
+			validate: func(s string) bool {
+				return strings.Contains(s, "`Hello ${name}`")
+			},
+			wantErr: false,
+		},
+		{
+			name:  "object literals",
+			input: "const obj = {\n  key: 'value',\n  num: 42\n};",
+			validate: func(s string) bool {
+				return strings.Contains(s, "const obj=") && strings.Contains(s, "num:42")
+			},
+			wantErr: false,
+		},
+		{
+			name:  "remove block comments",
+			input: "/* Multi\nline\ncomment */\nvar x = 1;",
+			validate: func(s string) bool {
+				return !strings.Contains(s, "/* Multi") && strings.Contains(s, "var x=1")
+			},
+			wantErr: false,
+		},
+	}
+
+	m := New()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := m.MinifyJS([]byte(tt.input))
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MinifyJS() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !tt.validate(string(got)) {
+				t.Errorf("MinifyJS() validation failed. Got: %q", string(got))
+			}
+		})
+	}
+}
+
+func TestMinifyJS_Compression(t *testing.T) {
+	m := New()
+
+	input := `
+// Large JS file with comments and whitespace
+function calculateTotal(items) {
+    let total = 0;
+    
+    for (let i = 0; i < items.length; i++) {
+        total += items[i].price * items[i].quantity;
+    }
+    
+    return total;
+}
+
+// Another function
+const formatCurrency = (amount) => {
+    return '$' + amount.toFixed(2);
+};
+
+/* Class definition */
+class ShoppingCart {
+    constructor() {
+        this.items = [];
+    }
+    
+    addItem(item) {
+        this.items.push(item);
+    }
+    
+    getTotal() {
+        return calculateTotal(this.items);
+    }
+}
+`
+
+	output, err := m.MinifyJS([]byte(input))
+	if err != nil {
+		t.Fatalf("MinifyJS() failed: %v", err)
+	}
+
+	inputSize := len(input)
+	outputSize := len(output)
+
+	if outputSize >= inputSize {
+		t.Errorf("Minification did not reduce size: input=%d, output=%d", inputSize, outputSize)
+	}
+
+	compressionRatio := float64(inputSize-outputSize) / float64(inputSize) * 100
+	if compressionRatio < 20 {
+		t.Errorf("Compression ratio too low: %.2f%% (expected > 20%%)", compressionRatio)
+	}
+
+	t.Logf("Compression: %d -> %d bytes (%.2f%% reduction)", inputSize, outputSize, compressionRatio)
+}
+
+func BenchmarkMinifyJS(b *testing.B) {
+	m := New()
+	input := []byte(`
+function hello(name) {
+    console.log('Hello, ' + name);
+}
+const x = 1;
+const y = 2;
+const sum = x + y;
+`)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := m.MinifyJS(input)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkMinifyJS_Large(b *testing.B) {
+	m := New()
+
+	var sb strings.Builder
+	for i := 0; i < 1000; i++ {
+		sb.WriteString("function func")
+		sb.WriteString(string(rune('a' + (i % 26))))
+		sb.WriteString("() { return ")
+		sb.WriteString(string(rune('0' + (i % 10))))
+		sb.WriteString("; }\n")
+	}
+	input := []byte(sb.String())
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := m.MinifyJS(input)
 		if err != nil {
 			b.Fatal(err)
 		}

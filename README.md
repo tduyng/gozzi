@@ -30,6 +30,7 @@ base_url = "https://example.com"
 title = "My Blog"
 minify_css = true
 minify_html = true
+minify_js = true
 EOF
 
 # Create first post

@@ -31,10 +31,6 @@ Displayed: E = mc²
 - ✅ **User control** - Choose KaTeX version and hosting method
 - ✅ **Lighter builds** - No embedded rendering engine in Gozzi binary
 
-::: tip Same Approach as Mermaid
-Like Mermaid diagrams, math rendering happens in the browser. Gozzi prepares the notation during build, and KaTeX handles the visual rendering. This keeps Gozzi simple, fast, and portable.
-:::
-
 ## Basic Usage
 
 Simply write math expressions in your markdown using standard delimiters:
@@ -55,7 +51,8 @@ $$
 
 ## Example
 
-::: details Complete Math Example
+<details>
+<summary>Complete Math Example</summary>
 
 ```markdown
 # Understanding Geometry
@@ -75,7 +72,7 @@ $$
 For derivatives, we use $\frac{dy}{dx}$ notation.
 ```
 
-:::
+</details>
 
 ## Advanced Features
 
@@ -183,13 +180,7 @@ Then reference them in your templates:
 - Works offline
 - Faster if CDN is blocked
 
-::: tip Why Both CSS and JavaScript?
-KaTeX needs both:
-- **CSS** (~50KB gzipped) - Fonts, spacing, and math layout styles
-- **JavaScript** (~50KB gzipped) - Renders LaTeX notation to beautiful HTML
-
-**Total:** ~100KB gzipped for full math rendering support
-:::
+**💡 Note:** KaTeX requires both CSS (~50KB) for fonts/layout and JavaScript (~50KB) for rendering. Total: ~100KB gzipped.
 
 ## Quick Start Checklist
 
@@ -230,11 +221,9 @@ To use KaTeX math in your Gozzi site:
 
 4. **View in browser** - Math will be rendered by KaTeX!
 
-::: warning Missing Math Rendering?
-If you see raw LaTeX like `\(E = mc^2\)` instead of rendered math, make sure:
-1. KaTeX CSS is loaded (check browser DevTools)
-2. KaTeX JavaScript is loaded (check browser Console)
-3. Auto-render script runs after page load (use `defer` attribute)
-:::
+**⚠️ Troubleshooting:** If you see raw LaTeX like `\(E = mc^2\)` instead of rendered math:
+1. Check KaTeX CSS is loaded (browser DevTools)
+2. Check KaTeX JavaScript is loaded (browser Console)
+3. Ensure auto-render script runs after page load (use `defer` attribute)
 
 

@@ -14,7 +14,6 @@ Before you begin, make sure you have:
 - **Basic command-line knowledge**
 - **A text editor** (VS Code, Vim, Neovim, etc.)
 
-::: tip
 Check your Go version:
 
 ```bash
@@ -22,30 +21,34 @@ go version
 # Should show go1.25 or higher
 ```
 
-:::
-
 ## Step 1: Install Gozzi
 
-Choose your preferred installation method:
+**Recommended method:**
 
-::: code-group
-
-```bash [go install]
+```bash
 go install github.com/tduyng/gozzi@latest
 ```
 
-```bash [Homebrew (coming soon)]
+**Alternative methods:**
+
+<details>
+<summary>Homebrew (coming soon)</summary>
+
+```bash
 brew install gozzi
 ```
+</details>
 
-```bash [From Release]
+<details>
+<summary>From Release</summary>
+
+```bash
 # Download from GitHub Releases
 curl -LO https://github.com/tduyng/gozzi/releases/latest/download/gozzi_Darwin_arm64.tar.gz
 tar -xzf gozzi_Darwin_arm64.tar.gz
 sudo mv gozzi /usr/local/bin/
 ```
-
-:::
+</details>
 
 Verify installation:
 

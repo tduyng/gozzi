@@ -35,16 +35,7 @@ Rendered: Beautiful SVG diagram
 - ✅ Pan and zoom capabilities
 - ✅ Dynamic rendering
 
-::: tip Why Client-Side?
-Mermaid uses **client-side rendering** because:
-
-- **Interactive features** - Hover tooltips, click events, pan/zoom
-- **Theme integration** - Automatically matches your site's light/dark theme
-- **Simpler builds** - No Node.js/Mermaid CLI dependency for building
-- **Cross-platform** - Works everywhere without system dependencies
-
-Trade-off: Requires JavaScript (~200KB) but enables richer diagram interactions.
-:::
+**💡 Why Client-Side?** Client-side rendering enables interactive features (hover, pan, zoom), automatic theme integration, and simpler builds without Node.js dependencies. Trade-off: Requires JavaScript (~200KB).
 
 ## Basic Usage
 
@@ -210,7 +201,8 @@ See [Mermaid configuration docs](https://mermaid.js.org/config/setup/modules/mer
 
 ## Example
 
-::: details Complete Example with Multiple Diagrams
+<details>
+<summary>Complete Example with Multiple Diagrams</summary>
 
 ```markdown
 # System Architecture
@@ -249,7 +241,7 @@ erDiagram
 ```
 ````
 
-:::
+</details>
 
 ## Styling
 

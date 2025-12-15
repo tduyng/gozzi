@@ -658,16 +658,18 @@ Your site is ready in the `public/` directory!
 
 Deploy to any static hosting:
 
-::: code-group
+**Netlify:**
 
-```bash [Netlify]
+```toml
 # netlify.toml
 [build]
   command = "gozzi build"
   publish = "public"
 ```
 
-```bash [Vercel]
+**Vercel:**
+
+```json
 # vercel.json
 {
   "buildCommand": "gozzi build",
@@ -675,7 +677,9 @@ Deploy to any static hosting:
 }
 ```
 
-```bash [GitHub Pages]
+**GitHub Pages:**
+
+```yaml
 # .github/workflows/deploy.yml
 name: Deploy
 on:
@@ -696,8 +700,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
 ```
-
-:::
 
 ## What You Built
 

@@ -599,3 +599,68 @@ func parseTime(t *testing.T, timeStr string) time.Time {
 func writeFile(path, content string) error {
 	return os.WriteFile(path, []byte(content), 0644)
 }
+
+func TestLoadSite_MinifyOptions(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		wantCSS  bool
+		wantHTML bool
+		wantErr  bool
+	}{
+		{
+			name: "both_minify_enabled",
+			content: `base_url = "https://example.com"
+title = "Test"
+minify_css = true
+minify_html = true`,
+			wantCSS:  true,
+			wantHTML: true,
+			wantErr:  false,
+		},
+		{
+			name: "only_css_minify",
+			content: `base_url = "https://example.com"
+title = "Test"
+minify_css = true`,
+			wantCSS:  true,
+			wantHTML: false,
+			wantErr:  false,
+		},
+		{
+			name: "only_html_minify",
+			content: `base_url = "https://example.com"
+title = "Test"
+minify_html = true`,
+			wantCSS:  false,
+			wantHTML: true,
+			wantErr:  false,
+		},
+		{
+			name: "default_no_minify",
+			content: `base_url = "https://example.com"
+title = "Test"`,
+			wantCSS:  false,
+			wantHTML: false,
+			wantErr:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			configPath := filepath.Join(tmpDir, "config.toml")
+			require.NoError(t, writeFile(configPath, tt.content))
+
+			site, err := LoadSite(configPath)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantCSS, site.MinifyCSS, "MinifyCSS should match")
+			assert.Equal(t, tt.wantHTML, site.MinifyHTML, "MinifyHTML should match")
+		})
+	}
+}

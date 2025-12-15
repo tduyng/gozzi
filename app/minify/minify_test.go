@@ -547,3 +547,384 @@ func BenchmarkMinifyJS_Large(b *testing.B) {
 		}
 	}
 }
+
+func TestMinifyJSON(t *testing.T) {
+	tests := []struct {
+		name             string
+		input            string
+		expectError      bool
+		checkContains    []string
+		checkNotContains []string
+	}{
+		{
+			name: "basic_object",
+			input: `{
+    "name": "Test",
+    "value": 42
+}`,
+			expectError:      false,
+			checkContains:    []string{`"name":"Test"`, `"value":42`},
+			checkNotContains: []string{"    ", "\n"},
+		},
+		{
+			name: "nested_structure",
+			input: `{
+    "user": {
+        "name": "John",
+        "age": 30,
+        "tags": ["dev", "golang"]
+    }
+}`,
+			expectError:      false,
+			checkContains:    []string{`"user":`, `"tags":["dev","golang"]`},
+			checkNotContains: []string{"    ", "\n"},
+		},
+		{
+			name:          "array",
+			input:         `[1, 2, 3, 4, 5]`,
+			expectError:   false,
+			checkContains: []string{`[1,2,3,4,5]`},
+		},
+		{
+			name: "whitespace_only",
+			input: `{
+    
+    "key"  :  "value"
+    
+}`,
+			expectError:   false,
+			checkContains: []string{`{"key":"value"}`},
+		},
+	}
+
+	m := New()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			output, err := m.MinifyJSON([]byte(tt.input))
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("MinifyJSON() failed: %v", err)
+			}
+
+			outputStr := string(output)
+			for _, check := range tt.checkContains {
+				if !strings.Contains(outputStr, check) {
+					t.Errorf("Output should contain %q, got: %q", check, outputStr)
+				}
+			}
+
+			for _, check := range tt.checkNotContains {
+				if strings.Contains(outputStr, check) {
+					t.Errorf("Output should not contain %q, got: %q", check, outputStr)
+				}
+			}
+
+			if len(output) >= len(tt.input) {
+				t.Errorf("Minified size (%d) should be smaller than input (%d)", len(output), len(tt.input))
+			}
+		})
+	}
+}
+
+func TestMinifySVG(t *testing.T) {
+	tests := []struct {
+		name             string
+		input            string
+		expectError      bool
+		checkContains    []string
+		checkNotContains []string
+	}{
+		{
+			name: "basic_svg",
+			input: `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+    <circle cx="50" cy="50" r="40" fill="red" />
+</svg>`,
+			expectError:      false,
+			checkContains:    []string{`<svg`, `<circle`, `cx="50"`},
+			checkNotContains: []string{"\n    "},
+		},
+		{
+			name: "with_paths",
+			input: `<svg xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 10 L90 90" stroke="black" />
+    <path d="M90 10 L10 90" stroke="black" />
+</svg>`,
+			expectError:   false,
+			checkContains: []string{`<path`, `d="M10 10 90 90"`},
+		},
+		{
+			name: "with_comments",
+			input: `<svg>
+    <!-- This is a comment -->
+    <rect width="50" height="50" />
+</svg>`,
+			expectError:      false,
+			checkContains:    []string{`<rect`},
+			checkNotContains: []string{"<!--"},
+		},
+	}
+
+	m := New()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			output, err := m.MinifySVG([]byte(tt.input))
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("MinifySVG() failed: %v", err)
+			}
+
+			outputStr := string(output)
+			for _, check := range tt.checkContains {
+				if !strings.Contains(outputStr, check) {
+					t.Errorf("Output should contain %q, got: %q", check, outputStr)
+				}
+			}
+
+			for _, check := range tt.checkNotContains {
+				if strings.Contains(outputStr, check) {
+					t.Errorf("Output should not contain %q, got: %q", check, outputStr)
+				}
+			}
+
+			if len(output) > len(tt.input) {
+				t.Errorf("Minified size (%d) should not be larger than input (%d)", len(output), len(tt.input))
+			}
+		})
+	}
+}
+
+func TestMinifyXML(t *testing.T) {
+	tests := []struct {
+		name             string
+		input            string
+		expectError      bool
+		checkContains    []string
+		checkNotContains []string
+	}{
+		{
+			name: "basic_xml",
+			input: `<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <item>Value</item>
+</root>`,
+			expectError:      false,
+			checkContains:    []string{`<root>`, `<item>Value</item>`},
+			checkNotContains: []string{"\n    "},
+		},
+		{
+			name: "with_attributes",
+			input: `<config>
+    <setting name="timeout" value="30" />
+    <setting name="retries" value="3" />
+</config>`,
+			expectError:   false,
+			checkContains: []string{`name="timeout"`, `value="30"`},
+		},
+		{
+			name: "nested_elements",
+			input: `<data>
+    <user>
+        <name>John</name>
+        <age>30</age>
+    </user>
+</data>`,
+			expectError:      false,
+			checkContains:    []string{`<user>`, `<name>John</name>`},
+			checkNotContains: []string{"    "},
+		},
+	}
+
+	m := New()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			output, err := m.MinifyXML([]byte(tt.input))
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("MinifyXML() failed: %v", err)
+			}
+
+			outputStr := string(output)
+			for _, check := range tt.checkContains {
+				if !strings.Contains(outputStr, check) {
+					t.Errorf("Output should contain %q, got: %q", check, outputStr)
+				}
+			}
+
+			for _, check := range tt.checkNotContains {
+				if strings.Contains(outputStr, check) {
+					t.Errorf("Output should not contain %q, got: %q", check, outputStr)
+				}
+			}
+
+			if len(output) > len(tt.input) {
+				t.Errorf("Minified size (%d) should not be larger than input (%d)", len(output), len(tt.input))
+			}
+		})
+	}
+}
+
+func TestMinifyJSON_Compression(t *testing.T) {
+	m := New()
+
+	input := `{
+    "users": [
+        {
+            "id": 1,
+            "name": "John Doe",
+            "email": "john@example.com",
+            "active": true
+        },
+        {
+            "id": 2,
+            "name": "Jane Smith",
+            "email": "jane@example.com",
+            "active": false
+        }
+    ],
+    "metadata": {
+        "total": 2,
+        "page": 1,
+        "per_page": 10
+    }
+}`
+
+	output, err := m.MinifyJSON([]byte(input))
+	if err != nil {
+		t.Fatalf("MinifyJSON() failed: %v", err)
+	}
+
+	inputSize := len(input)
+	outputSize := len(output)
+
+	if outputSize >= inputSize {
+		t.Errorf("Minification did not reduce size: input=%d, output=%d", inputSize, outputSize)
+	}
+
+	compressionRatio := float64(inputSize-outputSize) / float64(inputSize) * 100
+	t.Logf("JSON Compression: %d -> %d bytes (%.2f%% reduction)", inputSize, outputSize, compressionRatio)
+}
+
+func TestMinifySVG_Compression(t *testing.T) {
+	m := New()
+
+	input := `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+    <!-- Icon -->
+    <g id="layer1">
+        <circle cx="100" cy="100" r="80" fill="#4285f4" />
+        <path d="M 100 20 L 180 100 L 100 180 L 20 100 Z" fill="white" opacity="0.8" />
+        <rect x="80" y="80" width="40" height="40" fill="#34a853" />
+    </g>
+</svg>`
+
+	output, err := m.MinifySVG([]byte(input))
+	if err != nil {
+		t.Fatalf("MinifySVG() failed: %v", err)
+	}
+
+	inputSize := len(input)
+	outputSize := len(output)
+
+	if outputSize > inputSize {
+		t.Errorf("Minification increased size: input=%d, output=%d", inputSize, outputSize)
+	}
+
+	compressionRatio := float64(inputSize-outputSize) / float64(inputSize) * 100
+	t.Logf("SVG Compression: %d -> %d bytes (%.2f%% reduction)", inputSize, outputSize, compressionRatio)
+}
+
+func TestMinifyXML_Compression(t *testing.T) {
+	m := New()
+
+	input := `<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+    <book id="bk101">
+        <author>Gambardella, Matthew</author>
+        <title>XML Developer's Guide</title>
+        <genre>Computer</genre>
+        <price>44.95</price>
+        <publish_date>2000-10-01</publish_date>
+        <description>An in-depth look at creating applications with XML.</description>
+    </book>
+    <book id="bk102">
+        <author>Ralls, Kim</author>
+        <title>Midnight Rain</title>
+        <genre>Fantasy</genre>
+        <price>5.95</price>
+        <publish_date>2000-12-16</publish_date>
+        <description>A former architect battles corporate zombies.</description>
+    </book>
+</catalog>`
+
+	output, err := m.MinifyXML([]byte(input))
+	if err != nil {
+		t.Fatalf("MinifyXML() failed: %v", err)
+	}
+
+	inputSize := len(input)
+	outputSize := len(output)
+
+	if outputSize > inputSize {
+		t.Errorf("Minification increased size: input=%d, output=%d", inputSize, outputSize)
+	}
+
+	compressionRatio := float64(inputSize-outputSize) / float64(inputSize) * 100
+	t.Logf("XML Compression: %d -> %d bytes (%.2f%% reduction)", inputSize, outputSize, compressionRatio)
+}
+
+func BenchmarkMinifyJSON(b *testing.B) {
+	m := New()
+	input := []byte(`{"name":"test","value":42,"nested":{"key":"value"},"array":[1,2,3,4,5]}`)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := m.MinifyJSON(input)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkMinifySVG(b *testing.B) {
+	m := New()
+	input := []byte(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="40" fill="red" /></svg>`)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := m.MinifySVG(input)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkMinifyXML(b *testing.B) {
+	m := New()
+	input := []byte(`<?xml version="1.0"?><root><item name="test" value="42" /></root>`)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := m.MinifyXML(input)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}

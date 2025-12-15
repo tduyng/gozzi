@@ -105,6 +105,9 @@ output_dir = "dev-build"
 minify_css = false
 minify_html = false
 minify_js = false
+minify_json = false
+minify_svg = false
+minify_xml = false
 
 [extra]
 environment = "development"
@@ -118,6 +121,9 @@ output_dir = "staging-build"
 minify_css = true
 minify_html = true
 minify_js = true
+minify_json = true
+minify_svg = true
+minify_xml = true
 
 [extra]
 environment = "staging"
@@ -131,6 +137,9 @@ output_dir = "public"
 minify_css = true
 minify_html = true
 minify_js = true
+minify_json = true
+minify_svg = true
+minify_xml = true
 
 [extra]
 environment = "production"

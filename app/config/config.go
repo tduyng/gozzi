@@ -27,6 +27,9 @@ type Site struct {
 	MinifyCSS       bool           `toml:"minify_css"`
 	MinifyHTML      bool           `toml:"minify_html"`
 	MinifyJS        bool           `toml:"minify_js"`
+	MinifyJSON      bool           `toml:"minify_json"`
+	MinifySVG       bool           `toml:"minify_svg"`
+	MinifyXML       bool           `toml:"minify_xml"`
 	BuildTime       time.Time
 	BuildDrafts     bool
 }

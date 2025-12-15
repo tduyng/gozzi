@@ -31,6 +31,9 @@ title = "My Blog"
 minify_css = true
 minify_html = true
 minify_js = true
+minify_json = true
+minify_svg = true
+minify_xml = true
 EOF
 
 # Create first post

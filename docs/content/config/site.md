@@ -23,6 +23,9 @@ syntax_theme = "dracula"                          # Syntax highlighting theme (d
 minify_css = true                                 # Minify CSS files (default: false)
 minify_html = true                                # Minify HTML output (default: false)
 minify_js = true                                  # Minify JavaScript files (default: false)
+minify_json = true                                # Minify JSON files (default: false)
+minify_svg = true                                 # Minify SVG files (default: false)
+minify_xml = true                                 # Minify XML files (default: false)
 ```
 
 ## Configuration Options Reference
@@ -42,6 +45,9 @@ minify_js = true                                  # Minify JavaScript files (def
 | `minify_css` | boolean | false | Minify CSS files (36% avg reduction) |
 | `minify_html` | boolean | false | Minify HTML output (53% avg reduction) |
 | `minify_js` | boolean | false | Minify JavaScript files (53% avg reduction) |
+| `minify_json` | boolean | false | Minify JSON files (51% avg reduction) |
+| `minify_svg` | boolean | false | Minify SVG files (29% avg reduction) |
+| `minify_xml` | boolean | false | Minify XML files (19% avg reduction) |
 
 ## Minimal Blog Configuration
 
@@ -117,21 +123,24 @@ syntax_theme = "github-dark"  # Default: "dracula"
 
 See [Syntax Highlighting](/features/syntax-highlighting) for complete theme list and examples.
 
-## CSS, HTML, and JavaScript Minification
+## Asset Minification
 
-Optimize your site's performance by enabling minification:
+Optimize your site's performance by enabling minification for various file types:
 
 ```toml
 minify_css = true   # Reduces CSS file size by ~36%
 minify_html = true  # Reduces HTML output by ~53%
 minify_js = true    # Reduces JavaScript file size by ~53%
+minify_json = true  # Reduces JSON file size by ~51%
+minify_svg = true   # Reduces SVG file size by ~29%
+minify_xml = true   # Reduces XML file size by ~19%
 ```
 
 Benefits:
 - Smaller file sizes for faster page loads
 - Removes whitespace, comments, and redundant code
 - Graceful fallback - uses original if minification fails
-- No impact on build time (~150ms)
+- No significant impact on build time
 
 ## Best Practices
 

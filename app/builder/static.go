@@ -37,6 +37,18 @@ func (b *Builder) copyStaticAssets() error {
 			return b.copyJSWithMinify(srcPath, destPath)
 		}
 
+		if b.site.MinifyJSON && strings.HasSuffix(srcPath, ".json") {
+			return b.copyJSONWithMinify(srcPath, destPath)
+		}
+
+		if b.site.MinifySVG && strings.HasSuffix(srcPath, ".svg") {
+			return b.copySVGWithMinify(srcPath, destPath)
+		}
+
+		if b.site.MinifyXML && strings.HasSuffix(srcPath, ".xml") {
+			return b.copyXMLWithMinify(srcPath, destPath)
+		}
+
 		return copyFile(srcPath, destPath)
 	})
 }
@@ -103,6 +115,111 @@ func (b *Builder) copyJSWithMinify(src, dst string) error {
 	if err := os.WriteFile(dst, minified, 0644); err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 			Operation: "write_minified_js",
+			Component: "builder",
+			Path:      dst,
+		})
+	}
+
+	return nil
+}
+
+func (b *Builder) copyJSONWithMinify(src, dst string) error {
+	content, err := os.ReadFile(src)
+	if err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "read_json_file",
+			Component: "builder",
+			Path:      src,
+		})
+	}
+
+	m := minify.New()
+	minified, err := m.MinifyJSON(content)
+	if err != nil {
+		minified = content
+	}
+
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "create_directory",
+			Component: "builder",
+			Path:      filepath.Dir(dst),
+		})
+	}
+
+	if err := os.WriteFile(dst, minified, 0644); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "write_minified_json",
+			Component: "builder",
+			Path:      dst,
+		})
+	}
+
+	return nil
+}
+
+func (b *Builder) copySVGWithMinify(src, dst string) error {
+	content, err := os.ReadFile(src)
+	if err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "read_svg_file",
+			Component: "builder",
+			Path:      src,
+		})
+	}
+
+	m := minify.New()
+	minified, err := m.MinifySVG(content)
+	if err != nil {
+		minified = content
+	}
+
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "create_directory",
+			Component: "builder",
+			Path:      filepath.Dir(dst),
+		})
+	}
+
+	if err := os.WriteFile(dst, minified, 0644); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "write_minified_svg",
+			Component: "builder",
+			Path:      dst,
+		})
+	}
+
+	return nil
+}
+
+func (b *Builder) copyXMLWithMinify(src, dst string) error {
+	content, err := os.ReadFile(src)
+	if err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "read_xml_file",
+			Component: "builder",
+			Path:      src,
+		})
+	}
+
+	m := minify.New()
+	minified, err := m.MinifyXML(content)
+	if err != nil {
+		minified = content
+	}
+
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "create_directory",
+			Component: "builder",
+			Path:      filepath.Dir(dst),
+		})
+	}
+
+	if err := os.WriteFile(dst, minified, 0644); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "write_minified_xml",
 			Component: "builder",
 			Path:      dst,
 		})

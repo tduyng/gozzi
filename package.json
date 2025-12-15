@@ -1,6 +1,6 @@
 {
     "name": "gozzi",
-    "version": "0.0.26",
+    "version": "0.0.27",
     "description": "**A Go static site generator born from curiosity**",
     "main": "index.js",
     "directories": {

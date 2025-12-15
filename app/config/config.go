@@ -23,6 +23,7 @@ type Site struct {
 	OutputDir       string         `toml:"output_dir"`
 	Title           string         `toml:"title"`
 	StrictTemplates bool           `toml:"strict_templates"`
+	SyntaxTheme     string         `toml:"syntax_theme"` // Chroma syntax highlighting theme
 	BuildTime       time.Time      // Time when the build started
 	BuildDrafts     bool           // Include draft content in build
 }

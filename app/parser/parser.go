@@ -34,6 +34,12 @@ type ContentParser struct {
 
 // NewParser creates a new ContentParser with the given site configuration.
 func NewParser(cfg *config.Site) *ContentParser {
+	// Default to "dracula" theme if not specified
+	syntaxTheme := cfg.SyntaxTheme
+	if syntaxTheme == "" {
+		syntaxTheme = "dracula"
+	}
+
 	return &ContentParser{
 		Site:       cfg,
 		ContentMap: make(map[string]*content.Node),
@@ -44,7 +50,7 @@ func NewParser(cfg *config.Site) *ContentParser {
 				extension.Footnote,
 				highlight.NewHighlighting(
 					highlight.WithGuessLanguage(true),
-					highlight.WithStyle("dracula"),
+					highlight.WithStyle(syntaxTheme),
 				),
 				markdown.NewMathExtension(),
 				markdown.NewMermaidExtension(),

@@ -695,3 +695,257 @@ console.log('test');`,
 		})
 	}
 }
+
+func TestMinifyJSON(t *testing.T) {
+	tests := []struct {
+		name        string
+		minifyJSON  bool
+		jsonContent string
+		checkSize   bool
+	}{
+		{
+			name:       "minify_enabled",
+			minifyJSON: true,
+			jsonContent: `{
+    "name": "Test User",
+    "email": "test@example.com",
+    "active": true,
+    "tags": ["dev", "golang"]
+}`,
+			checkSize: true,
+		},
+		{
+			name:       "minify_disabled",
+			minifyJSON: false,
+			jsonContent: `{
+    "key": "value"
+}`,
+			checkSize: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			outputDir := filepath.Join(tmpDir, "public")
+			staticDir := filepath.Join(tmpDir, "static")
+			jsonDir := filepath.Join(staticDir, "data")
+			templateDir := filepath.Join(tmpDir, "templates")
+			contentDir := filepath.Join(tmpDir, "content")
+
+			require.NoError(t, os.MkdirAll(jsonDir, 0755))
+			require.NoError(t, os.MkdirAll(templateDir, 0755))
+			require.NoError(t, os.MkdirAll(contentDir, 0755))
+
+			jsonPath := filepath.Join(jsonDir, "data.json")
+			require.NoError(t, os.WriteFile(jsonPath, []byte(tt.jsonContent), 0644))
+
+			require.NoError(t, os.WriteFile(filepath.Join(templateDir, "post.html"),
+				[]byte(`<html><body>{{.Page.Title}}</body></html>`), 0644))
+			require.NoError(t, os.WriteFile(filepath.Join(templateDir, "404.html"),
+				[]byte(`<html><body>404</body></html>`), 0644))
+
+			cfg := &config.Site{
+				BaseURL:    "https://example.com",
+				Title:      "Test",
+				OutputDir:  outputDir,
+				MinifyJSON: tt.minifyJSON,
+			}
+
+			require.NoError(t, os.Chdir(tmpDir))
+			defer func() { _ = os.Chdir("../../..") }()
+
+			p := parser.NewParser(cfg)
+			builder, err := NewBuilder(cfg, p)
+			require.NoError(t, err)
+
+			err = builder.copyStaticAssets()
+			require.NoError(t, err)
+
+			outputJSON := filepath.Join(outputDir, "data", "data.json")
+			assert.FileExists(t, outputJSON)
+
+			originalSize := len(tt.jsonContent)
+			outputContent, err := os.ReadFile(outputJSON)
+			require.NoError(t, err)
+			outputSize := len(outputContent)
+
+			if tt.checkSize {
+				assert.Less(t, outputSize, originalSize, "Minified JSON should be smaller")
+				assert.NotContains(t, string(outputContent), "\n    ")
+			} else {
+				assert.Equal(t, originalSize, outputSize, "JSON size should be unchanged when minify disabled")
+			}
+		})
+	}
+}
+
+func TestMinifySVG(t *testing.T) {
+	tests := []struct {
+		name       string
+		minifySVG  bool
+		svgContent string
+		checkSize  bool
+	}{
+		{
+			name:      "minify_enabled",
+			minifySVG: true,
+			svgContent: `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+    <!-- Icon -->
+    <circle cx="50" cy="50" r="40" fill="blue" />
+    <rect x="20" y="20" width="60" height="60" fill="red" />
+</svg>`,
+			checkSize: true,
+		},
+		{
+			name:      "minify_disabled",
+			minifySVG: false,
+			svgContent: `<svg>
+    <circle cx="10" cy="10" r="5" />
+</svg>`,
+			checkSize: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			outputDir := filepath.Join(tmpDir, "public")
+			staticDir := filepath.Join(tmpDir, "static")
+			svgDir := filepath.Join(staticDir, "images")
+			templateDir := filepath.Join(tmpDir, "templates")
+			contentDir := filepath.Join(tmpDir, "content")
+
+			require.NoError(t, os.MkdirAll(svgDir, 0755))
+			require.NoError(t, os.MkdirAll(templateDir, 0755))
+			require.NoError(t, os.MkdirAll(contentDir, 0755))
+
+			svgPath := filepath.Join(svgDir, "icon.svg")
+			require.NoError(t, os.WriteFile(svgPath, []byte(tt.svgContent), 0644))
+
+			require.NoError(t, os.WriteFile(filepath.Join(templateDir, "post.html"),
+				[]byte(`<html><body>{{.Page.Title}}</body></html>`), 0644))
+			require.NoError(t, os.WriteFile(filepath.Join(templateDir, "404.html"),
+				[]byte(`<html><body>404</body></html>`), 0644))
+
+			cfg := &config.Site{
+				BaseURL:   "https://example.com",
+				Title:     "Test",
+				OutputDir: outputDir,
+				MinifySVG: tt.minifySVG,
+			}
+
+			require.NoError(t, os.Chdir(tmpDir))
+			defer func() { _ = os.Chdir("../../..") }()
+
+			p := parser.NewParser(cfg)
+			builder, err := NewBuilder(cfg, p)
+			require.NoError(t, err)
+
+			err = builder.copyStaticAssets()
+			require.NoError(t, err)
+
+			outputSVG := filepath.Join(outputDir, "images", "icon.svg")
+			assert.FileExists(t, outputSVG)
+
+			originalSize := len(tt.svgContent)
+			outputContent, err := os.ReadFile(outputSVG)
+			require.NoError(t, err)
+			outputSize := len(outputContent)
+
+			if tt.checkSize {
+				assert.LessOrEqual(t, outputSize, originalSize, "Minified SVG should be smaller or equal")
+				assert.NotContains(t, string(outputContent), "<!-- Icon -->")
+			} else {
+				assert.Equal(t, originalSize, outputSize, "SVG size should be unchanged when minify disabled")
+			}
+		})
+	}
+}
+
+func TestMinifyXML(t *testing.T) {
+	tests := []struct {
+		name       string
+		minifyXML  bool
+		xmlContent string
+		checkSize  bool
+	}{
+		{
+			name:      "minify_enabled",
+			minifyXML: true,
+			xmlContent: `<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <setting name="timeout" value="30" />
+    <setting name="retries" value="3" />
+    <database>
+        <host>localhost</host>
+        <port>5432</port>
+    </database>
+</config>`,
+			checkSize: true,
+		},
+		{
+			name:      "minify_disabled",
+			minifyXML: false,
+			xmlContent: `<root>
+    <item>Test</item>
+</root>`,
+			checkSize: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			outputDir := filepath.Join(tmpDir, "public")
+			staticDir := filepath.Join(tmpDir, "static")
+			xmlDir := filepath.Join(staticDir, "data")
+			templateDir := filepath.Join(tmpDir, "templates")
+			contentDir := filepath.Join(tmpDir, "content")
+
+			require.NoError(t, os.MkdirAll(xmlDir, 0755))
+			require.NoError(t, os.MkdirAll(templateDir, 0755))
+			require.NoError(t, os.MkdirAll(contentDir, 0755))
+
+			xmlPath := filepath.Join(xmlDir, "config.xml")
+			require.NoError(t, os.WriteFile(xmlPath, []byte(tt.xmlContent), 0644))
+
+			require.NoError(t, os.WriteFile(filepath.Join(templateDir, "post.html"),
+				[]byte(`<html><body>{{.Page.Title}}</body></html>`), 0644))
+			require.NoError(t, os.WriteFile(filepath.Join(templateDir, "404.html"),
+				[]byte(`<html><body>404</body></html>`), 0644))
+
+			cfg := &config.Site{
+				BaseURL:   "https://example.com",
+				Title:     "Test",
+				OutputDir: outputDir,
+				MinifyXML: tt.minifyXML,
+			}
+
+			require.NoError(t, os.Chdir(tmpDir))
+			defer func() { _ = os.Chdir("../../..") }()
+
+			p := parser.NewParser(cfg)
+			builder, err := NewBuilder(cfg, p)
+			require.NoError(t, err)
+
+			err = builder.copyStaticAssets()
+			require.NoError(t, err)
+
+			outputXML := filepath.Join(outputDir, "data", "config.xml")
+			assert.FileExists(t, outputXML)
+
+			originalSize := len(tt.xmlContent)
+			outputContent, err := os.ReadFile(outputXML)
+			require.NoError(t, err)
+			outputSize := len(outputContent)
+
+			if tt.checkSize {
+				assert.LessOrEqual(t, outputSize, originalSize, "Minified XML should be smaller or equal")
+				assert.NotContains(t, string(outputContent), "\n    ")
+			} else {
+				assert.Equal(t, originalSize, outputSize, "XML size should be unchanged when minify disabled")
+			}
+		})
+	}
+}

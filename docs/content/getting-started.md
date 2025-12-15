@@ -316,30 +316,3 @@ Reference in templates:
 <link rel="stylesheet" href="/css/main.css" /> <img src="/img/avatar.jpg" alt="Avatar" />
 ```
 
-## Troubleshooting
-
-### Port Already in Use
-
-If port 1313 is busy:
-
-```bash
-gozzi serve --port 3000
-```
-
-### Command Not Found
-
-Make sure Go's bin directory is in your PATH:
-
-```bash
-export PATH="$PATH:$HOME/go/bin"
-```
-
-### Template Errors
-
-Check that your template file names match the content type:
-
-- `post.html` for blog posts
-- `blog.html` for blog section
-- `home.html` for homepage
-
-Need help? [Open an issue](https://github.com/tduyng/gozzi/issues) on GitHub!

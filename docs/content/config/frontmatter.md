@@ -96,31 +96,3 @@ Access in templates:
 <p>{{ .Page.Extra.author }}</p>
 ```
 
-## Common Mistakes
-
-```toml
-# ❌ Wrong
-title = My Title
-date = "2025-1-5"
-tags = "go", "tutorial"
-
-# ✅ Correct
-title = "My Title"
-date = 2025-01-05
-tags = ["go", "tutorial"]
-```
-
-## Template Usage
-
-```html
-<h1>{{ .Page.Title }}</h1>
-<time>{{ .Page.Date.Format "January 2, 2006" }}</time>
-
-{{ if .Page.Config.featured }}
-  <span>Featured</span>
-{{ end }}
-
-{{ range .Page.Config.tags }}
-  <a href="/tags/{{ . }}">{{ . }}</a>
-{{ end }}
-```

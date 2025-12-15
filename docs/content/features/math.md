@@ -237,56 +237,6 @@ If you see raw LaTeX like `\(E = mc^2\)` instead of rendered math, make sure:
 3. Auto-render script runs after page load (use `defer` attribute)
 :::
 
-## Troubleshooting
-
-### Math displays as raw LaTeX: `\(E = mc^2\)` or `\[...\]`
-
-**Problem:** You see LaTeX delimiters instead of rendered math.
-
-**Solution:** Make sure KaTeX JavaScript is loaded and the auto-render script runs:
-
-```html
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" 
-    onload="renderMathInElement(document.body, ...);">
-</script>
-```
-
-**Check:**
-1. Open browser DevTools Console - look for KaTeX errors
-2. Verify both scripts loaded successfully (Network tab)
-3. Make sure `defer` attribute is present so scripts run after page loads
-
-### Math doesn't convert from `$...$` at all
-
-**Problem:** You see the raw dollar signs: `$E = mc^2$` in the output HTML.
-
-**Possible causes:**
-
-1. Check if you're using the correct delimiters (`$...$` for inline, `$$...$$` for block)
-2. Verify the markdown file extension is `.md`
-3. Rebuild your site: `gozzi build`
-4. Check that math is in proper markdown context (not in code blocks)
-
-### Complex math renders incorrectly
-
-**Problem:** Matrix or multi-line equations split across paragraphs.
-
-**Solution:** Keep complex expressions on a single line within `$$` blocks:
-
-```markdown
-<!-- ✅ Good -->
-
-$$
-\begin{bmatrix} a & b \\ c & d \end{bmatrix}
-$$
-
-<!-- ❌ Avoid multiple separate blocks on separate lines with operators between -->
-```
-
-For very complex expressions, consider breaking them into separate display math blocks.
-
-## FAQ
 
 **Q: Do I need to install anything on my build server?**  
 A: No! Gozzi has built-in math notation parsing. The KaTeX library runs in users' browsers, not during build.

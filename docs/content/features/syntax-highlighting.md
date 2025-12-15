@@ -177,41 +177,6 @@ code {
 
 That's it! Your code is now highlighted and ready.
 
-## Troubleshooting
-
-### Code displays without colors
-
-**Problem:** Code blocks show in monochrome or no styling.
-
-**Solution:** Include syntax highlighting CSS in your template:
-
-```html
-<link rel="stylesheet" href="/css/syntax.css" />
-```
-
-### Wrong language detected
-
-**Problem:** Code highlighting doesn't match the language.
-
-**Solution:** Explicitly specify the language identifier:
-
-````markdown
-```javascript
-// Not: ```js
-```
-````
-
-### Theme not applying
-
-**Problem:** Changed theme in config but styling doesn't update.
-
-**Solution:**
-
-1. Rebuild your site: `gozzi build`
-2. Clear browser cache
-3. Verify theme name is valid (see [Themes](#themes))
-
-## FAQ
 
 **Q: Can I use custom fonts like Fira Code?**  
 A: Yes! Add font CSS to your template and reference in code block styles.

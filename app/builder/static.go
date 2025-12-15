@@ -8,7 +8,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/tduyng/gozzi/app/minify"
 	"github.com/tduyng/gozzi/app/utils"
 )
 
@@ -28,8 +30,48 @@ func (b *Builder) copyStaticAssets() error {
 		}
 
 		destPath := filepath.Join(b.site.OutputDir, relPath)
+
+		if b.site.MinifyCSS && strings.HasSuffix(srcPath, ".css") {
+			return b.copyCSSWithMinify(srcPath, destPath)
+		}
+
 		return copyFile(srcPath, destPath)
 	})
+}
+
+func (b *Builder) copyCSSWithMinify(src, dst string) error {
+	content, err := os.ReadFile(src)
+	if err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "read_css_file",
+			Component: "builder",
+			Path:      src,
+		})
+	}
+
+	m := minify.New()
+	minified, err := m.MinifyCSS(content)
+	if err != nil {
+		minified = content
+	}
+
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "create_directory",
+			Component: "builder",
+			Path:      filepath.Dir(dst),
+		})
+	}
+
+	if err := os.WriteFile(dst, minified, 0644); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "write_minified_css",
+			Component: "builder",
+			Path:      dst,
+		})
+	}
+
+	return nil
 }
 
 func copyFile(src, dst string) error {

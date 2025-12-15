@@ -178,27 +178,3 @@ code {
 That's it! Your code is now highlighted and ready.
 
 
-**Q: Can I use custom fonts like Fira Code?**  
-A: Yes! Add font CSS to your template and reference in code block styles.
-
-**Q: Does this work offline?**  
-A: Yes! Syntax highlighting is baked into HTML during build. No external dependencies.
-
-**Q: How do I show code without highlighting?**  
-A: Use plain text blocks:
-
-````markdown
-```text
-This won't be highlighted
-```
-````
-
-**Q: Can I highlight inline code?**  
-A: Inline code (`backticks`) is not syntax-highlighted by default. Use code blocks for highlighting.
-
----
-
-**Related:**
-- [Mermaid Diagrams](/features/diagrams)
-- [Mathematical Expressions](/features/math)
-- [Template Functions](/functions/)

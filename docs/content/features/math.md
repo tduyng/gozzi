@@ -238,31 +238,3 @@ If you see raw LaTeX like `\(E = mc^2\)` instead of rendered math, make sure:
 :::
 
 
-**Q: Do I need to install anything on my build server?**  
-A: No! Gozzi has built-in math notation parsing. The KaTeX library runs in users' browsers, not during build.
-
-**Q: Can I use KaTeX offline/without CDN?**  
-A: Yes! Download `katex.min.css`, `katex.min.js`, and `auto-render.min.js` to your `static/` directory. See [Option 2: Self-Hosted](#option-2-self-hosted) above.
-
-**Q: Does this work with all KaTeX features?**  
-A: Yes! Since KaTeX renders in the browser, all [KaTeX functions](https://katex.org/docs/supported.html) are supported.
-
-**Q: Why client-side rendering instead of build-time?**  
-A: Client-side rendering means:
-
-- ✅ Zero Go dependencies (no CGO or quickjs)
-- ✅ Cross-platform builds (works on all architectures)
-- ✅ Smaller Gozzi binary (no embedded rendering engine)
-- ✅ User control over KaTeX version
-- ⚡ Still fast (~100KB gzipped, cached by CDN)
-
-**Q: What about SEO?**  
-A: Search engines execute JavaScript, so they see rendered math. The LaTeX notation `\(E = mc^2\)` is also semantically meaningful if JS fails.
-
----
-
-## Real-World Example
-
-See KaTeX in action on tduyng.com: [Native KaTeX Support](https://tduyng.com/notes/katex-support/)
-
-**Next:** Learn about [Mermaid Diagrams](/features/diagrams)

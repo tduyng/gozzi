@@ -255,10 +255,10 @@ build:
 
 - [Serve Command](/cli/serve) - Development server with live reload
 - [Usage Patterns](/cli/usage-patterns) - Advanced workflows
-- [Troubleshooting](/cli/troubleshooting) - Common build issues
+- [Troubleshooting](/troubleshooting) - Common build issues
 
 ## Next Steps
 
 - [Configuration Guide](/config/) - Configure your builds
-- [Content Structure](/guide/concepts/content-structure) - Organize your content
+- [Content Structure](/content-structure) - Organize your content
 - [Templates](/templates/) - Customize output

@@ -434,10 +434,10 @@ Usage:
 
 - [Build Command](/cli/build) - Build command details
 - [Serve Command](/cli/serve) - Development server features
-- [Troubleshooting](/cli/troubleshooting) - Common issues
+- [Troubleshooting](/troubleshooting) - Common issues
 
 ## Next Steps
 
 - [Configuration Guide](/config/) - Configure environments
-- [Content Structure](/guide/concepts/content-structure) - Organize content
+- [Content Structure](/content-structure) - Organize content
 - [Templates](/templates/) - Develop templates

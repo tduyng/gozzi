@@ -256,7 +256,7 @@ Now that you have a basic site running, explore more features:
 
 ### Learn the Basics
 
-- [Content Structure](/guide/concepts/content-structure) - Organize pages and sections
+- [Content Structure](/content-structure) - Organize pages and sections
 - [Configuration](/config/) - Customize your site
 - [Templates](/templates/) - Build custom layouts
 

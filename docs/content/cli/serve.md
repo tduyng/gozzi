@@ -325,10 +325,10 @@ The server will:
 
 - [Build Command](/cli/build) - Production builds
 - [Usage Patterns](/cli/usage-patterns) - Development workflows
-- [Troubleshooting](/cli/troubleshooting) - Server issues
+- [Troubleshooting](/troubleshooting) - Server issues
 
 ## Next Steps
 
 - [Templates Development](/templates/development) - Develop templates with live reload
-- [Content Structure](/guide/concepts/content-structure) - Organize your content
+- [Content Structure](/content-structure) - Organize your content
 - [Configuration](/config/) - Configure your development environment

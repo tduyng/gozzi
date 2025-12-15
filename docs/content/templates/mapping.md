@@ -322,5 +322,5 @@ templates/
 **Related:**
 - [Template Structure](/templates/structure)
 - [Template Variables](/templates/variables)
-- [Content Structure](/guide/concepts/content-structure)
+- [Content Structure](/content-structure)
 - [Front Matter Configuration](/config/frontmatter)

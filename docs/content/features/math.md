@@ -226,4 +226,52 @@ To use KaTeX math in your Gozzi site:
 2. Check KaTeX JavaScript is loaded (browser Console)
 3. Ensure auto-render script runs after page load (use `defer` attribute)
 
+## Live Examples
+
+Here are actual rendered math expressions to demonstrate the feature:
+
+**Inline Math:**
+
+The famous equation \(E = mc^2\) shows mass-energy equivalence. The quadratic formula \(x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}\) solves polynomial equations.
+
+**Block Math:**
+
+The Gaussian integral:
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+
+The Pythagorean theorem:
+
+$$
+a^2 + b^2 = c^2
+$$
+
+**Complex Expressions:**
+
+Matrix notation:
+
+$$
+\begin{bmatrix}
+a & b \\
+c & d
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y
+\end{bmatrix}
+=
+\begin{bmatrix}
+ax + by \\
+cx + dy
+\end{bmatrix}
+$$
+
+Summation:
+
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+$$
+
 

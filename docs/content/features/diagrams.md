@@ -318,4 +318,42 @@ Match Mermaid theme to your site's light/dark mode:
 
 That's it! Your diagrams will render as interactive SVG in the browser.
 
+## Live Examples
+
+Here are actual rendered diagrams to demonstrate the feature:
+
+**Simple Flowchart:**
+
+```mermaid
+graph TD
+    A[Start] --> B{Is it working?}
+    B -->|Yes| C[Great!]
+    B -->|No| D[Check setup]
+    D --> A
+    C --> E[End]
+```
+
+**Sequence Diagram:**
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Browser
+    participant Gozzi
+    User->>Browser: Visit page
+    Browser->>Gozzi: Request content
+    Gozzi-->>Browser: HTML with mermaid blocks
+    Browser->>Browser: Render diagrams
+    Browser-->>User: Display beautiful diagrams
+```
+
+**Simple Architecture:**
+
+```mermaid
+graph LR
+    A[Markdown] -->|Gozzi Build| B[HTML]
+    B -->|Browser| C[Rendered SVG]
+    style C fill:#10b981
+```
+
 

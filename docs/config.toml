@@ -23,11 +23,9 @@ items = [
 title = "Configuration"
 items = [
   { text = "Site Settings", link = "/config/site" },
-  { text = "Environment Configs", link = "/config/environment" },
-  { text = "Extended Config", link = "/config/extended" },
   { text = "Front Matter", link = "/config/frontmatter" },
-  { text = "Sections", link = "/config/sections" },
-  { text = "Pages", link = "/config/pages" },
+  { text = "Extended Config", link = "/config/extended" },
+  { text = "Environment", link = "/config/environment" },
   { text = "Inheritance", link = "/config/inheritance" },
   { text = "Troubleshooting", link = "/config/troubleshooting" },
 ]

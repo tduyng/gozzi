@@ -27,10 +27,6 @@ HTML: <pre><code class="language-go">...highlighted HTML...</code></pre>
 - ❌ Client-side processing
 - ❌ Runtime overhead
 
-::: tip Why This Matters
-Traditional setups require JavaScript libraries to highlight code in the browser on every page load. Gozzi does this once during build, so your users get instant syntax highlighting with zero JavaScript overhead!
-:::
-
 ## Basic Usage
 
 Simply write code blocks in your markdown with language identifiers:

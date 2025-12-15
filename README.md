@@ -47,16 +47,16 @@ Visit http://localhost:1313
 
 ## Documentation
 
-Read the full documentation at [tduyng.github.io/gozzi](https://tduyng.github.io/gozzi/)
+Read the full documentation at [tduyng.com/gozzi](https://tduyng.com/gozzi/)
 
-- [Getting Started](https://tduyng.github.io/gozzi/guide/getting-started)
-- [Installation](https://tduyng.github.io/gozzi/guide/installation)
-- [Configuration](https://tduyng.github.io/gozzi/guide/configuration)
-- [Templates](https://tduyng.github.io/gozzi/guide/templates)
-- [Content Structure](https://tduyng.github.io/gozzi/guide/content-structure)
-- [CLI Reference](https://tduyng.github.io/gozzi/reference/cli)
-- [Template Functions](https://tduyng.github.io/gozzi/reference/template-functions)
-- [Examples](https://tduyng.github.io/gozzi/examples/quick-start)
+- [Installation](https://tduyng.com/gozzi/installation)
+- [Getting Started](https://tduyng.com/gozzi/getting-started)
+- [Content Structure](https://tduyng.com/gozzi/content-structure)
+- [Configuration](https://tduyng.com/gozzi/config/site)
+- [Templates](https://tduyng.com/gozzi/templates/structure)
+- [CLI Reference](https://tduyng.com/gozzi/cli/build)
+- [Template Functions](https://tduyng.com/gozzi/functions/math-logic)
+- [Examples](https://tduyng.com/gozzi/examples/quick-start)
 
 ## Example
 

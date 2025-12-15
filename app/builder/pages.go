@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/tduyng/gozzi/app/content"
+	"github.com/tduyng/gozzi/app/minify"
 	"github.com/tduyng/gozzi/app/utils"
 )
 
@@ -123,7 +124,17 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		})
 	}
 
-	if err := os.WriteFile(outputPath, buf.Bytes(), 0644); err != nil {
+	content := buf.Bytes()
+
+	if b.site.MinifyHTML {
+		m := minify.New()
+		minified, err := m.MinifyHTML(content)
+		if err == nil {
+			content = minified
+		}
+	}
+
+	if err := os.WriteFile(outputPath, content, 0644); err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 			Operation: "write_html_output",
 			Component: "builder",

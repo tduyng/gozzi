@@ -12,6 +12,7 @@ I built Gozzi to [learn how static site generators work](https://tduyng.com/blog
 - RSS, sitemap, Open Graph support
 - Server-side KaTeX math & syntax highlighting
 - Mermaid diagrams
+- Built-in CSS and HTML minification (36-53% size reduction)
 
 ## Quick Start
 
@@ -27,6 +28,8 @@ mkdir -p content/blog templates static
 cat > config.toml << 'EOF'
 base_url = "https://example.com"
 title = "My Blog"
+minify_css = true
+minify_html = true
 EOF
 
 # Create first post

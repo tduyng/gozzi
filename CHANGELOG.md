@@ -1,5 +1,16 @@
 # What's changed
 
+## [Unreleased]
+
+### 🚀 Features
+
+- Add CSS and HTML minification support
+  - New `minify_css` and `minify_html` config options
+  - CSS minification: 36% average size reduction
+  - HTML minification: 53% average size reduction
+  - Graceful fallback on minification errors
+  - Comprehensive test coverage with benchmarks
+
 ## [0.0.26](https://github.com/tduyng/gozzi/compare/v0.0.25..v0.0.26) - 2025-12-11
 
 ### 🚀 Features

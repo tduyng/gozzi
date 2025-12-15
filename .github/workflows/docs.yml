@@ -37,6 +37,11 @@ jobs:
       - name: Install Gozzi
         run: go install github.com/tduyng/gozzi@latest
 
+      - name: Set production base_url
+        run: |
+          cd docs
+          sed -i 's|base_url = ""|base_url = "https://gozzi.tduyng.com"|g' config.toml
+      
       - name: Build with Gozzi
         run: |
           cd docs

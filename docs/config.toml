@@ -14,7 +14,6 @@ repo_url = "https://github.com/tduyng/gozzi"
 [[extra.sidebar]]
 title = "Getting Started"
 items = [
-  { text = "What is Gozzi?", link = "/introduction" },
   { text = "Installation", link = "/installation" },
   { text = "Your First Site", link = "/getting-started" },
   { text = "Content Structure", link = "/content-structure" },

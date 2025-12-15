@@ -3,91 +3,61 @@ title = "Gozzi"
 template = "home.html"
 date = 2025-12-15
 +++
-## Features
 
-### 📝 Markdown First
-Write content in Markdown with TOML front matter. Organize files in folders. That's it.
+A simple static site generator written in Go. Built for learning, designed for clarity.
 
-### ⚡ Fast & Live
-Sub-second builds. Live reload that actually works. See your changes instantly.
+## What is Gozzi?
 
-### 🎨 Go Templates
-Use Go's HTML templates. Simple, powerful, and you learn Go templating along the way.
+Gozzi converts Markdown files into a static website. I built it to understand how static site generators work, and now I use it for [tduyng.com](https://tduyng.com) with 100+ posts building in ~100ms.
 
-### 🔧 Clear Config
-One TOML file. No magic. You control everything.
+**Gozzi is not trying to replace Hugo or Zola** - those are excellent tools. Use them if they fit!
 
-### 📦 Built-in Essentials
-Tags, pagination, RSS, sitemap, TOC. Common features just work.
+Gozzi might be right for you if you:
+- Want to learn Go by using a real tool
+- Prefer simplicity over feature-rich complexity
+- Like understanding how your tools work
 
-### 🚀 Deploy Anywhere
-Generates static HTML. Deploy to GitHub Pages, Netlify, Vercel, or anywhere.
-
-## Quick Example
-
-Install and create your first site:
+## Quick Start
 
 ```bash
 # Install
 go install github.com/tduyng/gozzi@latest
 
-# Create Site
+# Create site
 mkdir my-blog && cd my-blog
-mkdir -p content/blog templates static
+mkdir -p content templates static
 
-# Create config
-cat > config.toml << EOF
-base_url = "https://example.com"
-title = "My Blog"
-EOF
-```
+# Configure (config.toml)
+echo 'base_url = "https://example.com"
+title = "My Blog"' > config.toml
 
-```bash
-# Create first post
-mkdir -p content/blog/hello-world
-cat > content/blog/hello-world/index.md << EOF
-+++
+# Create first post (content/hello.md)
+echo '+++
 title = "Hello World"
 date = 2024-01-15
 +++
 
-# My First Post
+# Hello World
 
-Welcome to my blog built with Gozzi!
-EOF
-```
+My first post!' > content/hello.md
 
-```bash
 # Serve
-gozzi serve
-# Visit http://localhost:1313
+gozzi serve  # Visit http://localhost:1313
 ```
 
-## Real Usage
+## Core Features
 
-I built Gozzi to learn, and now I use it daily for [tduyng.com](https://tduyng.com):
+- **Fast** - Sub-second builds, instant live reload
+- **Simple** - Markdown + TOML config + Go templates
+- **Complete** - Tags, pagination, RSS, sitemap, math, diagrams built-in
+- **Portable** - Single binary, deploy anywhere
 
-- 100+ blog posts and notes
-- KaTeX math expressions
-- Mermaid diagrams
-- Full-text search
-- Builds in ~100ms
+## Next Steps
 
-See the [real-world example](/examples/real-world) to learn from my setup.
+- [Installation](/installation) - Install Gozzi
+- [Getting Started](/getting-started) - Build your first complete site
+- [Real Example](/examples/real-world) - How I use Gozzi for tduyng.com
 
-## Why Gozzi?
+## Resources
 
-Gozzi is **not trying to replace Hugo or Zola**. Those are excellent, mature tools. Use them if they fit your needs!
-
-Gozzi might be a good fit if you:
-
-- **Want to learn Go** by using a real tool
-- **Like simplicity** over feature overload
-- **Prefer clear configuration** in TOML
-- **Enjoy understanding** how your tools work
-
-## Open Source
-
-Gozzi is MIT licensed. Built by learning, shared for learning.
-
-[View source on GitHub](https://github.com/tduyng/gozzi) · [Report issues](https://github.com/tduyng/gozzi/issues) · [Discussions](https://github.com/tduyng/gozzi/discussions)
+[GitHub](https://github.com/tduyng/gozzi) · [Issues](https://github.com/tduyng/gozzi/issues) · [Discussions](https://github.com/tduyng/gozzi/discussions)

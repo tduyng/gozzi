@@ -1,26 +1,91 @@
 # What's changed
 
-## [Unreleased]
+## [0.0.27](https://github.com/tduyng/gozzi/compare/v0.0.26..v0.0.27) - 2025-12-15
 
 ### 🚀 Features
 
-- Add CSS and HTML minification support
-  - New `minify_css` and `minify_html` config options
-  - CSS minification: 36% average size reduction
-  - HTML minification: 53% average size reduction
-  - Graceful fallback on minification errors
-  - Comprehensive test coverage with benchmarks
+- Add configurable syntax_theme option for code highlighting - ([6ad116d](https://github.com/tduyng/gozzi/commit/6ad116d2cee1f25470053ad1e7468cf81b3d0ef7))
+- Update --drafts options on CLI - ([a619138](https://github.com/tduyng/gozzi/commit/a6191387021e0dba708d7959f50762d0a3aee95d))
+
+### 📚 Documentation
+
+- Fix installation scripts - ([eca4e0a](https://github.com/tduyng/gozzi/commit/eca4e0a0cb5500f0213333ef2e29527c64a03ee8))
+- Override domaine name when deploy docs - ([1dd31eb](https://github.com/tduyng/gozzi/commit/1dd31eb4ec2362c36d45898d0adcb16255cfcd4b))
+- Setup correctly base_url for subdomain - ([9a339bb](https://github.com/tduyng/gozzi/commit/9a339bbb1d7e28399887cb87e4af385e4a1feb86))
+- Update syntax highlight color themes - ([37b3b24](https://github.com/tduyng/gozzi/commit/37b3b24411866dae661f6c8b4c487950823da87a))
+- Use github-dark syntax theme for better color matching with slate design - ([b5bb721](https://github.com/tduyng/gozzi/commit/b5bb721ace8323169d70c1125c7a3391792ac84b))
+- Use onedark syntax theme for better design consistency - ([92603f0](https://github.com/tduyng/gozzi/commit/92603f0d52cba881bac86532a24a5d98bd3da5f9))
+- Remove redundant examples, keep only live rendered examples - ([c5c4e57](https://github.com/tduyng/gozzi/commit/c5c4e57e9afb382c35602008952ff073560d27b9))
+- Add live examples for math and diagrams, fix script loading timing - ([5cb2653](https://github.com/tduyng/gozzi/commit/5cb26532cf7a4e7af91a50f9bac993904d6995d0))
+- Integrate KaTeX v0.16.11 and Mermaid v11 for rendering - ([8942636](https://github.com/tduyng/gozzi/commit/8942636274d00522ede097d5098a93921e1acd8a))
+- Convert VitePress callouts to standard markdown - ([94e702a](https://github.com/tduyng/gozzi/commit/94e702a2ff5f0d70622b7656f5482bd0c450a41d))
+- Remove redundant tip from syntax-highlighting - ([75c0307](https://github.com/tduyng/gozzi/commit/75c03079815308756533bae636ba4504f77c6429))
+- Simplify getting-started by removing verbose tips and duplicated sections - ([7326ba3](https://github.com/tduyng/gozzi/commit/7326ba39dc406ad5bc6cd8d8a5a28c853fba9ec4))
+- Remove unnecessary FAQ sections - ([40a0286](https://github.com/tduyng/gozzi/commit/40a028654f2f108a7a9dcd1c2c3e6e330e346f52))
+- Remove redundant troubleshooting sections - ([1404e76](https://github.com/tduyng/gozzi/commit/1404e760f507b7f896cfe7ac7776423df7eef675))
+- Simplify troubleshooting to essentials - ([db29048](https://github.com/tduyng/gozzi/commit/db290481741bff39fc397f48adb6db13047aec9e))
+- Fix broken internal links - ([ab9439c](https://github.com/tduyng/gozzi/commit/ab9439cb8f3b0033ab5abe1712227649fb407152))
+- Simplify features overview - ([a0f1f6f](https://github.com/tduyng/gozzi/commit/a0f1f6fce90eaa4003a4b9b430c3c0d1056172a3))
+- Merge architecture pages - ([4da0d48](https://github.com/tduyng/gozzi/commit/4da0d489e44a358ea5ca6a81118195793367d6eb))
+- Simplify template functions reference - ([6839abc](https://github.com/tduyng/gozzi/commit/6839abc3da41afcbcc22812a395529cad52a8a5d))
+- Merge troubleshooting pages - ([f094b4c](https://github.com/tduyng/gozzi/commit/f094b4c008a592da0f086d781cd3178184e712d9))
+- Consolidate front matter docs - ([5a82264](https://github.com/tduyng/gozzi/commit/5a8226477cf5439bad3625386c3a1c81f80806ec))
+- Simplify homepage - ([c74aa4e](https://github.com/tduyng/gozzi/commit/c74aa4e34bd83e04b65b25f6485e401601f00e06))
+- Write my own gozzi website, remove vitepress - ([d3d4c3e](https://github.com/tduyng/gozzi/commit/d3d4c3e99624995ffe43b6f999cd76b890a548ca))
+- Update docs - ([7521112](https://github.com/tduyng/gozzi/commit/75211121b9ebebf07377397ff7c5e1833a34a8f9))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(examples)_ Update latest commits - ([334bbed](https://github.com/tduyng/gozzi/commit/334bbedeca99a1300edac4a3dee55acc93c31eb4))
+
+## [0.0.27](https://github.com/tduyng/gozzi/compare/v0.0.26..v0.0.27) - 2025-12-15
+
+### 🚀 Features
+
+- Add configurable syntax_theme option for code highlighting - ([6ad116d](https://github.com/tduyng/gozzi/commit/6ad116d2cee1f25470053ad1e7468cf81b3d0ef7))
+- Update --drafts options on CLI - ([a619138](https://github.com/tduyng/gozzi/commit/a6191387021e0dba708d7959f50762d0a3aee95d))
+
+### 📚 Documentation
+
+- Fix installation scripts - ([eca4e0a](https://github.com/tduyng/gozzi/commit/eca4e0a0cb5500f0213333ef2e29527c64a03ee8))
+- Override domaine name when deploy docs - ([1dd31eb](https://github.com/tduyng/gozzi/commit/1dd31eb4ec2362c36d45898d0adcb16255cfcd4b))
+- Setup correctly base_url for subdomain - ([9a339bb](https://github.com/tduyng/gozzi/commit/9a339bbb1d7e28399887cb87e4af385e4a1feb86))
+- Update syntax highlight color themes - ([37b3b24](https://github.com/tduyng/gozzi/commit/37b3b24411866dae661f6c8b4c487950823da87a))
+- Use github-dark syntax theme for better color matching with slate design - ([b5bb721](https://github.com/tduyng/gozzi/commit/b5bb721ace8323169d70c1125c7a3391792ac84b))
+- Use onedark syntax theme for better design consistency - ([92603f0](https://github.com/tduyng/gozzi/commit/92603f0d52cba881bac86532a24a5d98bd3da5f9))
+- Remove redundant examples, keep only live rendered examples - ([c5c4e57](https://github.com/tduyng/gozzi/commit/c5c4e57e9afb382c35602008952ff073560d27b9))
+- Add live examples for math and diagrams, fix script loading timing - ([5cb2653](https://github.com/tduyng/gozzi/commit/5cb26532cf7a4e7af91a50f9bac993904d6995d0))
+- Integrate KaTeX v0.16.11 and Mermaid v11 for rendering - ([8942636](https://github.com/tduyng/gozzi/commit/8942636274d00522ede097d5098a93921e1acd8a))
+- Convert VitePress callouts to standard markdown - ([94e702a](https://github.com/tduyng/gozzi/commit/94e702a2ff5f0d70622b7656f5482bd0c450a41d))
+- Remove redundant tip from syntax-highlighting - ([75c0307](https://github.com/tduyng/gozzi/commit/75c03079815308756533bae636ba4504f77c6429))
+- Simplify getting-started by removing verbose tips and duplicated sections - ([7326ba3](https://github.com/tduyng/gozzi/commit/7326ba39dc406ad5bc6cd8d8a5a28c853fba9ec4))
+- Remove unnecessary FAQ sections - ([40a0286](https://github.com/tduyng/gozzi/commit/40a028654f2f108a7a9dcd1c2c3e6e330e346f52))
+- Remove redundant troubleshooting sections - ([1404e76](https://github.com/tduyng/gozzi/commit/1404e760f507b7f896cfe7ac7776423df7eef675))
+- Simplify troubleshooting to essentials - ([db29048](https://github.com/tduyng/gozzi/commit/db290481741bff39fc397f48adb6db13047aec9e))
+- Fix broken internal links - ([ab9439c](https://github.com/tduyng/gozzi/commit/ab9439cb8f3b0033ab5abe1712227649fb407152))
+- Simplify features overview - ([a0f1f6f](https://github.com/tduyng/gozzi/commit/a0f1f6fce90eaa4003a4b9b430c3c0d1056172a3))
+- Merge architecture pages - ([4da0d48](https://github.com/tduyng/gozzi/commit/4da0d489e44a358ea5ca6a81118195793367d6eb))
+- Simplify template functions reference - ([6839abc](https://github.com/tduyng/gozzi/commit/6839abc3da41afcbcc22812a395529cad52a8a5d))
+- Merge troubleshooting pages - ([f094b4c](https://github.com/tduyng/gozzi/commit/f094b4c008a592da0f086d781cd3178184e712d9))
+- Consolidate front matter docs - ([5a82264](https://github.com/tduyng/gozzi/commit/5a8226477cf5439bad3625386c3a1c81f80806ec))
+- Simplify homepage - ([c74aa4e](https://github.com/tduyng/gozzi/commit/c74aa4e34bd83e04b65b25f6485e401601f00e06))
+- Write my own gozzi website, remove vitepress - ([d3d4c3e](https://github.com/tduyng/gozzi/commit/d3d4c3e99624995ffe43b6f999cd76b890a548ca))
+- Update docs - ([7521112](https://github.com/tduyng/gozzi/commit/75211121b9ebebf07377397ff7c5e1833a34a8f9))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(examples)* Update latest commits - ([334bbed](https://github.com/tduyng/gozzi/commit/334bbedeca99a1300edac4a3dee55acc93c31eb4))
 
 ## [0.0.26](https://github.com/tduyng/gozzi/compare/v0.0.25..v0.0.26) - 2025-12-11
 
 ### 🚀 Features
 
-- *(template)* Add intelligent related_posts function with O(k) performance - ([290e836](https://github.com/tduyng/gozzi/commit/290e83687efa4f54ae474487c5984dd2a361f583))
+- _(template)_ Add intelligent related_posts function with O(k) performance - ([290e836](https://github.com/tduyng/gozzi/commit/290e83687efa4f54ae474487c5984dd2a361f583))
 
 ### 🐛 Bug Fixes
 
-- *(ci)* Add --unreleased flag to git cliff commands - ([1c937f5](https://github.com/tduyng/gozzi/commit/1c937f54f2f7f72f9d50affd7846513f960e6325))
-- *(just)* Use --tag flag in changelog generation for correct version - ([5310ab7](https://github.com/tduyng/gozzi/commit/5310ab7533fed7f3902a2d7de74f53f33eaab669))
+- _(ci)_ Add --unreleased flag to git cliff commands - ([1c937f5](https://github.com/tduyng/gozzi/commit/1c937f54f2f7f72f9d50affd7846513f960e6325))
+- _(just)_ Use --tag flag in changelog generation for correct version - ([5310ab7](https://github.com/tduyng/gozzi/commit/5310ab7533fed7f3902a2d7de74f53f33eaab669))
 
 ### 🎨 Styling
 
@@ -28,7 +93,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- *(examples)* Fetch latest commits - ([4645cba](https://github.com/tduyng/gozzi/commit/4645cba3ce310260071ff72bdb21eadc8a79b1a4))
+- _(examples)_ Fetch latest commits - ([4645cba](https://github.com/tduyng/gozzi/commit/4645cba3ce310260071ff72bdb21eadc8a79b1a4))
 - Update packages comments - ([3f71a3b](https://github.com/tduyng/gozzi/commit/3f71a3b90d838fecf2cf4be8be4fe9ceac20c419))
 - Remove the contributing text from readme - ([8c73bad](https://github.com/tduyng/gozzi/commit/8c73bad9a77043e83b20862406792a1c92eb8d1b))
 - Fix changelog duplicate and update for v0.0.25 - ([f153a85](https://github.com/tduyng/gozzi/commit/f153a85475d118997ef88729b171d92f0e4f467f))
@@ -46,8 +111,8 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- *(examples)* Fetch latest commits - ([ced0938](https://github.com/tduyng/gozzi/commit/ced09385570fb6ba77844aa7afee96e0e12ae9fb))
-- *(just)* Add group and use native constant color of just - ([c40fca4](https://github.com/tduyng/gozzi/commit/c40fca4b09afd03a5c7f086aec8247b422c68fa0))
+- _(examples)_ Fetch latest commits - ([ced0938](https://github.com/tduyng/gozzi/commit/ced09385570fb6ba77844aa7afee96e0e12ae9fb))
+- _(just)_ Add group and use native constant color of just - ([c40fca4](https://github.com/tduyng/gozzi/commit/c40fca4b09afd03a5c7f086aec8247b422c68fa0))
 - Release v0.0.25 - ([19b9d21](https://github.com/tduyng/gozzi/commit/19b9d21d6f7fc97f446ae6c0153d204c68af3958))
 - Fix tag command to push the commit release to main branch - ([e4ab982](https://github.com/tduyng/gozzi/commit/e4ab98273353e712a1843db978eda11b1b790419))
 - Update missing changelog - ([4df0924](https://github.com/tduyng/gozzi/commit/4df092401fb7266e81f710675d6d41b51620ff65))

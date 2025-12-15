@@ -3,7 +3,7 @@ title = "Gozzi Documentation"
 description = "A Go static site generator born from curiosity - Fast, flexible, and built for developers"
 language = "en"
 output_dir = "public"
-syntax_theme = "onedark"  # Chroma syntax highlighting theme (dracula, monokai, github, onedark, etc.)
+syntax_theme = "github-dark"  # Chroma syntax highlighting theme (dracula, monokai, github-dark, native, etc.)
 
 [extra]
 name = "Gozzi"

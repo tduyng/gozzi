@@ -19,6 +19,7 @@ language     = "en"                               # Default language code (defau
 theme        = "default"                          # Theme name (optional)
 img          = "/img/default-cover.webp"          # Default sharing image
 generate_feed = true                              # Generate RSS/Atom feed (default: false)
+syntax_theme = "dracula"                          # Syntax highlighting theme (default: "dracula")
 ```
 
 ## Configuration Options Reference
@@ -34,6 +35,7 @@ generate_feed = true                              # Generate RSS/Atom feed (defa
 | `theme` | string | "" | Theme name (if using themes) |
 | `img` | string | "" | Default sharing image for social media |
 | `generate_feed` | boolean | false | Whether to generate RSS/Atom feeds |
+| `syntax_theme` | string | "dracula" | Syntax highlighting theme for code blocks |
 
 ## Minimal Blog Configuration
 
@@ -99,6 +101,31 @@ Gozzi requires two fields in your site configuration:
 
 Without these fields, Gozzi will fail to build.
 
+## Syntax Highlighting Themes
+
+Gozzi uses [Chroma](https://github.com/alecthomas/chroma) for syntax highlighting. You can customize the theme via `syntax_theme`:
+
+```toml
+syntax_theme = "onedark"  # Choose from available Chroma styles
+```
+
+**Popular themes:**
+- `dracula` (default) - Vibrant purple/pink theme
+- `onedark` - VSCode OneDark theme, subtle and professional
+- `monokai` - Sublime Text inspired, balanced colors
+- `github` - GitHub's light theme
+- `github-dark` - GitHub's dark theme
+- `native` - Neutral dark theme
+- `nord` - Arctic, bluish palette
+- `solarized-dark` / `solarized-light` - Popular color scheme
+- `gruvbox` / `gruvbox-light` - Retro groove
+
+**Choosing a theme:**
+1. Match your site's color palette (e.g., `onedark` for slate/dark themes)
+2. Consider readability and contrast
+3. Test with your most common code languages
+4. Preview at: [Chroma Style Gallery](https://xyproto.github.io/splash/docs/)
+
 ## Best Practices
 
 1. **Use HTTPS** for `base_url` in production
@@ -106,10 +133,12 @@ Without these fields, Gozzi will fail to build.
 3. **Set language code** - Helps with SEO and accessibility
 4. **Use consistent paths** - End all URLs without trailing slashes
 5. **Organize with `[extra]`** - Keep custom data separate from core config
+6. **Choose appropriate syntax theme** - Match your site's design for consistency
 
 ---
 
 **Related:**
+- [Syntax Highlighting](/features/syntax-highlighting)
 - [Environment-Specific Configs](/config/environment)
 - [Extended Configuration](/config/extended)
 - [Front Matter](/config/frontmatter)

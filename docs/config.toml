@@ -77,10 +77,7 @@ items = [
 [[extra.sidebar]]
 title = "Architecture"
 items = [
-  { text = "Build Flow", link = "/architecture/build-flow" },
-  { text = "Serve Flow", link = "/architecture/serve-flow" },
-  { text = "Content Processing", link = "/architecture/content-processing" },
-  { text = "Template System", link = "/architecture/templates" },
+  { text = "How Gozzi Works", link = "/architecture" },
 ]
 
 [[extra.sidebar]]

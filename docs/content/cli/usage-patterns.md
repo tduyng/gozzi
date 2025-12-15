@@ -102,34 +102,36 @@ gozzi build --clean --config config/config.prod.toml
 ```toml
 base_url = "http://localhost:3000"
 output_dir = "dev-build"
+minify_css = false
+minify_html = false
 
 [extra]
 environment = "development"
 enable_analytics = false
-minify_html = false
 ```
 
 **Staging** (`config.staging.toml`):
 ```toml
 base_url = "https://staging.example.com"
 output_dir = "staging-build"
+minify_css = true
+minify_html = true
 
 [extra]
 environment = "staging"
 enable_analytics = true
-minify_html = true
 ```
 
 **Production** (`config.prod.toml`):
 ```toml
 base_url = "https://example.com"
 output_dir = "public"
+minify_css = true
+minify_html = true
 
 [extra]
 environment = "production"
 enable_analytics = true
-minify_html = true
-enable_seo = true
 ```
 
 ## Content Organization Patterns

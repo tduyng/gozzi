@@ -8,61 +8,31 @@ Gozzi automatically handles essential SEO tasks to improve your site's search en
 
 ## Sitemap Generation
 
-Automatically generates XML sitemaps following the sitemap protocol.
+Gozzi automatically generates XML sitemaps for all your content.
 
 ### Features
 
-- **Location**: `/sitemap.xml`
+- **Location**: `/sitemap.xml` (automatically generated)
 - **Format**: XML sitemap protocol
 - **Content**: All pages with modification dates
-- **Priority**: Calculated based on content type
-- **Change frequency**: Based on content updates
+- **Automatic**: No configuration needed
 
-### Configuration
+The sitemap includes:
 
-```toml
-[sitemap]
-enabled = true
-change_freq = "weekly"
-priority = 0.5
-```
-
-### Customization
-
-Override defaults per page using front matter:
-
-```yaml
----
-title: 'Important Page'
-sitemap:
-    priority: 1.0
-    change_freq: 'daily'
----
-```
-
-### Exclusion
-
-Exclude pages from sitemap:
-
-```yaml
----
-title: 'Draft Page'
-sitemap:
-    exclude: true
----
-```
+- Homepage
+- All content pages (blog posts, notes, etc.)
+- Last modification date from frontmatter `updated` field
+- Proper URL structure based on `base_url`
 
 ## Robots.txt
 
-Automatically generates robots.txt for crawler control.
-
-### Default Configuration
-
-- **Location**: `/robots.txt`
-- **Content**: Default rules for common crawlers
-- **Sitemap**: Automatically includes sitemap URL
+Gozzi automatically generates a basic robots.txt file.
 
 ### Generated File
+
+- **Location**: `/robots.txt` (automatically generated)
+- **Content**: Allows all crawlers and links to sitemap
+- **Format**:
 
 ```text
 User-agent: *
@@ -73,16 +43,13 @@ Sitemap: https://yoursite.com/sitemap.xml
 
 ### Customization
 
-Override by creating `static/robots.txt`:
+To customize robots.txt, create your own file at `static/robots.txt`. This will override the automatic generation:
 
 ```text
 User-agent: *
 Allow: /
 Disallow: /admin/
-Disallow: /private/
-
-User-agent: Googlebot
-Crawl-delay: 0
+Disallow: /drafts/
 
 Sitemap: https://yoursite.com/sitemap.xml
 ```
@@ -94,12 +61,12 @@ Sitemap: https://yoursite.com/sitemap.xml
 Essential for social media sharing:
 
 ```html
-<meta property="og:title" content="{{ .Title }}" />
-<meta property="og:description" content="{{ .Description }}" />
+<meta property="og:title" content="{{ .Page.Config.title }}" />
+<meta property="og:description" content="{{ .Page.Config.description }}" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="{{ .Permalink }}" />
-<meta property="og:image" content="{{ .FeaturedImage }}" />
-<meta property="og:site_name" content="{{ .Site.Title }}" />
+<meta property="og:url" content="{{ .Site.base_url }}{{ .Page.Path }}" />
+{{ with .Page.Config.img }}<meta property="og:image" content="{{ . }}" />{{ end }}
+<meta property="og:site_name" content="{{ .Site.title }}" />
 ```
 
 ### Twitter Cards
@@ -108,18 +75,18 @@ Optimized display on Twitter:
 
 ```html
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="{{ .Title }}" />
-<meta name="twitter:description" content="{{ .Description }}" />
-<meta name="twitter:image" content="{{ .FeaturedImage }}" />
-<meta name="twitter:site" content="@yourhandle" />
+<meta name="twitter:title" content="{{ .Page.Config.title }}" />
+<meta name="twitter:description" content="{{ .Page.Config.description }}" />
+{{ with .Page.Config.img }}<meta name="twitter:image" content="{{ . }}" />{{ end }} {{ with
+.Site.Extra.twitter }}<meta name="twitter:site" content="@{{ . }}" />{{ end }}
 ```
 
 ### Basic Meta Tags
 
 ```html
-<meta name="description" content="{{ .Description }}" />
-<meta name="keywords" content="{{ range .Tags }}{{ . }},{{ end }}" />
-<meta name="author" content="{{ .Site.Author }}" />
+<meta name="description" content="{{ .Page.Config.description }}" />
+<meta name="keywords" content="{{ range .Page.Config.tags }}{{ . }},{{ end }}" />
+{{ with .Site.Extra.author }}<meta name="author" content="{{ . }}" />{{ end }}
 <meta name="robots" content="index, follow" />
 ```
 
@@ -134,15 +101,15 @@ Improve search result appearance:
     {
         "@context": "https://schema.org",
         "@type": "BlogPosting",
-        "headline": "{{ .Title }}",
-        "description": "{{ .Description }}",
-        "author": {
+        "headline": "{{ .Page.Config.title }}",
+        "description": "{{ .Page.Config.description }}",
+        {{ with .Site.Extra.author }}"author": {
             "@type": "Person",
-            "name": "{{ .Site.Author }}"
-        },
-        "datePublished": "{{ .Date.Format "2006-01-02" }}",
-        "dateModified": "{{ .UpdatedDate.Format "2006-01-02" }}",
-        "image": "{{ .FeaturedImage }}"
+            "name": "{{ . }}"
+        },{{ end }}
+        "datePublished": "{{ format_date .Page.Config.date "2006-01-02" }}",
+        {{ if .Page.Config.updated }}"dateModified": "{{ format_date .Page.Config.updated "2006-01-02" }}",{{ end }}
+        {{ with .Page.Config.img }}"image": "{{ . }}"{{ end }}
     }
 </script>
 ```
@@ -154,9 +121,9 @@ Improve search result appearance:
     {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "{{ .Site.Title }}",
-        "url": "{{ .Site.BaseURL }}",
-        "description": "{{ .Site.Description }}"
+        "name": "{{ .Site.title }}",
+        "url": "{{ .Site.base_url }}",
+        "description": "{{ .Site.description }}"
     }
 </script>
 ```
@@ -166,60 +133,24 @@ Improve search result appearance:
 Prevent duplicate content issues:
 
 ```html
-<link rel="canonical" href="{{ .Permalink }}" />
-```
-
-## Performance SEO
-
-### Build-Time Optimization
-
-- **Server-side rendering** - All content pre-rendered
-- **Zero JavaScript** - Core content accessible without JS
-- **Fast page loads** - Critical for search rankings
-- **Mobile-friendly** - Responsive by default
-
-### Best Practices
-
-1. **Use descriptive titles**: <code v-pre>{{ .Title }} | {{ .Site.Title }}</code>
-2. **Write meta descriptions**: 150-160 characters optimal
-3. **Optimize images**: Use appropriate formats and sizes
-4. **Use semantic HTML**: Proper heading hierarchy
-5. **Add alt text**: Images accessible and indexable
-
-## Front Matter for SEO
-
-Configure SEO per page:
-
-```yaml
----
-title: 'Complete Guide to Go Web Development'
-description: 'Learn to build modern web applications with Go, covering HTTP servers, templating, databases, and deployment.'
-keywords: ['golang', 'web development', 'tutorial', 'backend']
-featured_image: '/images/go-web-guide.jpg'
-date: 2024-01-15
-updated: 2024-01-20
-author: 'Your Name'
-sitemap:
-    priority: 0.9
-    change_freq: 'monthly'
----
+<link rel="canonical" href="{{ .Site.base_url }}{{ .Page.Path }}" />
 ```
 
 ## Analytics Integration
 
-Add analytics tracking (Google Analytics, Plausible, etc.) in your template:
+Add analytics tracking in your template using custom `[extra]` config:
 
 ```html
 <!-- Google Analytics -->
-{{ if .Site.GoogleAnalytics }}
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ .Site.GoogleAnalytics }}"></script>
+{{ with .Site.Extra.google_analytics }}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ . }}"></script>
 <script>
-    window.dataLayer = window.dataLayer || [];
+    window.dataLayer = window.dataLayer || []
     function gtag() {
-        dataLayer.push(arguments);
+        dataLayer.push(arguments)
     }
-    gtag('js', new Date());
-    gtag('config', '{{ .Site.GoogleAnalytics }}');
+    gtag('js', new Date())
+    gtag('config', '{{ . }}')
 </script>
 {{ end }}
 ```
@@ -227,7 +158,6 @@ Add analytics tracking (Google Analytics, Plausible, etc.) in your template:
 Configuration:
 
 ```toml
-[site]
+[extra]
 google_analytics = "G-XXXXXXXXXX"
 ```
-

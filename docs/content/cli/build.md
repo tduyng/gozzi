@@ -208,15 +208,14 @@ Common config options for builds:
 # config.prod.toml
 base_url = "https://example.com"
 output_dir = "public"
-content_dir = "content"
-templates_dir = "templates"
-static_dir = "static"
-
-[build]
-# Build-specific settings
+minify_css = true
 minify_html = true
-generate_sitemap = true
-generate_rss = true
+generate_feed = true
+
+[extra]
+# Custom site data
+enable_analytics = true
+environment = "production"
 ```
 
 ## CI/CD Integration

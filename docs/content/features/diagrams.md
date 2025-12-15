@@ -39,9 +39,7 @@ Rendered: Beautiful SVG diagram
 
 ## Basic Usage
 
-Write Mermaid diagrams in standard code blocks with the `mermaid` language identifier:
-
-**Flowchart:**
+Write Mermaid diagrams in code blocks with the `mermaid` language identifier:
 
 ````markdown
 ```mermaid
@@ -52,15 +50,7 @@ graph TD
 ```
 ````
 
-**Sequence Diagram:**
-
-````markdown
-```mermaid
-sequenceDiagram
-    Alice->>Bob: Hello Bob!
-    Bob-->>Alice: Hi Alice!
-```
-````
+See [Live Examples](#live-examples) below for actual rendered diagrams.
 
 ## Supported Diagram Types
 
@@ -198,50 +188,6 @@ Customize Mermaid's behavior with initialization options:
 - `logLevel` - Debug level: `1` (debug), `2` (info), `3` (warn), `4` (error)
 
 See [Mermaid configuration docs](https://mermaid.js.org/config/setup/modules/mermaidAPI.html) for all options.
-
-## Example
-
-<details>
-<summary>Complete Example with Multiple Diagrams</summary>
-
-```markdown
-# System Architecture
-
-## User Flow
-
-```mermaid
-graph TD
-    A[User] --> B[Web Browser]
-    B --> C[Load Balancer]
-    C --> D[Web Server]
-    D --> E[Database]
-    D --> F[Cache]
-```
-
-## API Sequence
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant API
-    participant DB
-    Client->>API: POST /users
-    API->>DB: INSERT user
-    DB-->>API: User ID
-    API-->>Client: 201 Created
-```
-
-## Data Model
-
-```mermaid
-erDiagram
-    USER ||--o{ POST : writes
-    USER ||--o{ COMMENT : writes
-    POST ||--o{ COMMENT : has
-```
-````
-
-</details>
 
 ## Styling
 

@@ -33,46 +33,12 @@ Displayed: E = mc²
 
 ## Basic Usage
 
-Simply write math expressions in your markdown using standard delimiters:
+Write math expressions using standard delimiters:
 
-**Inline math** - Wrap with single `$`:
+- **Inline math**: Wrap with `$` → `$E = mc^2$`
+- **Block math**: Wrap with `$$` → `$$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$`
 
-```markdown
-The famous equation $E = mc^2$ shows mass-energy equivalence.
-```
-
-**Block math** - Wrap with double `$$`:
-
-```markdown
-$$
-\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
-$$
-```
-
-## Example
-
-<details>
-<summary>Complete Math Example</summary>
-
-```markdown
-# Understanding Geometry
-
-Given the radius $r$ of a circle, the area $A$ is:
-
-$$
-A = \pi \times r^2
-$$
-
-And the circumference $C$ is:
-
-$$
-C = 2 \pi r
-$$
-
-For derivatives, we use $\frac{dy}{dx}$ notation.
-```
-
-</details>
+See [Live Examples](#live-examples) below for actual rendered math.
 
 ## Advanced Features
 

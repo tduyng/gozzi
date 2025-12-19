@@ -192,39 +192,10 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 
 	s.notifyClients()
 
-	// Log build completion with optional debug stats
-	if s.site.Debug {
-		// Log incremental parsing and render cache stats (debug mode only)
-		stats := s.parser.GetStats()
-		hashCacheStats := s.parser.GetHashCache().Stats()
-		renderCacheStats := s.gen.GetRenderCacheStats()
-
-		total := stats.TotalFiles.Load()
-		skipped := stats.FilesSkipped.Load()
-		parsed := stats.FilesParsed.Load()
-
-		if total > 0 {
-			skipRate := float64(skipped) / float64(total) * 100
-			log.Printf("Change detected, build done in %dms (parsed: %d, skipped: %d/%.0f%%, %s, %s)",
-				time.Since(start).Milliseconds(),
-				parsed,
-				skipped,
-				skipRate,
-				hashCacheStats.String(),
-				renderCacheStats.String(),
-			)
-		} else {
-			log.Printf("Change detected, build done in %dms (%s)",
-				time.Since(start).Milliseconds(),
-				renderCacheStats.String(),
-			)
-		}
-	} else {
-		// Simple output for normal mode
-		log.Printf("Change detected, build done in %dms",
-			time.Since(start).Milliseconds(),
-		)
-	}
+	// Log build completion
+	log.Printf("Change detected, build done in %dms",
+		time.Since(start).Milliseconds(),
+	)
 }
 
 // hasFileChanged checks if a file's content has actually changed by comparing hashes.

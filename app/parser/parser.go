@@ -79,8 +79,12 @@ func NewParser(cfg *config.Site) *ContentParser {
 
 // Parse walks the content directory and parses all markdown files.
 func (p *ContentParser) Parse(rootDir string) error {
+	// Clear the existing map instead of creating a new one
+	// This preserves the reference held by the template engine
 	p.mu.Lock()
-	p.ContentMap = make(map[string]*content.Node)
+	for k := range p.ContentMap {
+		delete(p.ContentMap, k)
+	}
 	p.mu.Unlock()
 
 	var files []string
@@ -165,11 +169,6 @@ func buildPermalink(slug string) string {
 
 func buildURL(baseURL, slug string) string {
 	return baseURL + "/" + slug
-}
-
-// GetStats returns current parsing statistics
-func (p *ContentParser) GetStats() *ParseStats {
-	return p.stats
 }
 
 // ResetStats resets parsing statistics

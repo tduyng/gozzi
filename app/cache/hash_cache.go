@@ -8,10 +8,8 @@ import (
 	"sync"
 )
 
-// ContentHash represents a SHA256 hash of file content
 type ContentHash [32]byte
 
-// String returns hex representation of the hash
 func (h ContentHash) String() string {
 	return hex.EncodeToString(h[:])
 }
@@ -20,27 +18,22 @@ func (h ContentHash) String() string {
 // This is the foundation for incremental computation - we only reprocess
 // content when the actual content changes, not just when the filesystem event fires.
 type HashCache struct {
-	mu sync.RWMutex
-	// Map of file path -> content hash
+	mu     sync.RWMutex
 	hashes map[string]ContentHash
-	// Statistics for monitoring
 	hits   uint64
 	misses uint64
 }
 
-// NewHashCache creates a new hash cache
 func NewHashCache() *HashCache {
 	return &HashCache{
 		hashes: make(map[string]ContentHash),
 	}
 }
 
-// ComputeHash calculates SHA256 hash of content
 func ComputeHash(content []byte) ContentHash {
 	return sha256.Sum256(content)
 }
 
-// Get retrieves the stored hash for a path
 func (c *HashCache) Get(path string) (ContentHash, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -54,7 +47,6 @@ func (c *HashCache) Get(path string) (ContentHash, bool) {
 	return hash, exists
 }
 
-// Set stores a hash for a path
 func (c *HashCache) Set(path string, hash ContentHash) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -94,14 +86,12 @@ func (c *HashCache) Update(path string, content []byte) (changed bool, hash Cont
 	return changed, newHash
 }
 
-// Remove deletes a path from the cache (for deleted files)
 func (c *HashCache) Remove(path string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.hashes, path)
 }
 
-// Clear removes all cached hashes
 func (c *HashCache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -110,7 +100,6 @@ func (c *HashCache) Clear() {
 	c.misses = 0
 }
 
-// Stats returns cache statistics for monitoring
 func (c *HashCache) Stats() CacheStats {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -129,15 +118,13 @@ func (c *HashCache) Stats() CacheStats {
 	}
 }
 
-// CacheStats contains cache performance metrics
 type CacheStats struct {
-	Entries int     // Number of cached entries
-	Hits    uint64  // Cache hits
-	Misses  uint64  // Cache misses
-	HitRate float64 // Hit rate percentage
+	Entries int
+	Hits    uint64
+	Misses  uint64
+	HitRate float64
 }
 
-// String returns a formatted string of cache stats
 func (s CacheStats) String() string {
 	return fmt.Sprintf(
 		"HashCache: %d entries, %d hits, %d misses (%.1f%% hit rate)",
@@ -145,14 +132,12 @@ func (s CacheStats) String() string {
 	)
 }
 
-// Size returns the number of cached entries
 func (c *HashCache) Size() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return len(c.hashes)
 }
 
-// Contains checks if a path is in the cache
 func (c *HashCache) Contains(path string) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

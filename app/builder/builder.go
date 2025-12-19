@@ -198,12 +198,6 @@ func (b *Builder) hasTemplate(name string) bool {
 	defer b.mu.Unlock()
 	return b.templ.Lookup(name) != nil
 }
-
-// GetRenderCacheStats returns render cache statistics
-func (b *Builder) GetRenderCacheStats() cache.RenderCacheStats {
-	return b.renderCache.Stats()
-}
-
 func (b *Builder) generateRobotsTxt() error {
 	content := fmt.Sprintf(`User-agent: *
 Allow: /

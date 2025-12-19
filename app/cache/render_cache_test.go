@@ -280,23 +280,6 @@ func TestHashString(t *testing.T) {
 	}
 }
 
-func TestCombineHashes(t *testing.T) {
-	hash1 := HashString("test1")
-	hash2 := HashString("test2")
-	hash3 := HashString("test3")
-
-	combined1 := CombineHashes(hash1, hash2, hash3)
-	combined2 := CombineHashes(hash1, hash2, hash3)
-	combined3 := CombineHashes(hash1, hash2)
-
-	if combined1 != combined2 {
-		t.Error("Same hashes should combine to same result")
-	}
-	if combined1 == combined3 {
-		t.Error("Different hash combinations should produce different results")
-	}
-}
-
 func TestHashWriter(t *testing.T) {
 	hw := NewHashWriter()
 

@@ -337,11 +337,6 @@ date = 2024-01-01
 	err = parser.ParseFiles(contentDir, []string{filepath.Join(blogDir, "post1.md")})
 	require.NoError(t, err)
 
-	// Verify stats show incremental parse
-	stats := parser.GetStats()
-	assert.Equal(t, uint64(1), stats.TotalFiles.Load())
-	assert.Equal(t, uint64(1), stats.FilesParsed.Load())
-
 	// Verify content was updated
 	blogSection := parser.ContentMap["blog"]
 	require.NotNil(t, blogSection)

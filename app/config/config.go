@@ -32,7 +32,6 @@ type Site struct {
 	MinifyXML       bool           `toml:"minify_xml"`
 	BuildTime       time.Time
 	BuildDrafts     bool
-	Debug           bool // Show detailed build statistics
 }
 
 // FrontMatter represents the TOML front matter in markdown content files.

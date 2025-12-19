@@ -94,6 +94,7 @@ func handleServeCommand(args []string) {
 	contentDir := fs.String("content", "content", "Content directory")
 	port := fs.Int("port", 1313, "Port to listen on")
 	buildDrafts := fs.Bool("drafts", false, "Include draft content in build")
+	debug := fs.Bool("debug", false, "Show detailed build statistics")
 	fs.Usage = func() { serveUsage() }
 
 	if err := fs.Parse(args); err != nil {
@@ -103,6 +104,7 @@ func handleServeCommand(args []string) {
 	site, contentParser, gen := initApp(*configPath, *contentDir, *buildDrafts)
 
 	site.BuildTime = time.Now()
+	site.Debug = *debug
 	srv, err := server.NewDevServer(
 		*configPath,
 		*contentDir,
@@ -174,7 +176,8 @@ Options:
   --config string  Path to config file (default "config.toml")
   --content string Content directory (default "content")
   --port int       Port to listen on (default 1313)
-  --drafts         Include draft content in development (default false)`)
+  --drafts         Include draft content in development (default false)
+  --debug          Show detailed build statistics (cache hits, parse stats, etc.)`)
 }
 
 func initApp(configPath, contentDir string, buildDrafts bool) (*config.Site, *parser.ContentParser, *builder.Builder) {

@@ -49,9 +49,10 @@ debug
 docs/public/**
 examples/gozzi
 gozzi
-**/.vitepress/cache/*
-**/.vitepress/dist/*
 
-# Node/Bun dependencies
+# Node/Bun artifacts (no longer used)
 node_modules/
+package.json
+package-lock.json
 bun.lockb
+.vitepress/

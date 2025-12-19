@@ -1,6 +1,7 @@
 changelog := "CHANGELOG.md"
 bin_name := "gozzi"
-version := `git describe --tags --always | sed 's/^v//'`
+version_file := "VERSION"
+version := `cat VERSION 2>/dev/null || echo "0.0.1"`
 build_time := `date -u +"%Y-%m-%dT%H:%M:%SZ"`
 git_commit := `git rev-parse --short HEAD`
 ld_flags := '-ldflags "-X main.version=' + version + ' -X main.buildTime=' + build_time + ' -X main.commit=' + git_commit + ' -w -s"'
@@ -39,7 +40,7 @@ audit: check-tools
 build-dev: check-tools
     #!/usr/bin/env bash
     set -euo pipefail
-    VERSION=$(git describe --tags --always | sed 's/^v//')
+    VERSION=$(cat {{ version_file }} 2>/dev/null || echo "0.0.1")
     BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     GIT_COMMIT=$(git rev-parse --short HEAD)
     echo "Building {{ bin_name }} version ${VERSION}..."
@@ -97,7 +98,7 @@ tidy:
     @echo -e "{{ YELLOW }}Tidying modules...{{ NORMAL }}"
     @go mod tidy
 
-# Build production binary (optionally from specific version tag)
+# Build production binary (uses VERSION file or specific tag)
 [group('production')]
 build VERSION="":
     #!/usr/bin/env bash
@@ -105,34 +106,41 @@ build VERSION="":
 
     # Determine version to build
     if [ -z "{{ VERSION }}" ]; then
-        TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.1")
+        # Use VERSION file if no argument provided
+        VERSION=$(cat {{ version_file }} 2>/dev/null || echo "0.0.1")
+        echo "Building {{ bin_name }} version ${VERSION} from {{ version_file }}..."
+        BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        GIT_COMMIT=$(git rev-parse --short HEAD)
+        go build -v \
+            -ldflags "-X main.version=${VERSION} -X main.buildTime=${BUILD_TIME} -X main.commit=${GIT_COMMIT} -w -s" \
+            -o {{ bin_name }} main.go
     else
+        # Build from specific git tag
         TAG="v{{ VERSION }}"
         TAG="${TAG#vv}" # Remove double 'v' if present
         TAG="v${TAG#v}" # Ensure single 'v' prefix
-    fi
-
-    VERSION=${TAG#v}
-    BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-    echo "Building {{ bin_name }} version ${VERSION} from tag ${TAG}..."
-    git fetch --tags --quiet
-
-    # Save current branch/commit
-    CURRENT_REF=$(git symbolic-ref -q HEAD || git rev-parse --short HEAD)
-
-    # Checkout and build
-    git checkout ${TAG} --quiet
-    GIT_COMMIT=$(git rev-parse --short HEAD)
-    go build -v \
-        -ldflags "-X main.version=${VERSION} -X main.buildTime=${BUILD_TIME} -X main.commit=${GIT_COMMIT} -w -s" \
-        -o {{ bin_name }} main.go
-
-    # Return to original branch/commit
-    if [[ ${CURRENT_REF} == refs/heads/* ]]; then
-        git checkout ${CURRENT_REF#refs/heads/} --quiet
-    else
-        git checkout ${CURRENT_REF} --quiet
+        VERSION=${TAG#v}
+        
+        echo "Building {{ bin_name }} version ${VERSION} from tag ${TAG}..."
+        git fetch --tags --quiet
+        
+        # Save current branch/commit
+        CURRENT_REF=$(git symbolic-ref -q HEAD || git rev-parse --short HEAD)
+        
+        # Checkout and build
+        git checkout ${TAG} --quiet
+        BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        GIT_COMMIT=$(git rev-parse --short HEAD)
+        go build -v \
+            -ldflags "-X main.version=${VERSION} -X main.buildTime=${BUILD_TIME} -X main.commit=${GIT_COMMIT} -w -s" \
+            -o {{ bin_name }} main.go
+        
+        # Return to original branch/commit
+        if [[ ${CURRENT_REF} == refs/heads/* ]]; then
+            git checkout ${CURRENT_REF#refs/heads/} --quiet
+        else
+            git checkout ${CURRENT_REF} --quiet
+        fi
     fi
 
     echo "✓ Built {{ bin_name }} ${VERSION}"
@@ -160,12 +168,12 @@ tag VERSION:
     @echo "Creating tag v{{ VERSION }}..."
     @git checkout main
     @git pull origin main
-    @echo "Updating package.json version..."
-    @sed -i.bak 's/"version": "[^"]*"/"version": "{{ VERSION }}"/' package.json && rm -f package.json.bak
+    @echo "Updating {{ version_file }}..."
+    @echo "{{ VERSION }}" > {{ version_file }}
     @echo "→ Generating changelog for v{{ VERSION }}…"
     @git cliff --unreleased --tag "v{{ VERSION }}" --prepend {{ changelog }}
     @git cliff --unreleased --tag "v{{ VERSION }}" --strip all --output LATEST_CHANGELOG.md
-    @git add {{ changelog }} LATEST_CHANGELOG.md package.json
+    @git add {{ changelog }} LATEST_CHANGELOG.md {{ version_file }}
     @git commit -m "chore: release v{{ VERSION }}"
     @git tag -a v{{ VERSION }} -m "Release v{{ VERSION }}"
     @echo "Tag v{{ VERSION }} created. Push with: git push && git push origin v{{ VERSION }}"
@@ -203,6 +211,6 @@ release-test-all-arch:
 release: check-tools audit
     #!/usr/bin/env bash
     set -euo pipefail
-    VERSION=$(git describe --tags --always | sed 's/^v//')
+    VERSION=$(cat {{ version_file }} 2>/dev/null || echo "0.0.1")
     echo "Building release binaries for version ${VERSION}..."
     goreleaser release --clean

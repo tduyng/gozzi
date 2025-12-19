@@ -118,16 +118,25 @@ func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
 func (s *DevServer) triggerRebuild(changedFiles []string) {
 	start := time.Now()
 
-	// Determine what type of changes occurred
-	hasTemplateChange := false
+	// Categorize changed files
 	hasConfigChange := false
+	hasStaticChange := false
+	contentFiles := []string{}
+	templateFiles := []string{}
 
 	for _, file := range changedFiles {
-		if strings.Contains(file, "templates") && filepath.Ext(file) == ".html" {
-			hasTemplateChange = true
-		}
-		if filepath.Base(file) == "config.toml" {
+		switch {
+		case strings.Contains(file, "templates") && filepath.Ext(file) == ".html":
+			// Track specific template files for selective cache invalidation
+			if relPath, err := filepath.Rel("templates", file); err == nil {
+				templateFiles = append(templateFiles, filepath.ToSlash(relPath))
+			}
+		case filepath.Base(file) == "config.toml":
 			hasConfigChange = true
+		case strings.Contains(file, "static"):
+			hasStaticChange = true
+		case strings.Contains(file, s.contentDir) && (filepath.Ext(file) == ".md" || filepath.Base(file) == "_index.md"):
+			contentFiles = append(contentFiles, file)
 		}
 	}
 
@@ -138,18 +147,32 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 		}
 	}
 
-	// Only reload templates if they actually changed
-	if hasTemplateChange {
+	// Handle template changes with selective cache invalidation
+	if len(templateFiles) > 0 {
 		if err := s.gen.ReloadTemplates(); err != nil {
 			log.Printf("Template reload error: %v", err)
+		} else {
+			// Invalidate only the templates that changed
+			count := s.gen.InvalidateTemplateCache(templateFiles)
+			if count > 0 {
+				log.Printf("Invalidated %d cached render(s) for templates: %v", count, templateFiles)
+			}
 		}
 	}
 
 	// Reset stats before parsing
 	s.parser.ResetStats()
 
-	if err := s.parser.Parse(s.contentDir); err != nil {
-		log.Printf("Content parse error: %v", err)
+	// Incremental content parsing: only parse changed markdown files
+	if len(contentFiles) > 0 {
+		if err := s.parser.ParseFiles(s.contentDir, contentFiles); err != nil {
+			log.Printf("Content parse error: %v", err)
+		}
+	} else if hasConfigChange || len(templateFiles) > 0 || hasStaticChange {
+		// For config/template/static changes, do a full parse since they may affect all pages
+		if err := s.parser.Parse(s.contentDir); err != nil {
+			log.Printf("Content parse error: %v", err)
+		}
 	}
 
 	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {

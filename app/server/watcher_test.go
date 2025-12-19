@@ -113,8 +113,9 @@ base_url = "http://localhost"
 	server.mu.Unlock()
 
 	t.Run("successful rebuild", func(t *testing.T) {
-		// Trigger rebuild
-		server.triggerRebuild()
+		// Trigger rebuild with test file changes
+		changedFiles := []string{filepath.Join(contentDir, "blog", "test-post", "index.md")}
+		server.triggerRebuild(changedFiles)
 
 		// Verify client was notified
 		select {
@@ -136,7 +137,8 @@ base_url = "http://localhost"
 		require.NoError(t, err)
 
 		// Trigger rebuild - should not panic even with errors
-		server.triggerRebuild()
+		changedFiles := []string{configPath}
+		server.triggerRebuild(changedFiles)
 
 		// Client should still be notified even if there were errors
 		select {

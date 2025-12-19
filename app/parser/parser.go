@@ -94,6 +94,29 @@ func (p *ContentParser) Parse(rootDir string) error {
 		return nil
 	})
 
+	return p.parseFiles(rootDir, files)
+}
+
+// ParseFiles parses only the specified files for incremental rebuilds.
+// This is used by the dev server to avoid re-parsing the entire content directory.
+func (p *ContentParser) ParseFiles(rootDir string, files []string) error {
+	// Filter to only markdown files
+	var mdFiles []string
+	for _, f := range files {
+		if filepath.Ext(f) == ".md" || filepath.Base(f) == "_index.md" {
+			mdFiles = append(mdFiles, f)
+		}
+	}
+
+	if len(mdFiles) == 0 {
+		return nil
+	}
+
+	return p.parseFiles(rootDir, mdFiles)
+}
+
+// parseFiles is the internal implementation that parses a list of files
+func (p *ContentParser) parseFiles(rootDir string, files []string) error {
 	ctx := context.Background()
 	pool := utils.NewWorkerPool(ctx)
 
@@ -145,12 +168,8 @@ func buildURL(baseURL, slug string) string {
 }
 
 // GetStats returns current parsing statistics
-func (p *ContentParser) GetStats() ParseStats {
-	return ParseStats{
-		FilesSkipped: atomic.Uint64{},
-		FilesParsed:  atomic.Uint64{},
-		TotalFiles:   atomic.Uint64{},
-	}
+func (p *ContentParser) GetStats() *ParseStats {
+	return p.stats
 }
 
 // ResetStats resets parsing statistics

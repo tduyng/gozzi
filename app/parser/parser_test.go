@@ -282,6 +282,82 @@ This is in a nested directory.`
 	}
 }
 
+// TestParseFiles tests incremental parsing of specific files
+func TestParseFiles(t *testing.T) {
+	tempDir := t.TempDir()
+	contentDir := filepath.Join(tempDir, "content")
+	require.NoError(t, os.MkdirAll(contentDir, 0755))
+
+	// Create initial content structure
+	blogDir := filepath.Join(contentDir, "blog")
+	require.NoError(t, os.MkdirAll(blogDir, 0755))
+
+	indexContent := `+++
+title = "Home"
++++
+# Welcome`
+	require.NoError(t, os.WriteFile(filepath.Join(contentDir, "_index.md"), []byte(indexContent), 0644))
+
+	blogPost1 := `+++
+title = "Post 1"
+date = 2024-01-01
++++
+# Post 1`
+	require.NoError(t, os.WriteFile(filepath.Join(blogDir, "post1.md"), []byte(blogPost1), 0644))
+
+	blogPost2 := `+++
+title = "Post 2"
+date = 2024-01-02
++++
+# Post 2`
+	require.NoError(t, os.WriteFile(filepath.Join(blogDir, "post2.md"), []byte(blogPost2), 0644))
+
+	site := &config.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+	parser := NewParser(site)
+
+	// Initial full parse
+	err := parser.Parse(contentDir)
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(parser.ContentMap)) // root and blog sections
+
+	// Now test incremental parse of just one file
+	parser.ResetStats()
+
+	// Modify and reparse only post1
+	blogPost1Updated := `+++
+title = "Post 1 Updated"
+date = 2024-01-01
++++
+# Post 1 Updated Content`
+	require.NoError(t, os.WriteFile(filepath.Join(blogDir, "post1.md"), []byte(blogPost1Updated), 0644))
+
+	err = parser.ParseFiles(contentDir, []string{filepath.Join(blogDir, "post1.md")})
+	require.NoError(t, err)
+
+	// Verify stats show incremental parse
+	stats := parser.GetStats()
+	assert.Equal(t, uint64(1), stats.TotalFiles.Load())
+	assert.Equal(t, uint64(1), stats.FilesParsed.Load())
+
+	// Verify content was updated
+	blogSection := parser.ContentMap["blog"]
+	require.NotNil(t, blogSection)
+
+	// Find the updated post
+	var foundUpdated bool
+	for _, child := range blogSection.Children {
+		if strings.Contains(child.Config["title"].(string), "Updated") {
+			foundUpdated = true
+			assert.Contains(t, string(child.Content), "Updated Content")
+			break
+		}
+	}
+	assert.True(t, foundUpdated, "Should find updated post")
+}
+
 // Shared test helpers
 
 // Helper function for debugging.

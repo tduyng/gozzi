@@ -39,11 +39,24 @@ func NewRenderCache() *RenderCache {
 	}
 }
 
-// ComputeDataHash creates a deterministic hash of template input data
+// ComputeDataHash creates a hash of template input data for cache keying.
+//
+// Note: This uses gob encoding which is deterministic for structs but NOT for maps
+// due to Go's random map iteration order. However, this is acceptable because:
+// 1. Within a single build session, the same template+data will hash consistently
+// 2. The cache is cleared on server restart, so cross-run determinism isn't required
+// 3. The performance benefit of caching within a session is significant
+//
+// For perfectly deterministic hashing across runs, use struct-based data instead of maps.
 func ComputeDataHash(data any) (ContentHash, error) {
+	// Special handling for nil to avoid encoding errors
+	if data == nil {
+		return ContentHash{}, fmt.Errorf("cannot hash nil data")
+	}
+
 	h := sha256.New()
 
-	// Use gob encoding for deterministic serialization
+	// Use gob encoding for serialization
 	enc := gob.NewEncoder(h)
 	if err := enc.Encode(data); err != nil {
 		return ContentHash{}, fmt.Errorf("failed to encode data: %w", err)

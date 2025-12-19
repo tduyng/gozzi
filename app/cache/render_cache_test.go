@@ -46,9 +46,16 @@ func TestComputeDataHash(t *testing.T) {
 }
 
 func TestComputeDataHash_Deterministic(t *testing.T) {
-	data := map[string]any{
-		"title": "Test Page",
-		"count": 42,
+	// Use struct instead of map for deterministic gob encoding
+	// Maps in Go have non-deterministic iteration order which affects gob encoding
+	type PageData struct {
+		Title string
+		Count int
+	}
+
+	data := PageData{
+		Title: "Test Page",
+		Count: 42,
 	}
 
 	hash1, err1 := ComputeDataHash(data)

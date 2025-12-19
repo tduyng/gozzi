@@ -70,6 +70,20 @@ func (b *Builder) ReloadTemplates() error {
 	return nil
 }
 
+// InvalidateTemplateCache invalidates cached renders for specific templates.
+// This is more efficient than clearing the entire cache when only specific templates changed.
+func (b *Builder) InvalidateTemplateCache(templateNames []string) int {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	totalInvalidated := 0
+	for _, tplName := range templateNames {
+		count := b.renderCache.InvalidateTemplate(tplName)
+		totalInvalidated += count
+	}
+	return totalInvalidated
+}
+
 // Generate processes the content tree and generates the complete static site.
 func (b *Builder) Generate(contentRoot *content.Node) error {
 	if err := os.MkdirAll(b.site.OutputDir, 0755); err != nil {

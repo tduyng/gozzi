@@ -3,6 +3,7 @@ package builder
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"os"
 	"runtime"
 	"sync"
@@ -86,6 +87,14 @@ func (b *Builder) InvalidateTemplateCache(templateNames []string) int {
 
 // Generate processes the content tree and generates the complete static site.
 func (b *Builder) Generate(contentRoot *content.Node) error {
+	if b.site.Debug {
+		if contentRoot == nil {
+			log.Println("[GENERATE] WARNING: contentRoot is nil!")
+		} else {
+			log.Printf("[GENERATE] Starting build: root=%s children=%d", contentRoot.Slug, len(contentRoot.Children))
+		}
+	}
+
 	if err := os.MkdirAll(b.site.OutputDir, 0755); err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 			Operation: "create_output_directory",
@@ -160,6 +169,9 @@ func (b *Builder) Generate(contentRoot *content.Node) error {
 }
 
 func (b *Builder) processNode(node *content.Node) error {
+	if b.site.Debug {
+		log.Printf("[PROCESS] node=%s type=%s", node.Slug, node.Type)
+	}
 	switch node.Type {
 	case content.NodeTypeSection:
 		return b.generateSection(node)

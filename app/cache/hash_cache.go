@@ -1,5 +1,4 @@
-// ABOUTME: Provides content-based hash caching for incremental builds inspired by Salsa.
-// ABOUTME: Tracks file content hashes to detect actual changes vs. filesystem events.
+// Package cache provides content-based hash caching for incremental builds inspired by Salsa.
 package cache
 
 import (

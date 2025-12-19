@@ -9,7 +9,9 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 
+	"github.com/tduyng/gozzi/app/cache"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/markdown"
@@ -22,6 +24,13 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 )
 
+// ParseStats tracks incremental parsing statistics
+type ParseStats struct {
+	FilesSkipped atomic.Uint64 // Files skipped due to unchanged content
+	FilesParsed  atomic.Uint64 // Files actually parsed
+	TotalFiles   atomic.Uint64 // Total files encountered
+}
+
 // ContentParser parses markdown content files and builds the content tree.
 type ContentParser struct {
 	Site       *config.Site
@@ -29,6 +38,8 @@ type ContentParser struct {
 	Tags       map[string]*TagEntry
 	mu         sync.Mutex
 	md         goldmark.Markdown
+	hashCache  *cache.HashCache // Content hash cache for incremental parsing
+	stats      *ParseStats      // Statistics for monitoring
 }
 
 // NewParser creates a new ContentParser with the given site configuration.
@@ -42,6 +53,8 @@ func NewParser(cfg *config.Site) *ContentParser {
 		Site:       cfg,
 		ContentMap: make(map[string]*content.Node),
 		Tags:       make(map[string]*TagEntry),
+		hashCache:  cache.NewHashCache(),
+		stats:      &ParseStats{},
 		md: goldmark.New(
 			goldmark.WithExtensions(
 				extension.GFM,
@@ -129,4 +142,25 @@ func buildPermalink(slug string) string {
 
 func buildURL(baseURL, slug string) string {
 	return baseURL + "/" + slug
+}
+
+// GetStats returns current parsing statistics
+func (p *ContentParser) GetStats() ParseStats {
+	return ParseStats{
+		FilesSkipped: atomic.Uint64{},
+		FilesParsed:  atomic.Uint64{},
+		TotalFiles:   atomic.Uint64{},
+	}
+}
+
+// ResetStats resets parsing statistics
+func (p *ContentParser) ResetStats() {
+	p.stats.FilesSkipped.Store(0)
+	p.stats.FilesParsed.Store(0)
+	p.stats.TotalFiles.Store(0)
+}
+
+// GetHashCache returns the hash cache for external access
+func (p *ContentParser) GetHashCache() *cache.HashCache {
+	return p.hashCache
 }

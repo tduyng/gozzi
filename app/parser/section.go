@@ -25,6 +25,14 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		})
 	}
 
+	// Incremental parsing: Check if content has actually changed
+	p.stats.TotalFiles.Add(1)
+	if !p.hashCache.HasChanged(path, mdContent) {
+		p.stats.FilesSkipped.Add(1)
+		return nil // Content unchanged, skip parsing
+	}
+	p.stats.FilesParsed.Add(1)
+
 	frontMatter, contentPart, err := config.LoadFrontMatter(mdContent)
 	if err != nil {
 		return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{

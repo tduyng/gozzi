@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sync"
+	"sync/atomic"
 )
 
 type ContentHash [32]byte
@@ -20,8 +21,8 @@ func (h ContentHash) String() string {
 type HashCache struct {
 	mu     sync.RWMutex
 	hashes map[string]ContentHash
-	hits   uint64
-	misses uint64
+	hits   atomic.Uint64
+	misses atomic.Uint64
 }
 
 func NewHashCache() *HashCache {
@@ -36,13 +37,14 @@ func ComputeHash(content []byte) ContentHash {
 
 func (c *HashCache) Get(path string) (ContentHash, bool) {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	hash, exists := c.hashes[path]
+	c.mu.RUnlock()
+
+	// Update stats atomically (outside lock for better concurrency)
 	if exists {
-		c.hits++
+		c.hits.Add(1)
 	} else {
-		c.misses++
+		c.misses.Add(1)
 	}
 	return hash, exists
 }
@@ -96,24 +98,28 @@ func (c *HashCache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.hashes = make(map[string]ContentHash)
-	c.hits = 0
-	c.misses = 0
+	c.hits.Store(0)
+	c.misses.Store(0)
 }
 
 func (c *HashCache) Stats() CacheStats {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
+	entries := len(c.hashes)
+	c.mu.RUnlock()
 
-	total := c.hits + c.misses
+	// Read atomic counters
+	hits := c.hits.Load()
+	misses := c.misses.Load()
+	total := hits + misses
 	hitRate := float64(0)
 	if total > 0 {
-		hitRate = float64(c.hits) / float64(total) * 100
+		hitRate = float64(hits) / float64(total) * 100
 	}
 
 	return CacheStats{
-		Entries: len(c.hashes),
-		Hits:    c.hits,
-		Misses:  c.misses,
+		Entries: entries,
+		Hits:    hits,
+		Misses:  misses,
 		HitRate: hitRate,
 	}
 }

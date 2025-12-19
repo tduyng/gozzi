@@ -135,18 +135,37 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	templateFiles := []string{}
 
 	for _, file := range changedFiles {
+		if s.site.Debug {
+			log.Printf("[DEBUG] Processing changed file: %s", file)
+		}
 		switch {
 		case strings.Contains(file, "templates") && filepath.Ext(file) == ".html":
 			// Track specific template files for selective cache invalidation
 			if relPath, err := filepath.Rel("templates", file); err == nil {
 				templateFiles = append(templateFiles, filepath.ToSlash(relPath))
+				if s.site.Debug {
+					log.Printf("[DEBUG] Categorized as template: %s", relPath)
+				}
 			}
 		case filepath.Base(file) == "config.toml":
 			hasConfigChange = true
+			if s.site.Debug {
+				log.Printf("[DEBUG] Categorized as config change")
+			}
 		case strings.Contains(file, "static"):
 			hasStaticChange = true
+			if s.site.Debug {
+				log.Printf("[DEBUG] Categorized as static file")
+			}
 		case strings.Contains(file, s.contentDir) && (filepath.Ext(file) == ".md" || filepath.Base(file) == "_index.md"):
 			contentFiles = append(contentFiles, file)
+			if s.site.Debug {
+				log.Printf("[DEBUG] Categorized as content file")
+			}
+		default:
+			if s.site.Debug {
+				log.Printf("[DEBUG] File not categorized - will not trigger specific actions")
+			}
 		}
 	}
 

@@ -64,8 +64,8 @@ func (b *Builder) ReloadTemplates() error {
 
 	b.mu.Lock()
 	b.templ = tmpl
-	// Clear render cache when templates change
-	b.renderCache.Clear()
+	// Note: Don't clear render cache here - let caller do selective invalidation
+	// for better incremental build performance
 	b.mu.Unlock()
 	return nil
 }

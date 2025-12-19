@@ -40,9 +40,10 @@ audit: check-tools
 build-dev: check-tools
     #!/usr/bin/env bash
     set -euo pipefail
-    VERSION=$(cat {{ version_file }} 2>/dev/null || echo "0.0.1")
-    BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    BASE_VERSION=$(cat {{ version_file }} 2>/dev/null || echo "0.0.1")
     GIT_COMMIT=$(git rev-parse --short HEAD)
+    VERSION="${BASE_VERSION}-dev-${GIT_COMMIT}"
+    BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     echo "Building {{ bin_name }} version ${VERSION}..."
     go build -tags=development -v \
         -ldflags "-X main.version=${VERSION} -X main.buildTime=${BUILD_TIME} -X main.commit=${GIT_COMMIT} -w -s" \

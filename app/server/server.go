@@ -25,6 +25,8 @@ type DevServer struct {
 	clients        map[chan string]struct{}
 	mu             sync.Mutex
 	lastConfigHash string
+	fileHashes     map[string]string // Track file content hashes to detect actual changes
+	fileHashesMu   sync.RWMutex      // Protect fileHashes map from concurrent access
 }
 
 // NewDevServer creates a new development server with file watching enabled.
@@ -50,6 +52,7 @@ func NewDevServer(
 		parser:     parser,
 		watcher:    watcher,
 		clients:    make(map[chan string]struct{}),
+		fileHashes: make(map[string]string),
 	}, nil
 }
 

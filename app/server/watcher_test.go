@@ -104,6 +104,7 @@ base_url = "http://localhost"
 		parser:     parser,
 		gen:        gen,
 		clients:    make(map[chan string]struct{}),
+		fileHashes: make(map[string]string),
 	}
 
 	// Add a mock client to test notifications

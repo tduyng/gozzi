@@ -61,6 +61,11 @@ func (s *DevServer) watchChanges() {
 				continue
 			}
 
+			// Check if file content actually changed (skip no-op writes like vim :w)
+			if !s.hasFileChanged(event.Name) {
+				continue
+			}
+
 			// Track which files changed
 			changedFilesMutex.Lock()
 			changedFiles = append(changedFiles, event.Name)
@@ -124,7 +129,20 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	contentFiles := []string{}
 	templateFiles := []string{}
 
+	// Filter out files that haven't actually changed (defensive check)
+	actuallyChangedFiles := make([]string, 0, len(changedFiles))
 	for _, file := range changedFiles {
+		if s.hasFileChanged(file) {
+			actuallyChangedFiles = append(actuallyChangedFiles, file)
+		}
+	}
+
+	// If no files actually changed, skip rebuild
+	if len(actuallyChangedFiles) == 0 {
+		return
+	}
+
+	for _, file := range actuallyChangedFiles {
 		switch {
 		case strings.Contains(file, "templates") && filepath.Ext(file) == ".html":
 			// Track specific template files for selective cache invalidation
@@ -214,6 +232,31 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 			time.Since(start).Milliseconds(),
 		)
 	}
+}
+
+// hasFileChanged checks if a file's content has actually changed by comparing hashes.
+// Returns true if the file is new or its content changed, false for no-op writes.
+func (s *DevServer) hasFileChanged(filePath string) bool {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		// If we can't read the file, assume it changed (e.g., deleted)
+		return true
+	}
+
+	newHash := fmt.Sprintf("%x", md5.Sum(content))
+
+	s.fileHashesMu.Lock()
+	defer s.fileHashesMu.Unlock()
+
+	oldHash, exists := s.fileHashes[filePath]
+	if !exists || oldHash != newHash {
+		// File is new or changed, update hash
+		s.fileHashes[filePath] = newHash
+		return true
+	}
+
+	// File content unchanged (no-op write from vim :w, etc.)
+	return false
 }
 
 func (s *DevServer) reloadConfig() error {

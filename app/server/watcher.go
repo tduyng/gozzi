@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -24,8 +25,10 @@ func (s *DevServer) watchChanges() {
 	}()
 	debounceDuration := 500 * time.Millisecond
 	var (
-		debounceTimer   *time.Timer
-		lastRebuildTime time.Time
+		debounceTimer     *time.Timer
+		lastRebuildTime   time.Time
+		changedFiles      []string
+		changedFilesMutex sync.Mutex
 	)
 
 	paths := []string{
@@ -58,12 +61,23 @@ func (s *DevServer) watchChanges() {
 				continue
 			}
 
+			// Track which files changed
+			changedFilesMutex.Lock()
+			changedFiles = append(changedFiles, event.Name)
+			changedFilesMutex.Unlock()
+
 			if debounceTimer != nil {
 				debounceTimer.Stop()
 			}
 			debounceTimer = time.AfterFunc(debounceDuration, func() {
 				if time.Since(lastRebuildTime) > debounceDuration {
-					s.triggerRebuild()
+					changedFilesMutex.Lock()
+					files := make([]string, len(changedFiles))
+					copy(files, changedFiles)
+					changedFiles = changedFiles[:0]
+					changedFilesMutex.Unlock()
+
+					s.triggerRebuild(files)
 					lastRebuildTime = time.Now()
 				}
 			})
@@ -101,15 +115,34 @@ func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
 	return relevant[ext]
 }
 
-func (s *DevServer) triggerRebuild() {
+func (s *DevServer) triggerRebuild(changedFiles []string) {
 	start := time.Now()
 
-	if err := s.reloadConfig(); err != nil {
-		log.Printf("Config reload error: %v", err)
+	// Determine what type of changes occurred
+	hasTemplateChange := false
+	hasConfigChange := false
+
+	for _, file := range changedFiles {
+		if strings.Contains(file, "templates") && filepath.Ext(file) == ".html" {
+			hasTemplateChange = true
+		}
+		if filepath.Base(file) == "config.toml" {
+			hasConfigChange = true
+		}
 	}
 
-	if err := s.gen.ReloadTemplates(); err != nil {
-		log.Printf("Template reload error: %v", err)
+	// Only reload config if it actually changed
+	if hasConfigChange {
+		if err := s.reloadConfig(); err != nil {
+			log.Printf("Config reload error: %v", err)
+		}
+	}
+
+	// Only reload templates if they actually changed
+	if hasTemplateChange {
+		if err := s.gen.ReloadTemplates(); err != nil {
+			log.Printf("Template reload error: %v", err)
+		}
 	}
 
 	// Reset stats before parsing

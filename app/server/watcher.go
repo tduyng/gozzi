@@ -112,6 +112,9 @@ func (s *DevServer) triggerRebuild() {
 		log.Printf("Template reload error: %v", err)
 	}
 
+	// Reset stats before parsing
+	s.parser.ResetStats()
+
 	if err := s.parser.Parse(s.contentDir); err != nil {
 		log.Printf("Content parse error: %v", err)
 	}
@@ -121,7 +124,27 @@ func (s *DevServer) triggerRebuild() {
 	}
 
 	s.notifyClients()
-	log.Printf("Change detected, build done in %dms", time.Since(start).Milliseconds())
+
+	// Log incremental parsing stats
+	stats := s.parser.GetStats()
+	cacheStats := s.parser.GetHashCache().Stats()
+
+	total := stats.TotalFiles.Load()
+	skipped := stats.FilesSkipped.Load()
+	parsed := stats.FilesParsed.Load()
+
+	if total > 0 {
+		skipRate := float64(skipped) / float64(total) * 100
+		log.Printf("Change detected, build done in %dms (parsed: %d, skipped: %d/%.0f%%, %s)",
+			time.Since(start).Milliseconds(),
+			parsed,
+			skipped,
+			skipRate,
+			cacheStats.String(),
+		)
+	} else {
+		log.Printf("Change detected, build done in %dms", time.Since(start).Milliseconds())
+	}
 }
 
 func (s *DevServer) reloadConfig() error {

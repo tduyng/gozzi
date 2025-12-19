@@ -170,7 +170,7 @@ func (b *Builder) Generate(contentRoot *content.Node) error {
 
 func (b *Builder) processNode(node *content.Node) error {
 	if b.site.Debug {
-		log.Printf("[PROCESS] node=%s type=%s", node.Slug, node.Type)
+		log.Printf("[PROCESS] node=%s type=%v", node.Slug, node.Type)
 	}
 	switch node.Type {
 	case content.NodeTypeSection:

@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/tduyng/gozzi/app/cache"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/parser"
@@ -15,11 +16,12 @@ import (
 )
 
 type Builder struct {
-	site   *config.Site
-	templ  *template.Template
-	parser *parser.ContentParser
-	engine *tplengine.Engine
-	mu     sync.Mutex
+	site        *config.Site
+	templ       *template.Template
+	parser      *parser.ContentParser
+	engine      *tplengine.Engine
+	renderCache *cache.RenderCache // Template render cache for incremental builds
+	mu          sync.Mutex
 }
 
 // NewBuilder creates a new Builder with loaded templates.
@@ -32,9 +34,10 @@ func NewBuilder(site *config.Site, parser *parser.ContentParser) (*Builder, erro
 	})
 
 	b := &Builder{
-		site:   site,
-		parser: parser,
-		engine: engine,
+		site:        site,
+		parser:      parser,
+		engine:      engine,
+		renderCache: cache.NewRenderCache(),
 	}
 
 	tmpl, err := b.loadTemplates()
@@ -61,6 +64,8 @@ func (b *Builder) ReloadTemplates() error {
 
 	b.mu.Lock()
 	b.templ = tmpl
+	// Clear render cache when templates change
+	b.renderCache.Clear()
 	b.mu.Unlock()
 	return nil
 }
@@ -164,6 +169,11 @@ func (b *Builder) hasTemplate(name string) bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	return b.templ.Lookup(name) != nil
+}
+
+// GetRenderCacheStats returns render cache statistics
+func (b *Builder) GetRenderCacheStats() cache.RenderCacheStats {
+	return b.renderCache.Stats()
 }
 
 func (b *Builder) generateRobotsTxt() error {

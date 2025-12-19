@@ -125,9 +125,10 @@ func (s *DevServer) triggerRebuild() {
 
 	s.notifyClients()
 
-	// Log incremental parsing stats
+	// Log incremental parsing and render cache stats
 	stats := s.parser.GetStats()
-	cacheStats := s.parser.GetHashCache().Stats()
+	hashCacheStats := s.parser.GetHashCache().Stats()
+	renderCacheStats := s.gen.GetRenderCacheStats()
 
 	total := stats.TotalFiles.Load()
 	skipped := stats.FilesSkipped.Load()
@@ -135,15 +136,19 @@ func (s *DevServer) triggerRebuild() {
 
 	if total > 0 {
 		skipRate := float64(skipped) / float64(total) * 100
-		log.Printf("Change detected, build done in %dms (parsed: %d, skipped: %d/%.0f%%, %s)",
+		log.Printf("Change detected, build done in %dms (parsed: %d, skipped: %d/%.0f%%, %s, %s)",
 			time.Since(start).Milliseconds(),
 			parsed,
 			skipped,
 			skipRate,
-			cacheStats.String(),
+			hashCacheStats.String(),
+			renderCacheStats.String(),
 		)
 	} else {
-		log.Printf("Change detected, build done in %dms", time.Since(start).Milliseconds())
+		log.Printf("Change detected, build done in %dms (%s)",
+			time.Since(start).Milliseconds(),
+			renderCacheStats.String(),
+		)
 	}
 }
 

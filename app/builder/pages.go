@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/tduyng/gozzi/app/cache"
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/minify"
 	"github.com/tduyng/gozzi/app/utils"
@@ -78,23 +79,27 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	var tpl *template.Template
+	var tplName string
 
 	if node != nil {
-		for _, tplName := range node.TemplateChain() {
-			tpl = b.templ.Lookup(tplName)
+		for _, name := range node.TemplateChain() {
+			tpl = b.templ.Lookup(name)
 			if tpl != nil {
+				tplName = name
 				break
 			}
 		}
 	} else if len(templateNames) > 0 {
-		for _, tplName := range templateNames {
-			tpl = b.templ.Lookup(tplName)
+		for _, name := range templateNames {
+			tpl = b.templ.Lookup(name)
 			if tpl != nil {
+				tplName = name
 				break
 			}
 		}
 	} else {
 		tpl = b.templ.Lookup("404.html")
+		tplName = "404.html"
 	}
 
 	if tpl == nil {
@@ -105,6 +110,78 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		})
 	}
 
+	// Compute data hash for cache key
+	dataHash, err := cache.ComputeDataHash(data)
+	if err != nil {
+		// If hashing fails, fall back to non-cached render
+		return b.renderTemplateDirect(tpl, outputPath, data)
+	}
+
+	// Try to get from cache or compute
+	content, cached, err := b.renderCache.GetOrCompute(tplName, dataHash, func() ([]byte, error) {
+		return b.executeTemplate(tpl, data)
+	})
+
+	if err != nil {
+		return utils.WrapWithContext(err, utils.ErrTemplate, utils.ErrorContext{
+			Operation: "execute_template",
+			Component: "builder",
+			Path:      outputPath,
+		})
+	}
+
+	// If not cached and minification is enabled, minify before storing
+	if !cached && b.site.MinifyHTML {
+		m := minify.New()
+		if minified, err := m.MinifyHTML(content); err == nil {
+			content = minified
+			// Update cache with minified version
+			b.renderCache.Set(tplName, dataHash, content)
+		}
+	}
+
+	// Write output
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "create_output_directory",
+			Component: "builder",
+			Path:      filepath.Dir(outputPath),
+		})
+	}
+
+	if err := os.WriteFile(outputPath, content, 0644); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "write_html_output",
+			Component: "builder",
+			Path:      outputPath,
+		})
+	}
+
+	return nil
+}
+
+// executeTemplate renders a template to bytes
+func (b *Builder) executeTemplate(tpl *template.Template, data any) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := tpl.Execute(&buf, data); err != nil {
+		return nil, err
+	}
+
+	content := buf.Bytes()
+
+	// Apply minification if enabled
+	if b.site.MinifyHTML {
+		m := minify.New()
+		if minified, err := m.MinifyHTML(content); err == nil {
+			content = minified
+		}
+	}
+
+	return content, nil
+}
+
+// renderTemplateDirect renders template without caching (fallback)
+func (b *Builder) renderTemplateDirect(tpl *template.Template, outputPath string, data any) error {
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 			Operation: "create_output_directory",

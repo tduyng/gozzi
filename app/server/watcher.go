@@ -123,26 +123,18 @@ func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
 func (s *DevServer) triggerRebuild(changedFiles []string) {
 	start := time.Now()
 
+	// If no files changed, skip rebuild
+	if len(changedFiles) == 0 {
+		return
+	}
+
 	// Categorize changed files
 	hasConfigChange := false
 	hasStaticChange := false
 	contentFiles := []string{}
 	templateFiles := []string{}
 
-	// Filter out files that haven't actually changed (defensive check)
-	actuallyChangedFiles := make([]string, 0, len(changedFiles))
 	for _, file := range changedFiles {
-		if s.hasFileChanged(file) {
-			actuallyChangedFiles = append(actuallyChangedFiles, file)
-		}
-	}
-
-	// If no files actually changed, skip rebuild
-	if len(actuallyChangedFiles) == 0 {
-		return
-	}
-
-	for _, file := range actuallyChangedFiles {
 		switch {
 		case strings.Contains(file, "templates") && filepath.Ext(file) == ".html":
 			// Track specific template files for selective cache invalidation

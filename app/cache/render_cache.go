@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"hash"
 	"sync"
+	"sync/atomic"
 )
 
 // RenderKey uniquely identifies a template render by template name and data hash
@@ -27,9 +28,9 @@ type RenderCache struct {
 	mu sync.RWMutex
 	// Map of render key -> rendered output
 	cache map[RenderKey][]byte
-	// Statistics
-	hits   uint64
-	misses uint64
+	// Statistics (atomic for lock-free increments)
+	hits   atomic.Uint64
+	misses atomic.Uint64
 }
 
 // NewRenderCache creates a new render cache
@@ -86,15 +87,15 @@ func ComputeDataHashStream(items ...any) (ContentHash, error) {
 // Get retrieves cached render output if it exists
 func (c *RenderCache) Get(template string, dataHash ContentHash) ([]byte, bool) {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	key := RenderKey{Template: template, DataHash: dataHash}
 	output, exists := c.cache[key]
+	c.mu.RUnlock()
 
+	// Update stats atomically (outside lock for better concurrency)
 	if exists {
-		c.hits++
+		c.hits.Add(1)
 	} else {
-		c.misses++
+		c.misses.Add(1)
 	}
 
 	return output, exists
@@ -164,25 +165,29 @@ func (c *RenderCache) Clear() {
 	defer c.mu.Unlock()
 
 	c.cache = make(map[RenderKey][]byte)
-	c.hits = 0
-	c.misses = 0
+	c.hits.Store(0)
+	c.misses.Store(0)
 }
 
 // Stats returns cache statistics
 func (c *RenderCache) Stats() RenderCacheStats {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
+	entries := len(c.cache)
+	c.mu.RUnlock()
 
-	total := c.hits + c.misses
+	// Read atomic counters
+	hits := c.hits.Load()
+	misses := c.misses.Load()
+	total := hits + misses
 	hitRate := float64(0)
 	if total > 0 {
-		hitRate = float64(c.hits) / float64(total) * 100
+		hitRate = float64(hits) / float64(total) * 100
 	}
 
 	return RenderCacheStats{
-		Entries: len(c.cache),
-		Hits:    c.hits,
-		Misses:  c.misses,
+		Entries: entries,
+		Hits:    hits,
+		Misses:  misses,
 		HitRate: hitRate,
 	}
 }

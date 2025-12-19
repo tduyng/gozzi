@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -122,15 +121,7 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 	content, cached, err := b.renderCache.GetOrCompute(tplName, dataHash, func() ([]byte, error) {
 		return b.executeTemplate(tpl, data)
 	})
-
-	// Debug logging
-	if b.site.Debug {
-		cacheStatus := "MISS"
-		if cached {
-			cacheStatus = "HIT"
-		}
-		log.Printf("[RENDER] %s: template=%s path=%s", cacheStatus, tplName, outputPath)
-	}
+	_ = cached // Mark as used for potential future logging
 
 	if err != nil {
 		return utils.WrapWithContext(err, utils.ErrTemplate, utils.ErrorContext{

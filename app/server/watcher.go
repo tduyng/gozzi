@@ -134,36 +134,18 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	templateFiles := []string{}
 
 	for _, file := range changedFiles {
-		if s.site.Debug {
-			log.Printf("[DEBUG] Processing changed file: %s", file)
-		}
 		switch {
 		case strings.Contains(file, "templates") && filepath.Ext(file) == ".html":
 			// Track specific template files for selective cache invalidation
 			if relPath, err := filepath.Rel("templates", file); err == nil {
 				templateFiles = append(templateFiles, filepath.ToSlash(relPath))
-				if s.site.Debug {
-					log.Printf("[DEBUG] Categorized as template: %s", relPath)
-				}
 			}
 		case filepath.Base(file) == "config.toml":
 			hasConfigChange = true
-			if s.site.Debug {
-				log.Printf("[DEBUG] Categorized as config change")
-			}
 		case strings.Contains(file, "static"):
-			if s.site.Debug {
-				log.Printf("[DEBUG] Categorized as static file (will be copied during generate)")
-			}
+			// Static files will be copied during generate
 		case strings.Contains(file, s.contentDir) && (filepath.Ext(file) == ".md" || filepath.Base(file) == "_index.md"):
 			contentFiles = append(contentFiles, file)
-			if s.site.Debug {
-				log.Printf("[DEBUG] Categorized as content file")
-			}
-		default:
-			if s.site.Debug {
-				log.Printf("[DEBUG] File not categorized - will not trigger specific actions")
-			}
 		}
 	}
 
@@ -203,16 +185,6 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	}
 	// Note: Template and static changes don't require re-parsing markdown content.
 	// The existing parsed content will be re-rendered with the new templates/assets.
-
-	if s.site.Debug {
-		log.Printf("[DEBUG] ContentMap keys: %v", func() []string {
-			keys := make([]string, 0, len(s.parser.ContentMap))
-			for k := range s.parser.ContentMap {
-				keys = append(keys, k)
-			}
-			return keys
-		}())
-	}
 
 	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
 		log.Printf("Build error: %v", err)

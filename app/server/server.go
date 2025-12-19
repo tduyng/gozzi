@@ -76,9 +76,6 @@ func (s *DevServer) Start(port int) {
 }
 
 func (s *DevServer) initialize() error {
-	if s.site.Debug {
-		log.Printf("[INIT] Parsing content from: %s", s.contentDir)
-	}
 	if err := s.parser.Parse(s.contentDir); err != nil {
 		return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{
 			Operation: "initial_content_parse",

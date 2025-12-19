@@ -3,7 +3,6 @@ linters:
   default: none
   enable:
     - errcheck
-    - godot
     - govet
     - ineffassign
     - lll

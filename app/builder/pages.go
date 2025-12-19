@@ -161,7 +161,7 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 	return nil
 }
 
-// executeTemplate renders a template to bytes
+// executeTemplate renders a template to bytes.
 func (b *Builder) executeTemplate(tpl *template.Template, data any) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := tpl.Execute(&buf, data); err != nil {
@@ -181,7 +181,7 @@ func (b *Builder) executeTemplate(tpl *template.Template, data any) ([]byte, err
 	return content, nil
 }
 
-// renderTemplateDirect renders template without caching (fallback)
+// renderTemplateDirect renders template without caching (fallback).
 func (b *Builder) renderTemplateDirect(tpl *template.Template, outputPath string, data any) error {
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{

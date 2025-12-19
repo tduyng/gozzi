@@ -15,7 +15,7 @@ type WorkerPool struct {
 	cancel     context.CancelFunc
 }
 
-// NewWorkerPool creates a new worker pool
+// NewWorkerPool creates a new worker pool.
 func NewWorkerPool(ctx context.Context) *WorkerPool {
 	if ctx == nil {
 		ctx = context.Background()

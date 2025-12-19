@@ -254,7 +254,7 @@ func TestContentHash_String(t *testing.T) {
 
 	// Verify it's valid hex
 	for _, c := range str {
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
 			t.Errorf("Invalid hex character in hash: %c", c)
 		}
 	}

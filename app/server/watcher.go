@@ -57,7 +57,22 @@ func (s *DevServer) watchChanges() {
 		select {
 
 		case event, ok := <-s.watcher.Events:
-			if !ok || !s.isRelevantChange(event) {
+			if !ok {
+				continue
+			}
+
+			// Handle directory creation - add new directories to watch list
+			if event.Op&fsnotify.Create == fsnotify.Create {
+				if info, err := os.Stat(event.Name); err == nil && info.IsDir() && !s.shouldIgnore(event.Name) {
+					if err := s.watcher.Add(event.Name); err != nil {
+						log.Printf("Error watching new directory %s: %v", event.Name, err)
+					} else {
+						log.Printf("Now watching new directory: %s", event.Name)
+					}
+				}
+			}
+
+			if !s.isRelevantChange(event) {
 				continue
 			}
 
@@ -204,6 +219,10 @@ func (s *DevServer) hasFileChanged(filePath string) bool {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		// If we can't read the file, assume it changed (e.g., deleted)
+		// Clean up the hash for deleted files
+		s.fileHashesMu.Lock()
+		delete(s.fileHashes, filePath)
+		s.fileHashesMu.Unlock()
 		return true
 	}
 

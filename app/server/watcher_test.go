@@ -258,3 +258,58 @@ func TestDevServer_isRelevantChange(t *testing.T) {
 		})
 	}
 }
+
+func TestDevServer_hasFileChanged(t *testing.T) {
+	tempDir := createTempTestEnvironment(t)
+	defer os.RemoveAll(tempDir)
+
+	site := createTestSite(t)
+	server, err := NewDevServer("", "", site, nil, nil)
+	require.NoError(t, err)
+	defer server.watcher.Close()
+
+	testFile := filepath.Join(tempDir, "test.md")
+
+	t.Run("detects new file", func(t *testing.T) {
+		// Create a new file
+		writeTestFile(t, testFile, "# New Content")
+
+		// Should detect as changed (new file)
+		changed := server.hasFileChanged(testFile)
+		assert.True(t, changed, "New file should be detected as changed")
+	})
+
+	t.Run("detects content change", func(t *testing.T) {
+		// Modify the file
+		writeTestFile(t, testFile, "# Modified Content")
+
+		// Should detect as changed
+		changed := server.hasFileChanged(testFile)
+		assert.True(t, changed, "Modified file should be detected as changed")
+	})
+
+	t.Run("skips no-op writes", func(t *testing.T) {
+		// First read to cache the hash
+		server.hasFileChanged(testFile)
+
+		// Write same content again (simulates vim :w without changes)
+		changed := server.hasFileChanged(testFile)
+		assert.False(t, changed, "Unchanged file should not trigger rebuild")
+	})
+
+	t.Run("handles deleted files", func(t *testing.T) {
+		// Delete the file
+		err := os.Remove(testFile)
+		require.NoError(t, err)
+
+		// Should detect as changed and clean up hash
+		changed := server.hasFileChanged(testFile)
+		assert.True(t, changed, "Deleted file should be detected as changed")
+
+		// Verify hash was removed
+		server.fileHashesMu.RLock()
+		_, exists := server.fileHashes[testFile]
+		server.fileHashesMu.RUnlock()
+		assert.False(t, exists, "Hash should be removed for deleted file")
+	})
+}

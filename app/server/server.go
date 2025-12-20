@@ -76,14 +76,7 @@ func (s *DevServer) Start(port int) {
 }
 
 func (s *DevServer) initialize() error {
-	if err := s.parser.Parse(s.contentDir); err != nil {
-		return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{
-			Operation: "initial_content_parse",
-			Component: "dev_server",
-			Path:      s.contentDir,
-		})
-	}
-
+	// Generate initial site - content has already been parsed by initApp in main.go
 	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
 		return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{
 			Operation: "initial_site_generation",

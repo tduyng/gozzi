@@ -164,6 +164,9 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 		}
 	}
 
+	log.Printf("Rebuild triggered - config: %v, content: %d, templates: %d",
+		hasConfigChange, len(contentFiles), len(templateFiles))
+
 	// Only reload config if it actually changed
 	if hasConfigChange {
 		if err := s.reloadConfig(); err != nil {
@@ -188,29 +191,32 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	s.parser.ResetStats()
 
 	// Incremental content parsing: only parse changed markdown files
+	parseStart := time.Now()
 	if len(contentFiles) > 0 {
 		if err := s.parser.ParseFiles(s.contentDir, contentFiles); err != nil {
 			log.Printf("Content parse error: %v", err)
 		}
+		log.Printf("ParseFiles took %dms", time.Since(parseStart).Milliseconds())
 	} else if hasConfigChange {
 		// For config changes, do a full parse since they may affect all pages
 		if err := s.parser.Parse(s.contentDir); err != nil {
 			log.Printf("Content parse error: %v", err)
 		}
+		log.Printf("Full parse took %dms", time.Since(parseStart).Milliseconds())
 	}
 	// Note: Template and static changes don't require re-parsing markdown content.
 	// The existing parsed content will be re-rendered with the new templates/assets.
 
+	genStart := time.Now()
 	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
 		log.Printf("Build error: %v", err)
 	}
+	log.Printf("Generate took %dms", time.Since(genStart).Milliseconds())
 
 	s.notifyClients()
 
 	// Log build completion
-	log.Printf("Change detected, build done in %dms",
-		time.Since(start).Milliseconds(),
-	)
+	log.Printf("Change detected, build done in %dms", time.Since(start).Milliseconds())
 }
 
 // hasFileChanged checks if a file's content has actually changed by comparing hashes.

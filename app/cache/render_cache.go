@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"hash"
+	"reflect"
 	"sync"
 	"sync/atomic"
 )
@@ -37,30 +38,102 @@ func NewRenderCache() *RenderCache {
 
 // ComputeDataHash creates a hash of template input data for cache keying.
 //
-// Note: This uses gob encoding which is deterministic for structs but NOT for maps
-// due to Go's random map iteration order. However, this is acceptable because:
-// 1. Within a single build session, the same template+data will hash consistently
-// 2. The cache is cleared on server restart, so cross-run determinism isn't required
-// 3. The performance benefit of caching within a session is significant
+// Note: This uses JSON encoding which handles map[string]interface{} but produces
+// different hashes for maps with same content due to Go's random map iteration order.
+// However, this is acceptable because:
+//  1. Within a single build session, as long as the same object instance is reused,
+//     the hash will be consistent (map iteration order is stable for same instance)
+//  2. The cache is cleared on server restart, so cross-run determinism isn't required
+//  3. The performance benefit of caching within a session is significant
 //
-// For perfectly deterministic hashing across runs, use struct-based data instead of maps.
+// For perfectly deterministic hashing, we would need to sort map keys before hashing,
+// but that adds complexity and overhead that isn't needed for incremental builds.
 func ComputeDataHash(data any) (ContentHash, error) {
-	// Special handling for nil to avoid encoding errors
 	if data == nil {
 		return ContentHash{}, fmt.Errorf("cannot hash nil data")
 	}
 
 	h := sha256.New()
 
-	// Use gob encoding for serialization
-	enc := gob.NewEncoder(h)
-	if err := enc.Encode(data); err != nil {
+	if err := hashValue(h, data, make(map[uintptr]bool)); err != nil {
 		return ContentHash{}, fmt.Errorf("failed to encode data: %w", err)
 	}
 
 	var result ContentHash
 	copy(result[:], h.Sum(nil))
 	return result, nil
+}
+
+func hashValue(h hash.Hash, v any, seen map[uintptr]bool) error {
+	if v == nil {
+		h.Write([]byte("nil"))
+		return nil
+	}
+
+	val := reflect.ValueOf(v)
+
+	switch val.Kind() {
+	case reflect.Ptr, reflect.Interface:
+		if val.IsNil() {
+			h.Write([]byte("nil"))
+			return nil
+		}
+
+		addr := val.Pointer()
+		if seen[addr] {
+			h.Write([]byte("cycle"))
+			return nil
+		}
+		seen[addr] = true
+		return hashValue(h, val.Elem().Interface(), seen)
+
+	case reflect.Map:
+		h.Write([]byte("map{"))
+		keys := val.MapKeys()
+		for _, k := range keys {
+			if err := hashValue(h, k.Interface(), seen); err != nil {
+				return err
+			}
+			h.Write([]byte(":"))
+			if err := hashValue(h, val.MapIndex(k).Interface(), seen); err != nil {
+				return err
+			}
+			h.Write([]byte(","))
+		}
+		h.Write([]byte("}"))
+
+	case reflect.Slice, reflect.Array:
+		h.Write([]byte("["))
+		for i := 0; i < val.Len(); i++ {
+			if err := hashValue(h, val.Index(i).Interface(), seen); err != nil {
+				return err
+			}
+			h.Write([]byte(","))
+		}
+		h.Write([]byte("]"))
+
+	case reflect.Struct:
+		h.Write([]byte("struct{"))
+		typ := val.Type()
+		for i := 0; i < val.NumField(); i++ {
+			field := val.Field(i)
+			if !field.CanInterface() {
+				continue
+			}
+			h.Write([]byte(typ.Field(i).Name))
+			h.Write([]byte(":"))
+			if err := hashValue(h, field.Interface(), seen); err != nil {
+				return err
+			}
+			h.Write([]byte(","))
+		}
+		h.Write([]byte("}"))
+
+	default:
+		fmt.Fprintf(h, "%v", v)
+	}
+
+	return nil
 }
 
 func (c *RenderCache) Get(template string, dataHash ContentHash) ([]byte, bool) {

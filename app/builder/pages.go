@@ -110,18 +110,28 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		})
 	}
 
-	// Compute data hash for cache key
-	dataHash, err := cache.ComputeDataHash(data)
+	var cacheKey any
+	if node != nil {
+		cacheKey = map[string]any{
+			"Path":      node.Path,
+			"Content":   string(node.Content),
+			"WordCount": node.WordCount,
+			"ReadTime":  node.ReadTime,
+		}
+	} else {
+		cacheKey = map[string]any{
+			"Template": tplName,
+		}
+	}
+
+	dataHash, err := cache.ComputeDataHash(cacheKey)
 	if err != nil {
-		// If hashing fails, fall back to non-cached render
 		return b.renderTemplateDirect(tpl, outputPath, data)
 	}
 
-	// Try to get from cache or compute
 	content, cached, err := b.renderCache.GetOrCompute(tplName, dataHash, func() ([]byte, error) {
 		return b.executeTemplate(tpl, data)
 	})
-	_ = cached // Mark as used for potential future logging
 
 	if err != nil {
 		return utils.WrapWithContext(err, utils.ErrTemplate, utils.ErrorContext{

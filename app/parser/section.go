@@ -67,18 +67,38 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	node := p.GetOrCreateSection(dir)
-	node.Type = content.NodeTypeSection
-	node.Config = mergedConfig
-	node.Content = template.HTML(htmlBuf.String())
-	node.Permalink = buildPermalink(slug)
-	node.URL = buildURL(p.Site.BaseURL, slug)
+	existingNode := p.GetOrCreateSection(dir)
 
 	wordCount, readTime := calculateReadStats(string(contentPart))
-	node.WordCount = wordCount
-	node.ReadTime = readTime
-	node.Path = strings.TrimPrefix(path, "content/")
-	node.Toc = toc
+	slug = content.GenerateSlug(path, nil)
+
+	newNode := &content.Node{
+		Type:      content.NodeTypeSection,
+		Config:    mergedConfig,
+		Content:   template.HTML(htmlBuf.String()),
+		Permalink: buildPermalink(slug),
+		URL:       buildURL(p.Site.BaseURL, slug),
+		WordCount: wordCount,
+		ReadTime:  readTime,
+		Path:      strings.TrimPrefix(path, "content/"),
+		Toc:       toc,
+		Slug:      existingNode.Slug,
+		Parent:    existingNode.Parent,
+		Children:  existingNode.Children,
+		Higher:    existingNode.Higher,
+		Lower:     existingNode.Lower,
+	}
+
+	p.ContentMap[dir] = newNode
+
+	if newNode.Parent != nil {
+		for i, child := range newNode.Parent.Children {
+			if child == existingNode {
+				newNode.Parent.Children[i] = newNode
+				break
+			}
+		}
+	}
 
 	return nil
 }

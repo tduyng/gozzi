@@ -129,3 +129,49 @@ func TestTagEntry(t *testing.T) {
 	_, exists = entry.Seen[page2.Path]
 	assert.True(t, exists)
 }
+
+func TestTagIncrementalRebuild(t *testing.T) {
+	site := &config.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+	p := NewParser(site)
+
+	// First parse: create a page with a tag
+	frontMatter1 := &config.FrontMatter{
+		Tags: []string{"docker"},
+	}
+	pageNode1 := &content.Node{
+		Path: "blog/docker-guide.md",
+		Config: map[string]any{
+			"title": "Original Title",
+		},
+	}
+	p.parseTags(frontMatter1, pageNode1)
+
+	// Verify tag was added
+	entry := p.Tags["docker"]
+	assert.NotNil(t, entry)
+	assert.Equal(t, 1, len(entry.Pages))
+	assert.Equal(t, pageNode1, entry.Pages[0])
+	assert.Equal(t, "Original Title", entry.Pages[0].Config["title"])
+
+	// Second parse: simulate incremental rebuild with new node pointer
+	frontMatter2 := &config.FrontMatter{
+		Tags: []string{"docker"},
+	}
+	pageNode2 := &content.Node{
+		Path: "blog/docker-guide.md", // Same path
+		Config: map[string]any{
+			"title": "Updated Title", // Different content
+		},
+	}
+	p.parseTags(frontMatter2, pageNode2)
+
+	// Verify: still only 1 page in tag, but pointer updated to new node
+	entry = p.Tags["docker"]
+	assert.Equal(t, 1, len(entry.Pages), "Should still have exactly 1 page, not duplicate")
+	assert.Equal(t, pageNode2, entry.Pages[0], "Should point to NEW node")
+	assert.Equal(t, "Updated Title", entry.Pages[0].Config["title"], "Should have updated content")
+	assert.NotEqual(t, pageNode1, entry.Pages[0], "Should NOT point to old node")
+}

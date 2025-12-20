@@ -37,9 +37,18 @@ func (p *ContentParser) parseTags(pageConfig *config.FrontMatter, pageNode *cont
 		}
 
 		if _, exists := entry.Seen[pageNode.Path]; !exists {
+			// New page with this tag
 			entry.Pages = append(entry.Pages, pageNode)
 			entry.Seen[pageNode.Path] = struct{}{}
 			entry.Count = len(entry.Pages)
+		} else {
+			// Page already exists - replace the old pointer with new one
+			for i, page := range entry.Pages {
+				if page.Path == pageNode.Path {
+					entry.Pages[i] = pageNode
+					break
+				}
+			}
 		}
 	}
 }

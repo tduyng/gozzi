@@ -101,7 +101,19 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		Toc:       toc,
 	}
 
-	parent.Children = append(parent.Children, pageNode)
+	// Check if this page already exists in parent's children and replace it
+	// Otherwise append as new child
+	found := false
+	for i, child := range parent.Children {
+		if child.Path == pageNode.Path {
+			parent.Children[i] = pageNode
+			found = true
+			break
+		}
+	}
+	if !found {
+		parent.Children = append(parent.Children, pageNode)
+	}
 
 	if len(pageConfig.Tags) > 0 {
 		p.parseTags(pageConfig, pageNode)

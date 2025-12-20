@@ -100,6 +100,10 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		}
 	}
 
+	for _, child := range newNode.Children {
+		child.Parent = newNode
+	}
+
 	return nil
 }
 

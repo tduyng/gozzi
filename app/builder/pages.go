@@ -193,7 +193,7 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 					key["BlogPosts"] = blogChildKeys
 				}
 			} else if len(node.Children) > 0 {
-				// Other sections: include direct children
+				// Other sections: include direct children metadata
 				childKeys := make([]string, len(node.Children))
 				for i, child := range node.Children {
 					parts := []string{child.Path}
@@ -204,6 +204,18 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 					if date, ok := child.Config["date"].(time.Time); ok {
 						parts = append(parts, date.Format("2006-01-02"))
 					}
+
+					// Include description for blog posts
+					if desc, ok := child.Config["description"].(string); ok {
+						parts = append(parts, desc)
+					}
+
+					// Include content for notes (since notes.html renders child content)
+					if node.Slug == "notes" {
+						parts = append(parts, string(child.Content))
+					}
+
+					// Include extra config (contains img, featured, etc.)
 					if extra, ok := child.Config["extra"]; ok {
 						if extraMap, ok := extra.(map[string]any); ok {
 							keys := make([]string, 0, len(extraMap))

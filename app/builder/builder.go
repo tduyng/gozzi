@@ -24,6 +24,15 @@ type Builder struct {
 	mu          sync.Mutex
 }
 
+// GenerateOptions configures how the site generation should run
+type GenerateOptions struct {
+	// Incremental mode only generates changed pages instead of full site rebuild
+	Incremental bool
+
+	// ChangedFiles lists the files that changed (for incremental mode)
+	ChangedFiles []string
+}
+
 // NewBuilder creates a new Builder with loaded templates.
 func NewBuilder(site *config.Site, parser *parser.ContentParser) (*Builder, error) {
 	engine := tplengine.NewEngine(&tplengine.EngineConfig{
@@ -85,7 +94,25 @@ func (b *Builder) InvalidateTemplateCache(templateNames []string) int {
 }
 
 // Generate processes the content tree and generates the complete static site.
+// This is a convenience wrapper around GenerateWithOptions with default settings.
 func (b *Builder) Generate(contentRoot *content.Node) error {
+	return b.GenerateWithOptions(contentRoot, GenerateOptions{
+		Incremental: false, // Default to full build for backwards compatibility
+	})
+}
+
+// GenerateWithOptions processes the content tree with specific generation options.
+// Supports both full builds and incremental builds based on options.
+func (b *Builder) GenerateWithOptions(contentRoot *content.Node, opts GenerateOptions) error {
+	// Route to appropriate generation strategy
+	if opts.Incremental {
+		return b.incrementalGenerate(contentRoot, opts)
+	}
+	return b.fullGenerate(contentRoot)
+}
+
+// fullGenerate performs a complete site rebuild (original Generate logic)
+func (b *Builder) fullGenerate(contentRoot *content.Node) error {
 	// Silently handle nil contentRoot (empty content directory)
 	if contentRoot == nil {
 		// Just generate auxiliary pages (404, robots.txt, etc.)
@@ -171,6 +198,20 @@ func (b *Builder) Generate(contentRoot *content.Node) error {
 	}
 
 	return b.copyStaticAssets()
+}
+
+// incrementalGenerate performs a selective rebuild (only changed content)
+// This is a placeholder that will be implemented in subsequent steps
+func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOptions) error {
+	// TODO: Implement incremental generation in next phase
+	// For now, fallback to full build
+	fmt.Println("DEBUG: incrementalGenerate called, falling back to full build")
+	return b.fullGenerate(contentRoot)
+}
+
+// GetCacheStats returns the current render cache statistics.
+func (b *Builder) GetCacheStats() cache.RenderCacheStats {
+	return b.renderCache.Stats()
 }
 
 func (b *Builder) processNode(node *content.Node) error {

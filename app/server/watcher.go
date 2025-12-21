@@ -211,7 +211,15 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
 		log.Printf("Build error: %v", err)
 	}
-	log.Printf("Generate took %dms", time.Since(genStart).Milliseconds())
+	genDuration := time.Since(genStart).Milliseconds()
+
+	// Log cache stats to understand how well incremental builds are working
+	cacheStats := s.gen.GetCacheStats()
+	log.Printf("Generate took %dms (cache: %d hits, %d misses, %.1f%% hit rate)",
+		genDuration,
+		cacheStats.Hits,
+		cacheStats.Misses,
+		cacheStats.HitRate)
 
 	s.notifyClients()
 

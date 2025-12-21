@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -142,7 +143,87 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		// Include extra config which contains comment, reaction, toc, copy, etc.
 		// These fields affect template rendering via partials
 		if extra, ok := node.Config["extra"]; ok {
-			key["Extra"] = fmt.Sprintf("%+v", extra)
+			// Store as-is, the cache hash function handles maps deterministically
+			key["Extra"] = extra
+		}
+
+		// For section pages, include children metadata in cache key
+		// Templates iterate over children and use their config (images, featured status, etc.)
+		if node.Type == content.NodeTypeSection {
+			// Special handling for homepage: include blog posts since home.html uses get_section("blog")
+			isHomepage := (node.Path == "." || node.Path == "" || node.Path == "_index.md" || node.Slug == "" || node.Slug == "/")
+
+			if isHomepage {
+				// Homepage template uses get_section("blog").Children
+				if blogSection, exists := b.parser.ContentMap["blog"]; exists && len(blogSection.Children) > 0 {
+					blogChildKeys := make([]string, len(blogSection.Children))
+					for i, post := range blogSection.Children {
+						// Include fields that affect homepage rendering
+						parts := []string{post.Path}
+
+						if title, ok := post.Config["title"].(string); ok {
+							parts = append(parts, title)
+						}
+						if date, ok := post.Config["date"].(time.Time); ok {
+							parts = append(parts, date.Format("2006-01-02"))
+						}
+						if desc, ok := post.Config["description"].(string); ok {
+							parts = append(parts, desc)
+						}
+
+						// Critical: include extra config (contains img, featured, etc.)
+						if extra, ok := post.Config["extra"]; ok {
+							if extraMap, ok := extra.(map[string]any); ok {
+								keys := make([]string, 0, len(extraMap))
+								for k := range extraMap {
+									keys = append(keys, k)
+								}
+								sort.Strings(keys)
+								extraParts := make([]string, 0, len(keys))
+								for _, k := range keys {
+									extraParts = append(extraParts, fmt.Sprintf("%s=%v", k, extraMap[k]))
+								}
+								parts = append(parts, strings.Join(extraParts, ","))
+							}
+						}
+
+						blogChildKeys[i] = strings.Join(parts, "|")
+					}
+					key["BlogPosts"] = blogChildKeys
+				}
+			} else if len(node.Children) > 0 {
+				// Other sections: include direct children
+				childKeys := make([]string, len(node.Children))
+				for i, child := range node.Children {
+					parts := []string{child.Path}
+
+					if title, ok := child.Config["title"].(string); ok {
+						parts = append(parts, title)
+					}
+					if date, ok := child.Config["date"].(time.Time); ok {
+						parts = append(parts, date.Format("2006-01-02"))
+					}
+					if extra, ok := child.Config["extra"]; ok {
+						if extraMap, ok := extra.(map[string]any); ok {
+							keys := make([]string, 0, len(extraMap))
+							for k := range extraMap {
+								keys = append(keys, k)
+							}
+							sort.Strings(keys)
+							extraParts := make([]string, 0, len(keys))
+							for _, k := range keys {
+								extraParts = append(extraParts, fmt.Sprintf("%s=%v", k, extraMap[k]))
+							}
+							parts = append(parts, strings.Join(extraParts, ","))
+						} else {
+							parts = append(parts, fmt.Sprintf("%v", extra))
+						}
+					}
+
+					childKeys[i] = strings.Join(parts, "|")
+				}
+				key["Children"] = childKeys
+			}
 		}
 
 		cacheKey = key

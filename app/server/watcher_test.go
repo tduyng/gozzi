@@ -235,9 +235,9 @@ func TestDevServer_isRelevantChange(t *testing.T) {
 			expected: true,
 		},
 		{
-			name:     "txt file change is not relevant",
+			name:     "txt file change is relevant",
 			event:    fsnotify.Event{Name: "/content/readme.txt", Op: fsnotify.Write},
-			expected: false,
+			expected: true,
 		},
 		{
 			name:     "log file change is not relevant",
@@ -245,9 +245,9 @@ func TestDevServer_isRelevantChange(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "image file change is not relevant",
+			name:     "image file change is relevant",
 			event:    fsnotify.Event{Name: "/static/image.png", Op: fsnotify.Write},
-			expected: false,
+			expected: true,
 		},
 	}
 

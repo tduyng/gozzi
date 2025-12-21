@@ -261,13 +261,15 @@ func copyFile(src, dst string) error {
 		_ = out.Close()
 	}()
 
-	if _, err = io.Copy(out, in); err != nil {
+	copied, err := io.Copy(out, in)
+	if err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 			Operation: "copy_file_content",
 			Component: "builder",
 			Path:      fmt.Sprintf("%s -> %s", src, dst),
 		})
 	}
+	_ = copied // Suppress unused variable warning
 	return nil
 }
 

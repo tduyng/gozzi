@@ -127,12 +127,51 @@ func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
 
 	ext := filepath.Ext(event.Name)
 	relevant := map[string]bool{
+		// Content and templates
 		".md":   true,
 		".html": true,
-		".css":  true,
-		".js":   true,
+		// Stylesheets and scripts
+		".css": true,
+		".js":  true,
+		// Images
+		".png":  true,
+		".jpg":  true,
+		".jpeg": true,
+		".gif":  true,
+		".webp": true,
+		".svg":  true,
+		// Other assets
+		".ico":  true,
+		".xml":  true,
+		".json": true,
+		".txt":  true,
 	}
 	return relevant[ext]
+}
+
+// findParentMarkdownFile finds the markdown file that owns an asset
+// For content/blog/post-name/img/image.png -> content/blog/post-name/index.md
+func (s *DevServer) findParentMarkdownFile(assetPath string) string {
+	// Get directory of the asset (e.g., content/blog/post/img)
+	dir := filepath.Dir(assetPath)
+
+	// Walk up the directory tree looking for index.md
+	for dir != s.contentDir && dir != "." && dir != "/" {
+		// Go up one level (from img -> post-name)
+		parentDir := filepath.Dir(dir)
+
+		// Check for index.md in this directory
+		indexPath := filepath.Join(parentDir, "index.md")
+		if _, err := os.Stat(indexPath); err == nil {
+			return indexPath
+		}
+
+		// Move up for next iteration
+		dir = parentDir
+	}
+
+	// No markdown file found - return empty string to skip
+	return ""
 }
 
 func (s *DevServer) triggerRebuild(changedFiles []string) {
@@ -147,25 +186,32 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	hasConfigChange := false
 	contentFiles := []string{}
 	templateFiles := []string{}
+	assetFiles := []string{}
 
 	for _, file := range changedFiles {
 		switch {
 		case strings.Contains(file, "templates") && filepath.Ext(file) == ".html":
-			// Track specific template files for selective cache invalidation
 			if relPath, err := filepath.Rel("templates", file); err == nil {
 				templateFiles = append(templateFiles, filepath.ToSlash(relPath))
 			}
 		case filepath.Base(file) == "config.toml":
 			hasConfigChange = true
-		case strings.Contains(file, "static"):
-			// Static files will be copied during generate
+		case strings.HasPrefix(file, "static/") || strings.Contains(file, "/static/"):
+			assetFiles = append(assetFiles, file)
 		case strings.Contains(file, s.contentDir) && (filepath.Ext(file) == ".md" || filepath.Base(file) == "_index.md"):
 			contentFiles = append(contentFiles, file)
+		case strings.Contains(file, s.contentDir):
+			parentMd := s.findParentMarkdownFile(file)
+			if parentMd != "" {
+				contentFiles = append(contentFiles, parentMd)
+			} else {
+				assetFiles = append(assetFiles, file)
+			}
 		}
 	}
 
-	log.Printf("Rebuild triggered - config: %v, content: %d, templates: %d",
-		hasConfigChange, len(contentFiles), len(templateFiles))
+	log.Printf("Rebuild triggered - config: %v, content: %d, templates: %d, assets: %d",
+		hasConfigChange, len(contentFiles), len(templateFiles), len(assetFiles))
 
 	// Only reload config if it actually changed
 	if hasConfigChange {

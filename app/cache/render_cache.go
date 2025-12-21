@@ -130,7 +130,9 @@ func hashValue(h hash.Hash, v any, seen map[uintptr]bool) error {
 		h.Write([]byte("}"))
 
 	default:
-		fmt.Fprintf(h, "%v", v)
+		if _, err := fmt.Fprintf(h, "%v", v); err != nil {
+			return err
+		}
 	}
 
 	return nil

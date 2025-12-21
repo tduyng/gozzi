@@ -242,15 +242,27 @@ func (b *Builder) copyPageAssets(node *content.Node) error {
 		return nil
 	}
 
-	if _, err := os.Stat(assets); os.IsNotExist(err) {
-		return nil
-	}
-
 	dest := filepath.Join(
 		b.site.OutputDir,
 		node.Slug,
 		filepath.Base(assets),
 	)
+
+	// Check if source assets directory exists
+	if _, err := os.Stat(assets); os.IsNotExist(err) {
+		// Source deleted - remove destination directory if it exists
+		return os.RemoveAll(dest)
+	}
+
+	// Remove existing destination directory to clean up deleted files
+	// This ensures incremental builds properly sync deletions
+	if err := os.RemoveAll(dest); err != nil && !os.IsNotExist(err) {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "remove_old_assets",
+			Component: "builder",
+			Path:      dest,
+		})
+	}
 
 	return copyDir(assets, dest)
 }

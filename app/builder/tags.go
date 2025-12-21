@@ -85,6 +85,16 @@ func (b *Builder) generateTagPage(tag string, entry *parser.TagEntry) error {
 		return dateB.Compare(dateA)
 	})
 
+	// Convert nodes to minimal representations for cache efficiency
+	// Tag pages only need title, date, permalink - not full content
+	pageList := make([]map[string]any, len(sortedPages))
+	for i, node := range sortedPages {
+		pageList[i] = map[string]any{
+			"Permalink": node.Permalink,
+			"Config":    node.Config,
+		}
+	}
+
 	data := map[string]any{
 		"Site": map[string]any{
 			"Config": b.site.ToConfig(),
@@ -92,7 +102,7 @@ func (b *Builder) generateTagPage(tag string, entry *parser.TagEntry) error {
 		"Page": map[string]any{
 			"Title":     fmt.Sprintf("Tag: %s", tag),
 			"Tag":       tag,
-			"Pages":     sortedPages,
+			"Pages":     pageList, // Use minimal representation instead of full nodes
 			"Permalink": b.buildTagPermalink(tag),
 			"Path":      b.buildTagPermalink(tag),
 		},

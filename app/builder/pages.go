@@ -16,7 +16,9 @@ import (
 
 func (b *Builder) generateSection(node *content.Node) error {
 	outputPath := filepath.Join(b.site.OutputDir, node.Slug, "index.html")
-	nodeMap := node.ToMap()
+	// Use minimal representation for better cache efficiency
+	// Section templates don't need full HTML content of children
+	nodeMap := node.ToMapMinimal()
 
 	data := map[string]any{
 		"Site": map[string]any{
@@ -42,7 +44,8 @@ func (b *Builder) generatePage(node *content.Node) error {
 		}
 	}
 	nodeMap := node.ToMap()
-	parentMap := node.Parent.ToMap()
+	// Use minimal representation for parent section (doesn't need full content of siblings)
+	parentMap := node.Parent.ToMapMinimal()
 
 	data := map[string]any{
 		"Site": map[string]any{

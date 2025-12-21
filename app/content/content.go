@@ -73,6 +73,43 @@ func (node *Node) ToMap() map[string]any {
 	}
 }
 
+// ToMapMinimal returns a minimal map representation for cache efficiency.
+// Used when full content is not needed (e.g., in children lists, tag pages).
+// Only includes metadata, excludes HTML content and ToC to reduce cache key size.
+func (node *Node) ToMapMinimal() map[string]any {
+	// For children, create minimal representations recursively
+	minimalChildren := make([]*Node, len(node.Children))
+	for i, child := range node.Children {
+		minimalChildren[i] = &Node{
+			Type:      child.Type,
+			Path:      child.Path,
+			Slug:      child.Slug,
+			Permalink: child.Permalink,
+			URL:       child.URL,
+			Config:    child.Config,
+			// Omit Content and Toc - not needed for listings
+			WordCount: child.WordCount,
+			ReadTime:  child.ReadTime,
+		}
+	}
+
+	return map[string]any{
+		"Type":      node.Type,
+		"Path":      node.Path,
+		"Slug":      node.Slug,
+		"Permalink": node.Permalink,
+		"URL":       node.URL,
+		"Config":    node.Config,
+		// Omit Content - not needed for section pages
+		"Children":  minimalChildren,
+		"Higher":    node.Higher,
+		"Lower":     node.Lower,
+		"WordCount": node.WordCount,
+		"ReadTime":  node.ReadTime,
+		// Omit Toc - not needed for section pages
+	}
+}
+
 // GenerateSlug generates a URL-friendly slug from a file path.
 func GenerateSlug(path string, parent *Node) string {
 	base := extractBaseName(path)

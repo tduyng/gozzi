@@ -276,6 +276,18 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
+	// Homepage: regenerate if blog posts changed (featured posts display on homepage)
+	if tracker.ShouldRegenerateHome() {
+		if homeNode, exists := b.parser.ContentMap["."]; exists {
+			if err := b.processNode(homeNode); err != nil {
+				return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
+					Operation: "regenerate_homepage",
+					Component: "builder",
+				})
+			}
+		}
+	}
+
 	// Tag pages: only regenerate affected tags
 	if tracker.GetAffectedTagsCount() > 0 {
 		if err := b.generateSelectiveTags(tracker.GetAffectedTags()); err != nil {

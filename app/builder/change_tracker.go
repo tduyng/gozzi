@@ -18,6 +18,7 @@ type ChangeTracker struct {
 	needsFeed    bool                     // Whether Atom feed needs regeneration
 	needsRobots  bool                     // Whether robots.txt needs regeneration
 	needs404     bool                     // Whether 404 page needs regeneration
+	needsHome    bool                     // Whether homepage needs regeneration
 	contentMap   map[string]*content.Node // Reference to content map
 	parser       *parser.ContentParser    // Reference to parser for tag lookup
 }
@@ -34,6 +35,7 @@ func NewChangeTracker(contentMap map[string]*content.Node, p *parser.ContentPars
 		needsFeed:    false,
 		needsRobots:  false,
 		needs404:     false,
+		needsHome:    false,
 	}
 }
 
@@ -87,6 +89,9 @@ func (ct *ChangeTracker) analyzeFile(file, contentDir string) {
 	// Feed needs regeneration if blog posts changed
 	if ct.isBlogPost(relPath) {
 		ct.needsFeed = true
+		// Homepage needs regeneration if blog posts changed
+		// (homepage displays featured posts with images from extra config)
+		ct.needsHome = true
 	}
 }
 
@@ -196,6 +201,11 @@ func (ct *ChangeTracker) ShouldRegenerateRobots() bool {
 // ShouldRegenerate404 returns true if 404 page needs regeneration
 func (ct *ChangeTracker) ShouldRegenerate404() bool {
 	return ct.needs404
+}
+
+// ShouldRegenerateHome returns true if homepage needs regeneration
+func (ct *ChangeTracker) ShouldRegenerateHome() bool {
+	return ct.needsHome
 }
 
 // GetChangedNodesCount returns the number of nodes that need regeneration

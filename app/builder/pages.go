@@ -151,7 +151,8 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		// Templates iterate over children and use their config (images, featured status, etc.)
 		if node.Type == content.NodeTypeSection {
 			// Special handling for homepage: include blog posts since home.html uses get_section("blog")
-			isHomepage := (node.Path == "." || node.Path == "" || node.Path == "_index.md" || node.Slug == "" || node.Slug == "/")
+			isHomepage := node.Path == "." || node.Path == "" || node.Path == "_index.md" ||
+				node.Slug == "" || node.Slug == "/"
 
 			if isHomepage {
 				// Homepage template uses get_section("blog").Children

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"hash"
 	"reflect"
+	"sort"
 	"sync"
 	"sync/atomic"
 )
@@ -37,17 +38,7 @@ func NewRenderCache() *RenderCache {
 }
 
 // ComputeDataHash creates a hash of template input data for cache keying.
-//
-// Note: This uses JSON encoding which handles map[string]interface{} but produces
-// different hashes for maps with same content due to Go's random map iteration order.
-// However, this is acceptable because:
-//  1. Within a single build session, as long as the same object instance is reused,
-//     the hash will be consistent (map iteration order is stable for same instance)
-//  2. The cache is cleared on server restart, so cross-run determinism isn't required
-//  3. The performance benefit of caching within a session is significant
-//
-// For perfectly deterministic hashing, we would need to sort map keys before hashing,
-// but that adds complexity and overhead that isn't needed for incremental builds.
+// The hash is deterministic and stable across identical data structures by sorting map keys.
 func ComputeDataHash(data any) (ContentHash, error) {
 	if data == nil {
 		return ContentHash{}, fmt.Errorf("cannot hash nil data")
@@ -90,15 +81,31 @@ func hashValue(h hash.Hash, v any, seen map[uintptr]bool) error {
 	case reflect.Map:
 		h.Write([]byte("map{"))
 		keys := val.MapKeys()
-		for _, k := range keys {
-			if err := hashValue(h, k.Interface(), seen); err != nil {
-				return err
+
+		// Sort keys for deterministic hashing
+		// Convert keys to strings for sorting
+		keyStrs := make([]string, len(keys))
+		for i, k := range keys {
+			keyStrs[i] = fmt.Sprintf("%v", k.Interface())
+		}
+		sort.Strings(keyStrs)
+
+		// Hash in sorted order
+		for _, keyStr := range keyStrs {
+			// Find the original key that matches this string
+			for _, k := range keys {
+				if fmt.Sprintf("%v", k.Interface()) == keyStr {
+					if err := hashValue(h, k.Interface(), seen); err != nil {
+						return err
+					}
+					h.Write([]byte(":"))
+					if err := hashValue(h, val.MapIndex(k).Interface(), seen); err != nil {
+						return err
+					}
+					h.Write([]byte(","))
+					break
+				}
 			}
-			h.Write([]byte(":"))
-			if err := hashValue(h, val.MapIndex(k).Interface(), seen); err != nil {
-				return err
-			}
-			h.Write([]byte(","))
 		}
 		h.Write([]byte("}"))
 

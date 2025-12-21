@@ -7,6 +7,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/tduyng/gozzi/app/cache"
 	"github.com/tduyng/gozzi/app/content"
@@ -115,16 +117,34 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 
 	var cacheKey any
 	if node != nil {
-		cacheKey = map[string]any{
+		// For regular pages, include node content and config
+		// Convert time.Time to stable string representation
+		key := map[string]any{
 			"Path":      node.Path,
 			"Content":   string(node.Content),
 			"WordCount": node.WordCount,
 			"ReadTime":  node.ReadTime,
 		}
+
+		// Add config fields that affect rendering
+		if title, ok := node.Config["title"].(string); ok {
+			key["Title"] = title
+		}
+		if date, ok := node.Config["date"].(time.Time); ok {
+			key["Date"] = date.Format("2006-01-02")
+		}
+		if template, ok := node.Config["template"].(string); ok {
+			key["Template"] = template
+		}
+		if tags, ok := node.Config["tags"]; ok {
+			key["Tags"] = fmt.Sprint(tags)
+		}
+
+		cacheKey = key
 	} else {
-		// For auxiliary pages (tags, sitemap, feed, 404), hash the actual data
-		// to ensure each unique page gets its own cache entry
-		cacheKey = data
+		// For auxiliary pages (tags, 404, etc.), create a stable cache key
+		// by extracting only the data that affects rendering, converted to stable strings
+		cacheKey = b.createStableCacheKey(tplName, data)
 	}
 
 	dataHash, err := cache.ComputeDataHash(cacheKey)
@@ -232,6 +252,99 @@ func (b *Builder) renderTemplateDirect(tpl *template.Template, outputPath string
 	}
 
 	return nil
+}
+
+// createStableCacheKey creates a deterministic cache key for auxiliary pages.
+// It converts unstable data (time.Time, maps) into stable representations.
+func (b *Builder) createStableCacheKey(templateName string, data any) map[string]any {
+	key := map[string]any{
+		"Template": templateName,
+	}
+
+	dataMap, ok := data.(map[string]any)
+	if !ok {
+		return key
+	}
+
+	pageData, ok := dataMap["Page"].(map[string]any)
+	if !ok {
+		return key
+	}
+
+	// For tag pages: Tag name + sorted list of (permalink, title, date)
+	if tag, ok := pageData["Tag"].(string); ok {
+		key["Tag"] = tag
+
+		if pages, ok := pageData["Pages"].([]map[string]any); ok {
+			// Create stable representation of pages
+			pageKeys := make([]string, len(pages))
+			for i, page := range pages {
+				// Build a stable string: "permalink|title|date"
+				parts := []string{}
+
+				if permalink, ok := page["Permalink"].(string); ok {
+					parts = append(parts, permalink)
+				}
+
+				if config, ok := page["Config"].(map[string]any); ok {
+					if title, ok := config["title"].(string); ok {
+						parts = append(parts, title)
+					}
+					if date, ok := config["date"].(time.Time); ok {
+						// Convert time to stable string (day precision)
+						parts = append(parts, date.Format("2006-01-02"))
+					}
+					// Add featured status if present
+					if extra, ok := config["extra"].(map[string]any); ok {
+						if featured, ok := extra["featured"].(bool); ok {
+							parts = append(parts, fmt.Sprintf("featured:%v", featured))
+						}
+					}
+				}
+
+				pageKeys[i] = strings.Join(parts, "|")
+			}
+			key["Pages"] = pageKeys
+		}
+	}
+
+	// For tags index page: sorted list of (tag name, count, permalink)
+	if tags, ok := pageData["Tags"].([]map[string]any); ok {
+		tagKeys := make([]string, len(tags))
+		for i, tag := range tags {
+			name := fmt.Sprint(tag["Name"])
+			count := fmt.Sprint(tag["Count"])
+			permalink := fmt.Sprint(tag["Permalink"])
+			tagKeys[i] = fmt.Sprintf("%s:%s:%s", name, count, permalink)
+		}
+		key["Tags"] = tagKeys
+	}
+
+	// For 404 and other pages: use title
+	if title, ok := pageData["Title"].(string); ok {
+		key["Title"] = title
+	}
+
+	// Use path for additional uniqueness
+	if path, ok := pageData["Path"].(string); ok {
+		key["Path"] = path
+	}
+
+	// Include relevant Site.Config data that affects rendering
+	// (404 page uses site title and base URL)
+	if siteData, ok := dataMap["Site"].(map[string]any); ok {
+		if config, ok := siteData["Config"].(map[string]any); ok {
+			// Include fields that are actually rendered in templates
+			if baseURL, ok := config["base_url"]; ok {
+				key["SiteBaseURL"] = fmt.Sprint(baseURL)
+			}
+			if siteTitle, ok := config["title"]; ok {
+				key["SiteTitle"] = fmt.Sprint(siteTitle)
+			}
+		}
+	}
+
+	return key
 }
 
 func (b *Builder) copyPageAssets(node *content.Node) error {

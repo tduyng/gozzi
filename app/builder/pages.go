@@ -19,9 +19,15 @@ import (
 
 func (b *Builder) generateSection(node *content.Node) error {
 	outputPath := filepath.Join(b.site.OutputDir, node.Slug, "index.html")
-	// Use minimal representation for better cache efficiency
-	// Section templates don't need full HTML content of children
-	nodeMap := node.ToMapMinimal()
+
+	// Notes section needs full content of children (notes.html renders {{ .Content }})
+	// Other sections can use minimal representation for cache efficiency
+	var nodeMap map[string]any
+	if node.Slug == "notes" {
+		nodeMap = node.ToMap()
+	} else {
+		nodeMap = node.ToMapMinimal()
+	}
 
 	data := map[string]any{
 		"Site": map[string]any{

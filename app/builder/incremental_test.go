@@ -1,5 +1,3 @@
-// ABOUTME: Integration tests for incremental build functionality
-// ABOUTME: Validates that incremental builds produce identical output to full builds
 package builder
 
 import (

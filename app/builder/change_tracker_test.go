@@ -1,5 +1,3 @@
-// ABOUTME: Tests for ChangeTracker dependency analysis
-// ABOUTME: Verifies correct detection of what needs regeneration
 package builder
 
 import (

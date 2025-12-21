@@ -1,5 +1,4 @@
-// ABOUTME: ChangeTracker tracks which content changed for incremental builds
-// ABOUTME: Analyzes dependencies to determine minimal regeneration set
+// ChangeTracker tracks which content changed for incremental builds
 package builder
 
 import (

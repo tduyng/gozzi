@@ -208,14 +208,36 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	// The existing parsed content will be re-rendered with the new templates/assets.
 
 	genStart := time.Now()
-	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
-		log.Printf("Build error: %v", err)
+	var err error
+
+	// Use incremental builds when only content files changed (no config/template changes)
+	if len(contentFiles) > 0 && !hasConfigChange && len(templateFiles) == 0 {
+		// Incremental build: only regenerate changed content and affected dependencies
+		err = s.gen.GenerateWithOptions(s.parser.ContentMap["."], builder.GenerateOptions{
+			Incremental:  true,
+			ChangedFiles: contentFiles,
+			ContentDir:   s.contentDir,
+		})
+		if err != nil {
+			log.Printf("Incremental build error: %v", err)
+		}
+	} else {
+		// Full build: config or template changes affect everything
+		err = s.gen.Generate(s.parser.ContentMap["."])
+		if err != nil {
+			log.Printf("Full build error: %v", err)
+		}
 	}
 	genDuration := time.Since(genStart).Milliseconds()
 
 	// Log cache stats to understand how well incremental builds are working
 	cacheStats := s.gen.GetCacheStats()
-	log.Printf("Generate took %dms (cache: %d hits, %d misses, %.1f%% hit rate)",
+	buildType := "full"
+	if len(contentFiles) > 0 && !hasConfigChange && len(templateFiles) == 0 {
+		buildType = "incremental"
+	}
+	log.Printf("Generate (%s) took %dms (cache: %d hits, %d misses, %.1f%% hit rate)",
+		buildType,
 		genDuration,
 		cacheStats.Hits,
 		cacheStats.Misses,

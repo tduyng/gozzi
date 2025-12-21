@@ -46,15 +46,19 @@ func (ct *ChangeTracker) AnalyzeChanges(changedFiles []string, contentDir string
 
 // analyzeFile determines what needs regeneration for a single changed file
 func (ct *ChangeTracker) analyzeFile(file, contentDir string) {
-	// Normalize path and resolve symlinks (important on macOS with /var -> /private/var)
-	absContent, _ := filepath.EvalSymlinks(contentDir)
-	if absContent == "" {
-		absContent, _ = filepath.Abs(contentDir)
+	// First convert to absolute paths before resolving symlinks
+	absContentRaw, _ := filepath.Abs(contentDir)
+	absFileRaw, _ := filepath.Abs(file)
+
+	// Then resolve symlinks (important on macOS with /var -> /private/var)
+	absContent, err := filepath.EvalSymlinks(absContentRaw)
+	if err != nil {
+		absContent = absContentRaw
 	}
 
-	absFile, _ := filepath.EvalSymlinks(file)
-	if absFile == "" {
-		absFile, _ = filepath.Abs(file)
+	absFile, err := filepath.EvalSymlinks(absFileRaw)
+	if err != nil {
+		absFile = absFileRaw
 	}
 
 	// Skip if not in content directory
@@ -104,7 +108,17 @@ func (ct *ChangeTracker) determineNodeImpact(relPath string) {
 	}
 
 	// Regular page - find it in the parent section's children
+	// For pages like "blog/2020-04-07-post/index.md", the parent section is "blog"
+	// not "blog/2020-04-07-post", so we need to go up one more level if this is an index.md
 	parentDir := dir
+	if filepath.Base(relPath) == "index.md" {
+		// This is a page bundle (dir/index.md), parent section is grandparent
+		parentDir = filepath.Dir(dir)
+		if parentDir == "." {
+			parentDir = ""
+		}
+	}
+
 	if parentSection, exists := ct.contentMap[parentDir]; exists {
 		// Find the specific page node
 		for _, child := range parentSection.Children {
@@ -200,6 +214,53 @@ func (ct *ChangeTracker) GetChangedNodes() []*content.Node {
 	for node := range ct.changedNodes {
 		nodes = append(nodes, node)
 	}
+	return nodes
+}
+
+// GetChangedNodesAfterParse re-resolves node pointers after parsing completes
+// This is critical because ParseFiles creates NEW node objects, invalidating old pointers
+func (ct *ChangeTracker) GetChangedNodesAfterParse(contentMap map[string]*content.Node) []*content.Node {
+	nodes := make([]*content.Node, 0, len(ct.changedNodes))
+
+	// For each changed path, find the CURRENT node pointer in contentMap
+	for relPath := range ct.changedPaths {
+		// Determine the node path (without the filename)
+		dir := filepath.Dir(relPath)
+		if dir == "." {
+			dir = ""
+		}
+
+		// Check if this is a section _index.md
+		if filepath.Base(relPath) == "_index.md" {
+			if node, exists := contentMap[dir]; exists {
+				nodes = append(nodes, node)
+			}
+			continue
+		}
+
+		// For page bundles (blog/post-dir/index.md), the node path is the dir
+		parentDir := dir
+		if filepath.Base(relPath) == "index.md" {
+			parentDir = filepath.Dir(dir)
+			if parentDir == "." {
+				parentDir = ""
+			}
+		}
+
+		// Find in parent section's children
+		if parentSection, exists := contentMap[parentDir]; exists {
+			for _, child := range parentSection.Children {
+				if child.Type == content.NodeTypePage {
+					// Match by path
+					if strings.Contains(child.Path, relPath) || strings.Contains(relPath, child.Path) {
+						nodes = append(nodes, child)
+						break
+					}
+				}
+			}
+		}
+	}
+
 	return nodes
 }
 

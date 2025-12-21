@@ -228,8 +228,10 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 	tracker := NewChangeTracker(b.parser.ContentMap, b.parser)
 	tracker.AnalyzeChanges(opts.ChangedFiles, contentDir)
 
-	// Get list of changed nodes
-	changedNodes := tracker.GetChangedNodes()
+	// CRITICAL: Get changed nodes AFTER parsing completes!
+	// ParseFiles creates NEW node objects, so we need fresh pointers to updated nodes
+	// Otherwise we'll be rendering old node data with old content
+	changedNodes := tracker.GetChangedNodesAfterParse(b.parser.ContentMap)
 
 	// Process changed nodes in parallel (same pattern as fullGenerate)
 	sem := make(chan struct{}, runtime.NumCPU()*2)

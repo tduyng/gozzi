@@ -1,11 +1,13 @@
 package builder
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/tduyng/gozzi/app/cache"
 	"github.com/tduyng/gozzi/app/config"
+	"github.com/tduyng/gozzi/app/content"
 )
 
 func TestCreateStableCacheKey_TagPage(t *testing.T) {
@@ -168,5 +170,81 @@ func TestCreateStableCacheKey_DifferentTagContent(t *testing.T) {
 	if hash1 == hash2 {
 		t.Errorf("Expected different hashes for different tag content.\nHash: %s\nKey1: %+v\nKey2: %+v",
 			hash1, key1, key2)
+	}
+}
+
+func TestPageCacheKey_ExtraConfigChanges(t *testing.T) {
+	// Test that changes to extra config (comment, toc, reaction, etc.) invalidate cache
+	node1 := &content.Node{
+		Path:      "blog/post1",
+		Content:   "Same content",
+		WordCount: 100,
+		ReadTime:  1,
+		Config: map[string]any{
+			"title":    "Test Post",
+			"date":     time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			"template": "post.html",
+			"extra": map[string]any{
+				"comment":  true,
+				"reaction": true,
+				"toc":      true,
+			},
+		},
+	}
+
+	node2 := &content.Node{
+		Path:      "blog/post1",
+		Content:   "Same content",
+		WordCount: 100,
+		ReadTime:  1,
+		Config: map[string]any{
+			"title":    "Test Post",
+			"date":     time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			"template": "post.html",
+			"extra": map[string]any{
+				"comment":  false, // Changed!
+				"reaction": true,
+				"toc":      false, // Changed!
+			},
+		},
+	}
+
+	// Create cache keys
+	key1 := map[string]any{
+		"Path":      node1.Path,
+		"Content":   string(node1.Content),
+		"WordCount": node1.WordCount,
+		"ReadTime":  node1.ReadTime,
+		"Title":     node1.Config["title"],
+		"Date":      node1.Config["date"].(time.Time).Format("2006-01-02"),
+		"Template":  node1.Config["template"],
+		"Extra":     fmt.Sprintf("%+v", node1.Config["extra"]),
+	}
+
+	key2 := map[string]any{
+		"Path":      node2.Path,
+		"Content":   string(node2.Content),
+		"WordCount": node2.WordCount,
+		"ReadTime":  node2.ReadTime,
+		"Title":     node2.Config["title"],
+		"Date":      node2.Config["date"].(time.Time).Format("2006-01-02"),
+		"Template":  node2.Config["template"],
+		"Extra":     fmt.Sprintf("%+v", node2.Config["extra"]),
+	}
+
+	hash1, err := cache.ComputeDataHash(key1)
+	if err != nil {
+		t.Fatalf("Failed to compute hash1: %v", err)
+	}
+
+	hash2, err := cache.ComputeDataHash(key2)
+	if err != nil {
+		t.Fatalf("Failed to compute hash2: %v", err)
+	}
+
+	// Hashes should be DIFFERENT because extra config changed
+	if hash1 == hash2 {
+		t.Errorf("Expected different hashes when extra config changes.\nHash: %s\nNode1 extra: %+v\nNode2 extra: %+v",
+			hash1, node1.Config["extra"], node2.Config["extra"])
 	}
 }

@@ -139,6 +139,11 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		if tags, ok := node.Config["tags"]; ok {
 			key["Tags"] = fmt.Sprint(tags)
 		}
+		// Include extra config which contains comment, reaction, toc, copy, etc.
+		// These fields affect template rendering via partials
+		if extra, ok := node.Config["extra"]; ok {
+			key["Extra"] = fmt.Sprintf("%+v", extra)
+		}
 
 		cacheKey = key
 	} else {

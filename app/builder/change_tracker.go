@@ -47,9 +47,16 @@ func (ct *ChangeTracker) AnalyzeChanges(changedFiles []string, contentDir string
 
 // analyzeFile determines what needs regeneration for a single changed file
 func (ct *ChangeTracker) analyzeFile(file, contentDir string) {
-	// Normalize path
-	absContent, _ := filepath.Abs(contentDir)
-	absFile, _ := filepath.Abs(file)
+	// Normalize path and resolve symlinks (important on macOS with /var -> /private/var)
+	absContent, _ := filepath.EvalSymlinks(contentDir)
+	if absContent == "" {
+		absContent, _ = filepath.Abs(contentDir)
+	}
+
+	absFile, _ := filepath.EvalSymlinks(file)
+	if absFile == "" {
+		absFile, _ = filepath.Abs(file)
+	}
 
 	// Skip if not in content directory
 	if !strings.HasPrefix(absFile, absContent) {
@@ -103,7 +110,7 @@ func (ct *ChangeTracker) determineNodeImpact(relPath string) {
 		// Find the specific page node
 		for _, child := range parentSection.Children {
 			if child.Type == content.NodeTypePage {
-				// Match by path
+				// Match by path - check if paths overlap
 				if strings.Contains(child.Path, relPath) || strings.Contains(relPath, child.Path) {
 					ct.changedNodes[child] = true
 

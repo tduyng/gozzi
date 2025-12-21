@@ -115,3 +115,35 @@ func (b *Builder) buildTagPermalink(tag string) string {
 func (b *Builder) buildTagURL(tagLink string) string {
 	return b.site.BaseURL + tagLink
 }
+
+// generateSelectiveTags generates only the specified tag pages (for incremental builds)
+func (b *Builder) generateSelectiveTags(affectedTags []string) error {
+	tagTemplateExists := b.hasTemplate("tag.html")
+
+	if !tagTemplateExists || len(affectedTags) == 0 {
+		return nil
+	}
+
+	tagsDir := filepath.Join(b.site.OutputDir, "tags")
+	if err := os.MkdirAll(tagsDir, 0755); err != nil {
+		return err
+	}
+
+	// Generate only the affected tag pages
+	for _, tag := range affectedTags {
+		if entry, exists := b.parser.Tags[tag]; exists {
+			if err := b.generateTagPage(tag, entry); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Also regenerate the tags index since tag counts may have changed
+	if b.hasTemplate("tags.html") {
+		if err := b.generateTagsIndex(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

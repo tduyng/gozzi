@@ -31,6 +31,9 @@ type GenerateOptions struct {
 
 	// ChangedFiles lists the files that changed (for incremental mode)
 	ChangedFiles []string
+
+	// ContentDir is the base content directory (needed for relative path calculation)
+	ContentDir string
 }
 
 // NewBuilder creates a new Builder with loaded templates.
@@ -201,12 +204,120 @@ func (b *Builder) fullGenerate(contentRoot *content.Node) error {
 }
 
 // incrementalGenerate performs a selective rebuild (only changed content)
-// This is a placeholder that will be implemented in subsequent steps
 func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOptions) error {
-	// TODO: Implement incremental generation in next phase
-	// For now, fallback to full build
-	fmt.Println("DEBUG: incrementalGenerate called, falling back to full build")
-	return b.fullGenerate(contentRoot)
+	if contentRoot == nil {
+		return b.fullGenerate(contentRoot)
+	}
+
+	// Create output directory
+	if err := os.MkdirAll(b.site.OutputDir, 0755); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "create_output_directory",
+			Component: "builder",
+			Path:      b.site.OutputDir,
+		})
+	}
+
+	// Default contentDir to "content" if not specified
+	contentDir := opts.ContentDir
+	if contentDir == "" {
+		contentDir = "content"
+	}
+
+	// Analyze what changed to determine what needs regeneration
+	tracker := NewChangeTracker(b.parser.ContentMap, b.parser)
+	tracker.AnalyzeChanges(opts.ChangedFiles, contentDir)
+
+	// Get list of changed nodes
+	changedNodes := tracker.GetChangedNodes()
+
+	// Process changed nodes in parallel (same pattern as fullGenerate)
+	sem := make(chan struct{}, runtime.NumCPU()*2)
+	var wg sync.WaitGroup
+	errChan := make(chan error, 100)
+
+	for _, node := range changedNodes {
+		wg.Add(1)
+		sem <- struct{}{}
+
+		go func(n *content.Node) {
+			defer func() {
+				<-sem
+				wg.Done()
+			}()
+
+			if err := b.processNode(n); err != nil {
+				errChan <- err
+			}
+		}(node)
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	// Report any errors
+	for err := range errChan {
+		fmt.Printf("Processing error: %v\n", err)
+	}
+
+	// Selective auxiliary page generation
+	// Only regenerate what's affected by the changes
+
+	// 404 page rarely needs regeneration (only on template changes)
+	// Skip for content-only changes
+	if tracker.ShouldRegenerate404() {
+		if err := b.generate404Page(); err != nil {
+			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
+				Operation: "generate_404_page",
+				Component: "builder",
+			})
+		}
+	}
+
+	// Tag pages: only regenerate affected tags
+	if tracker.GetAffectedTagsCount() > 0 {
+		if err := b.generateSelectiveTags(tracker.GetAffectedTags()); err != nil {
+			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
+				Operation: "generate_selective_tags",
+				Component: "builder",
+			})
+		}
+	}
+
+	// Robots.txt rarely changes
+	// Skip unless config changed
+	if tracker.ShouldRegenerateRobots() {
+		if err := b.generateRobotsTxt(); err != nil {
+			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
+				Operation: "generate_robots_txt",
+				Component: "builder",
+			})
+		}
+	}
+
+	// Feed: only if blog posts changed
+	if tracker.ShouldRegenerateFeed() {
+		if err := b.generateAtomFeed(); err != nil {
+			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
+				Operation: "generate_atom_feed",
+				Component: "builder",
+			})
+		}
+	}
+
+	// Sitemap: regenerate if any content changed
+	if tracker.ShouldRegenerateSitemap() {
+		if err := b.generateSitemap(); err != nil {
+			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
+				Operation: "generate_sitemap",
+				Component: "builder",
+			})
+		}
+	}
+
+	// Static assets: skip unless explicitly changed
+	// This is a conservative approach - could be optimized further
+	return b.copyStaticAssets()
 }
 
 // GetCacheStats returns the current render cache statistics.

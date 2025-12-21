@@ -122,9 +122,9 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 			"ReadTime":  node.ReadTime,
 		}
 	} else {
-		cacheKey = map[string]any{
-			"Template": tplName,
-		}
+		// For auxiliary pages (tags, sitemap, feed, 404), hash the actual data
+		// to ensure each unique page gets its own cache entry
+		cacheKey = data
 	}
 
 	dataHash, err := cache.ComputeDataHash(cacheKey)

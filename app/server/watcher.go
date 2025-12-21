@@ -236,6 +236,9 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	// Reset stats before parsing
 	s.parser.ResetStats()
 
+	// Reset cache stats to get per-build statistics
+	s.gen.ResetCacheStats()
+
 	// Incremental content parsing: only parse changed markdown files
 	parseStart := time.Now()
 	if len(contentFiles) > 0 {

@@ -217,6 +217,13 @@ func (c *RenderCache) Clear() {
 	c.misses.Store(0)
 }
 
+// ResetStats resets the hit/miss counters without clearing the cache.
+// Use this before each build to get per-build statistics.
+func (c *RenderCache) ResetStats() {
+	c.hits.Store(0)
+	c.misses.Store(0)
+}
+
 func (c *RenderCache) Stats() RenderCacheStats {
 	c.mu.RLock()
 	entries := len(c.cache)

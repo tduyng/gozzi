@@ -327,6 +327,11 @@ func (b *Builder) GetCacheStats() cache.RenderCacheStats {
 	return b.renderCache.Stats()
 }
 
+// ResetCacheStats resets the hit/miss counters for per-build statistics.
+func (b *Builder) ResetCacheStats() {
+	b.renderCache.ResetStats()
+}
+
 func (b *Builder) processNode(node *content.Node) error {
 	switch node.Type {
 	case content.NodeTypeSection:

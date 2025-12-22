@@ -153,7 +153,6 @@ func (c *RenderCache) Get(template string, dataHash ContentHash) ([]byte, bool) 
 	output, exists := c.cache[key]
 	c.mu.RUnlock()
 
-	// Update stats atomically (outside lock for better concurrency)
 	if exists {
 		c.hits.Add(1)
 	} else {
@@ -168,7 +167,6 @@ func (c *RenderCache) Set(template string, dataHash ContentHash, output []byte) 
 	defer c.mu.Unlock()
 
 	key := RenderKey{Template: template, DataHash: dataHash}
-	// Store a copy to prevent external modifications
 	cached := make([]byte, len(output))
 	copy(cached, output)
 	c.cache[key] = cached
@@ -179,18 +177,15 @@ func (c *RenderCache) GetOrCompute(
 	dataHash ContentHash,
 	compute func() ([]byte, error),
 ) ([]byte, bool, error) {
-	// Try to get from cache first
 	if output, exists := c.Get(template, dataHash); exists {
 		return output, true, nil
 	}
 
-	// Not cached, compute it
 	output, err := compute()
 	if err != nil {
 		return nil, false, err
 	}
 
-	// Store in cache
 	c.Set(template, dataHash, output)
 	return output, false, nil
 }
@@ -238,7 +233,6 @@ func (c *RenderCache) Stats() RenderCacheStats {
 	entries := len(c.cache)
 	c.mu.RUnlock()
 
-	// Read atomic counters
 	hits := c.hits.Load()
 	misses := c.misses.Load()
 	total := hits + misses

@@ -61,7 +61,6 @@ func (s *DevServer) watchChanges() {
 				continue
 			}
 
-			// Handle directory creation - add new directories to watch list
 			if event.Op&fsnotify.Create == fsnotify.Create {
 				if info, err := os.Stat(event.Name); err == nil && info.IsDir() && !s.shouldIgnore(event.Name) {
 					if err := s.watcher.Add(event.Name); err != nil {
@@ -76,12 +75,10 @@ func (s *DevServer) watchChanges() {
 				continue
 			}
 
-			// Check if file content actually changed (skip no-op writes like vim :w)
 			if !s.hasFileChanged(event.Name) {
 				continue
 			}
 
-			// Track which files changed
 			changedFilesMutex.Lock()
 			changedFiles = append(changedFiles, event.Name)
 			changedFilesMutex.Unlock()
@@ -152,37 +149,29 @@ func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
 // findParentMarkdownFile finds the markdown file that owns an asset
 // For content/blog/post-name/img/image.png -> content/blog/post-name/index.md
 func (s *DevServer) findParentMarkdownFile(assetPath string) string {
-	// Get directory of the asset (e.g., content/blog/post/img)
 	dir := filepath.Dir(assetPath)
 
-	// Walk up the directory tree looking for index.md
 	for dir != s.contentDir && dir != "." && dir != "/" {
-		// Go up one level (from img -> post-name)
 		parentDir := filepath.Dir(dir)
 
-		// Check for index.md in this directory
 		indexPath := filepath.Join(parentDir, "index.md")
 		if _, err := os.Stat(indexPath); err == nil {
 			return indexPath
 		}
 
-		// Move up for next iteration
 		dir = parentDir
 	}
 
-	// No markdown file found - return empty string to skip
 	return ""
 }
 
 func (s *DevServer) triggerRebuild(changedFiles []string) {
 	start := time.Now()
 
-	// If no files changed, skip rebuild
 	if len(changedFiles) == 0 {
 		return
 	}
 
-	// Categorize changed files
 	hasConfigChange := false
 	contentFiles := []string{}
 	templateFiles := []string{}
@@ -213,19 +202,16 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	log.Printf("Rebuild triggered - config: %v, content: %d, templates: %d, assets: %d",
 		hasConfigChange, len(contentFiles), len(templateFiles), len(assetFiles))
 
-	// Only reload config if it actually changed
 	if hasConfigChange {
 		if err := s.reloadConfig(); err != nil {
 			log.Printf("Config reload error: %v", err)
 		}
 	}
 
-	// Handle template changes with selective cache invalidation
 	if len(templateFiles) > 0 {
 		if err := s.gen.ReloadTemplates(); err != nil {
 			log.Printf("Template reload error: %v", err)
 		} else {
-			// Invalidate only the templates that changed
 			count := s.gen.InvalidateTemplateCache(templateFiles)
 			if count > 0 {
 				log.Printf("Invalidated %d cached render(s) for templates: %v", count, templateFiles)
@@ -233,13 +219,10 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 		}
 	}
 
-	// Reset stats before parsing
 	s.parser.ResetStats()
 
-	// Reset cache stats to get per-build statistics
 	s.gen.ResetCacheStats()
 
-	// Incremental content parsing: only parse changed markdown files
 	parseStart := time.Now()
 	if len(contentFiles) > 0 {
 		if err := s.parser.ParseFiles(s.contentDir, contentFiles); err != nil {
@@ -247,24 +230,17 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 		}
 		log.Printf("ParseFiles took %dms", time.Since(parseStart).Milliseconds())
 	} else if hasConfigChange {
-		// For config changes, do a full parse since they may affect all pages
-		// CRITICAL: Clear hash cache so all files are reparsed even if content hasn't changed
-		// Config changes can affect all pages (e.g., site.extra.img used in templates)
 		s.parser.GetHashCache().Clear()
 		if err := s.parser.Parse(s.contentDir); err != nil {
 			log.Printf("Content parse error: %v", err)
 		}
 		log.Printf("Full parse took %dms", time.Since(parseStart).Milliseconds())
 	}
-	// Note: Template and static changes don't require re-parsing markdown content.
-	// The existing parsed content will be re-rendered with the new templates/assets.
 
 	genStart := time.Now()
 	var err error
 
-	// Use incremental builds when only content files changed (no config/template changes)
 	if len(contentFiles) > 0 && !hasConfigChange && len(templateFiles) == 0 {
-		// Incremental build: only regenerate changed content and affected dependencies
 		err = s.gen.GenerateWithOptions(s.parser.ContentMap["."], builder.GenerateOptions{
 			Incremental:  true,
 			ChangedFiles: contentFiles,
@@ -274,7 +250,6 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 			log.Printf("Incremental build error: %v", err)
 		}
 	} else {
-		// Full build: config or template changes affect everything
 		err = s.gen.Generate(s.parser.ContentMap["."])
 		if err != nil {
 			log.Printf("Full build error: %v", err)
@@ -282,7 +257,6 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	}
 	genDuration := time.Since(genStart).Milliseconds()
 
-	// Log cache stats to understand how well incremental builds are working
 	cacheStats := s.gen.GetCacheStats()
 	buildType := "full"
 	if len(contentFiles) > 0 && !hasConfigChange && len(templateFiles) == 0 {
@@ -297,7 +271,6 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 
 	s.notifyClients()
 
-	// Log build completion
 	log.Printf("Change detected, build done in %dms", time.Since(start).Milliseconds())
 }
 

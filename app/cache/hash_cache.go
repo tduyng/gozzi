@@ -38,7 +38,6 @@ func NewHashCache() *HashCache {
 func ComputeHash(content []byte) ContentHash {
 	h := xxhash.Sum64(content)
 	var result ContentHash
-	// Convert uint64 to [8]byte in big-endian order for consistent string representation
 	result[0] = byte(h >> 56)
 	result[1] = byte(h >> 48)
 	result[2] = byte(h >> 40)
@@ -55,7 +54,6 @@ func (c *HashCache) Get(path string) (ContentHash, bool) {
 	hash, exists := c.hashes[path]
 	c.mu.RUnlock()
 
-	// Update stats atomically (outside lock for better concurrency)
 	if exists {
 		c.hits.Add(1)
 	} else {
@@ -77,18 +75,15 @@ func (c *HashCache) HasChanged(path string, content []byte) bool {
 	oldHash, exists := c.Get(path)
 
 	if !exists {
-		// First time seeing this file
 		c.Set(path, newHash)
 		return true
 	}
 
 	if newHash != oldHash {
-		// Content changed
 		c.Set(path, newHash)
 		return true
 	}
 
-	// Content unchanged
 	return false
 }
 
@@ -122,7 +117,6 @@ func (c *HashCache) Stats() CacheStats {
 	entries := len(c.hashes)
 	c.mu.RUnlock()
 
-	// Read atomic counters
 	hits := c.hits.Load()
 	misses := c.misses.Load()
 	total := hits + misses

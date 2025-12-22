@@ -280,12 +280,10 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		m := minify.New()
 		if minified, err := m.MinifyHTML(content); err == nil {
 			content = minified
-			// Update cache with minified version
 			b.renderCache.Set(tplName, dataHash, content)
 		}
 	}
 
-	// Write output
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 			Operation: "create_output_directory",

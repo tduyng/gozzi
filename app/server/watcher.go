@@ -248,6 +248,9 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 		log.Printf("ParseFiles took %dms", time.Since(parseStart).Milliseconds())
 	} else if hasConfigChange {
 		// For config changes, do a full parse since they may affect all pages
+		// CRITICAL: Clear hash cache so all files are reparsed even if content hasn't changed
+		// Config changes can affect all pages (e.g., site.extra.img used in templates)
+		s.parser.GetHashCache().Clear()
 		if err := s.parser.Parse(s.contentDir); err != nil {
 			log.Printf("Content parse error: %v", err)
 		}

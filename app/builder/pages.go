@@ -245,6 +245,12 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 			}
 		}
 
+		// Include site config extra fields that affect rendering (e.g., default og:image)
+		// Templates use .Site.Config.extra.img as fallback when page doesn't have custom image
+		if b.site.Extra != nil {
+			key["SiteExtra"] = b.site.Extra
+		}
+
 		cacheKey = key
 	} else {
 		// For auxiliary pages (tags, 404, etc.), create a stable cache key

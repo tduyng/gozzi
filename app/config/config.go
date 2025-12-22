@@ -187,7 +187,13 @@ func mergeFrontMatter(merged, frontMatter map[string]any) map[string]any {
 }
 
 // MergeExtra recursively merges extra configuration maps.
+// Note: Some fields like 'img' are page-specific and should not be inherited from site config.
 func MergeExtra(base map[string]any, extra map[string]any) map[string]any {
+	// Page-specific fields that should not be inherited from site config
+	pageSpecificFields := map[string]bool{
+		"img": true, // Page images should not inherit site default
+	}
+
 	for k, v := range extra {
 		if existing, exists := base[k]; exists {
 			switch existingVal := existing.(type) {
@@ -205,6 +211,15 @@ func MergeExtra(base map[string]any, extra map[string]any) map[string]any {
 		}
 		base[k] = v
 	}
+
+	// Remove page-specific fields that were inherited from base (site config)
+	// but not explicitly set in extra (page config)
+	for field := range pageSpecificFields {
+		if _, existsInExtra := extra[field]; !existsInExtra {
+			delete(base, field)
+		}
+	}
+
 	return base
 }
 

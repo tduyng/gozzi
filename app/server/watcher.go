@@ -117,29 +117,24 @@ func (s *DevServer) shouldIgnore(path string) bool {
 }
 
 func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
+	// Ignore temporary files, build artifacts, and system files
 	base := filepath.Base(event.Name)
-	if base == "config.toml" {
-		return true
+	ext := filepath.Ext(event.Name)
+
+	// Temporary and system files to ignore
+	if strings.HasPrefix(base, ".") ||
+		strings.HasPrefix(base, "~") ||
+		strings.HasSuffix(base, "~") ||
+		strings.HasSuffix(base, ".swp") ||
+		strings.HasSuffix(base, ".tmp") ||
+		strings.HasSuffix(base, ".bak") ||
+		strings.HasSuffix(base, ".lock") ||
+		ext == ".log" {
+		return false
 	}
 
-	ext := filepath.Ext(event.Name)
-	relevant := map[string]bool{
-		".md":   true,
-		".html": true,
-		".css":  true,
-		".js":   true,
-		".png":  true,
-		".jpg":  true,
-		".jpeg": true,
-		".gif":  true,
-		".webp": true,
-		".svg":  true,
-		".ico":  true,
-		".xml":  true,
-		".json": true,
-		".txt":  true,
-	}
-	return relevant[ext]
+	// Accept all other files - let the builder decide what to do with them
+	return true
 }
 
 // findParentMarkdownFile finds the markdown file that owns an asset.

@@ -22,9 +22,6 @@ func (e *KaTeXExtender) Extend(m goldmark.Markdown) {
 }
 
 // NewMathExtension creates a new math extension for client-side KaTeX rendering.
-// This extension parses math delimiters ($...$ for inline, $$...$$ for block)
-// and outputs LaTeX delimiters (\(...\) and \[...\]) that KaTeX can render in the browser.
-// Works on all architectures (no CGO, quickjs, or external dependencies required).
 func NewMathExtension() goldmark.Extender {
 	return &KaTeXExtender{}
 }

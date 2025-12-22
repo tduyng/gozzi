@@ -25,8 +25,8 @@ type DevServer struct {
 	clients        map[chan string]struct{}
 	mu             sync.Mutex
 	lastConfigHash string
-	fileHashes     map[string]string // Track file content hashes to detect actual changes
-	fileHashesMu   sync.RWMutex      // Protect fileHashes map from concurrent access
+	fileHashes     map[string]string
+	fileHashesMu   sync.RWMutex
 }
 
 // NewDevServer creates a new development server with file watching enabled.
@@ -76,7 +76,6 @@ func (s *DevServer) Start(port int) {
 }
 
 func (s *DevServer) initialize() error {
-	// Generate initial site - content has already been parsed by initApp in main.go
 	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
 		return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{
 			Operation: "initial_site_generation",

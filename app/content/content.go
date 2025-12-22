@@ -74,10 +74,7 @@ func (node *Node) ToMap() map[string]any {
 }
 
 // ToMapMinimal returns a minimal map representation for cache efficiency.
-// Used when full content is not needed (e.g., in children lists, tag pages).
-// Only includes metadata, excludes HTML content and ToC to reduce cache key size.
 func (node *Node) ToMapMinimal() map[string]any {
-	// For children, create minimal representations recursively
 	minimalChildren := make([]*Node, len(node.Children))
 	for i, child := range node.Children {
 		minimalChildren[i] = &Node{
@@ -87,7 +84,6 @@ func (node *Node) ToMapMinimal() map[string]any {
 			Permalink: child.Permalink,
 			URL:       child.URL,
 			Config:    child.Config,
-			// Omit Content and Toc - not needed for listings
 			WordCount: child.WordCount,
 			ReadTime:  child.ReadTime,
 		}
@@ -100,13 +96,11 @@ func (node *Node) ToMapMinimal() map[string]any {
 		"Permalink": node.Permalink,
 		"URL":       node.URL,
 		"Config":    node.Config,
-		// Omit Content - not needed for section pages
 		"Children":  minimalChildren,
 		"Higher":    node.Higher,
 		"Lower":     node.Lower,
 		"WordCount": node.WordCount,
 		"ReadTime":  node.ReadTime,
-		// Omit Toc - not needed for section pages
 	}
 }
 

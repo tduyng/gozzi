@@ -39,7 +39,6 @@ func NewRenderCache() *RenderCache {
 }
 
 // ComputeDataHash creates a hash of template input data for cache keying.
-// The hash is deterministic and stable across identical data structures by sorting map keys.
 func ComputeDataHash(data any) (ContentHash, error) {
 	if data == nil {
 		return ContentHash{}, fmt.Errorf("cannot hash nil data")
@@ -84,17 +83,13 @@ func hashValue(h hash.Hash, v any, seen map[uintptr]bool) error {
 		h.Write([]byte("map{"))
 		keys := val.MapKeys()
 
-		// Sort keys for deterministic hashing
-		// Convert keys to strings for sorting
 		keyStrs := make([]string, len(keys))
 		for i, k := range keys {
 			keyStrs[i] = fmt.Sprintf("%v", k.Interface())
 		}
 		sort.Strings(keyStrs)
 
-		// Hash in sorted order
 		for _, keyStr := range keyStrs {
-			// Find the original key that matches this string
 			for _, k := range keys {
 				if fmt.Sprintf("%v", k.Interface()) == keyStr {
 					if err := hashValue(h, k.Interface(), seen); err != nil {

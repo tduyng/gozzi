@@ -26,11 +26,10 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		})
 	}
 
-	// Incremental parsing: Check if content has actually changed
 	p.stats.TotalFiles.Add(1)
 	if !p.hashCache.HasChanged(path, mdContent) {
 		p.stats.FilesSkipped.Add(1)
-		return nil // Content unchanged, skip parsing
+		return nil
 	}
 	p.stats.FilesParsed.Add(1)
 
@@ -101,8 +100,6 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		Toc:       toc,
 	}
 
-	// Check if this page already exists in parent's children and replace it
-	// Otherwise append as new child
 	found := false
 	for i, child := range parent.Children {
 		if child.Path == pageNode.Path {

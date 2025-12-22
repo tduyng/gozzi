@@ -24,16 +24,11 @@ type Builder struct {
 	mu          sync.Mutex
 }
 
-// GenerateOptions configures how the site generation should run
+// GenerateOptions configures how the site generation should run.
 type GenerateOptions struct {
-	// Incremental mode only generates changed pages instead of full site rebuild
-	Incremental bool
-
-	// ChangedFiles lists the files that changed (for incremental mode)
+	Incremental  bool
 	ChangedFiles []string
-
-	// ContentDir is the base content directory (needed for relative path calculation)
-	ContentDir string
+	ContentDir   string
 }
 
 // NewBuilder creates a new Builder with loaded templates.
@@ -76,14 +71,11 @@ func (b *Builder) ReloadTemplates() error {
 
 	b.mu.Lock()
 	b.templ = tmpl
-	// Note: Don't clear render cache here - let caller do selective invalidation
-	// for better incremental build performance
 	b.mu.Unlock()
 	return nil
 }
 
 // InvalidateTemplateCache invalidates cached renders for specific templates.
-// This is more efficient than clearing the entire cache when only specific templates changed.
 func (b *Builder) InvalidateTemplateCache(templateNames []string) int {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -97,7 +89,6 @@ func (b *Builder) InvalidateTemplateCache(templateNames []string) int {
 }
 
 // Generate processes the content tree and generates the complete static site.
-// This is a convenience wrapper around GenerateWithOptions with default settings.
 func (b *Builder) Generate(contentRoot *content.Node) error {
 	return b.GenerateWithOptions(contentRoot, GenerateOptions{
 		Incremental: false, // Default to full build for backwards compatibility
@@ -105,21 +96,16 @@ func (b *Builder) Generate(contentRoot *content.Node) error {
 }
 
 // GenerateWithOptions processes the content tree with specific generation options.
-// Supports both full builds and incremental builds based on options.
 func (b *Builder) GenerateWithOptions(contentRoot *content.Node, opts GenerateOptions) error {
-	// Route to appropriate generation strategy
 	if opts.Incremental {
 		return b.incrementalGenerate(contentRoot, opts)
 	}
 	return b.fullGenerate(contentRoot)
 }
 
-// fullGenerate performs a complete site rebuild (original Generate logic)
+// fullGenerate performs a complete site rebuild.
 func (b *Builder) fullGenerate(contentRoot *content.Node) error {
-	// Silently handle nil contentRoot (empty content directory)
 	if contentRoot == nil {
-		// Just generate auxiliary pages (404, robots.txt, etc.)
-		// Skip content-dependent pages
 		if err := os.MkdirAll(b.site.OutputDir, 0755); err != nil {
 			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 				Operation: "create_output_directory",
@@ -203,7 +189,7 @@ func (b *Builder) fullGenerate(contentRoot *content.Node) error {
 	return b.copyStaticAssets()
 }
 
-// incrementalGenerate performs a selective rebuild (only changed content)
+// incrementalGenerate performs a selective rebuild.
 func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOptions) error {
 	if contentRoot == nil {
 		return b.fullGenerate(contentRoot)
@@ -218,22 +204,16 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		})
 	}
 
-	// Default contentDir to "content" if not specified
 	contentDir := opts.ContentDir
 	if contentDir == "" {
 		contentDir = "content"
 	}
 
-	// Analyze what changed to determine what needs regeneration
 	tracker := NewChangeTracker(b.parser.ContentMap, b.parser)
 	tracker.AnalyzeChanges(opts.ChangedFiles, contentDir)
 
-	// CRITICAL: Get changed nodes AFTER parsing completes!
-	// ParseFiles creates NEW node objects, so we need fresh pointers to updated nodes
-	// Otherwise we'll be rendering old node data with old content
 	changedNodes := tracker.GetChangedNodesAfterParse(b.parser.ContentMap)
 
-	// Process changed nodes in parallel (same pattern as fullGenerate)
 	sem := make(chan struct{}, runtime.NumCPU()*2)
 	var wg sync.WaitGroup
 	errChan := make(chan error, 100)
@@ -257,16 +237,10 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 	wg.Wait()
 	close(errChan)
 
-	// Report any errors
 	for err := range errChan {
 		fmt.Printf("Processing error: %v\n", err)
 	}
 
-	// Selective auxiliary page generation
-	// Only regenerate what's affected by the changes
-
-	// 404 page rarely needs regeneration (only on template changes)
-	// Skip for content-only changes
 	if tracker.ShouldRegenerate404() {
 		if err := b.generate404Page(); err != nil {
 			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
@@ -276,7 +250,6 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
-	// Homepage: regenerate if blog posts changed (featured posts display on homepage)
 	if tracker.ShouldRegenerateHome() {
 		if homeNode, exists := b.parser.ContentMap["."]; exists {
 			if err := b.processNode(homeNode); err != nil {
@@ -288,7 +261,6 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
-	// Blog listing: regenerate if blog posts changed (listing displays all posts)
 	if tracker.ShouldRegenerateBlogListing() {
 		if blogNode, exists := b.parser.ContentMap["blog"]; exists {
 			if err := b.processNode(blogNode); err != nil {
@@ -300,7 +272,6 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
-	// Tag pages: only regenerate affected tags
 	if tracker.GetAffectedTagsCount() > 0 {
 		if err := b.generateSelectiveTags(tracker.GetAffectedTags()); err != nil {
 			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
@@ -310,8 +281,6 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
-	// Robots.txt rarely changes
-	// Skip unless config changed
 	if tracker.ShouldRegenerateRobots() {
 		if err := b.generateRobotsTxt(); err != nil {
 			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
@@ -321,7 +290,6 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
-	// Feed: only if blog posts changed
 	if tracker.ShouldRegenerateFeed() {
 		if err := b.generateAtomFeed(); err != nil {
 			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
@@ -331,7 +299,6 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
-	// Sitemap: regenerate if any content changed
 	if tracker.ShouldRegenerateSitemap() {
 		if err := b.generateSitemap(); err != nil {
 			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
@@ -341,8 +308,6 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
-	// Static assets: skip unless explicitly changed
-	// This is a conservative approach - could be optimized further
 	return b.copyStaticAssets()
 }
 
@@ -351,7 +316,7 @@ func (b *Builder) GetCacheStats() cache.RenderCacheStats {
 	return b.renderCache.Stats()
 }
 
-// ResetCacheStats resets the hit/miss counters for per-build statistics.
+// ResetCacheStats resets the hit/miss counters.
 func (b *Builder) ResetCacheStats() {
 	b.renderCache.ResetStats()
 }

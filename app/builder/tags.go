@@ -85,8 +85,6 @@ func (b *Builder) generateTagPage(tag string, entry *parser.TagEntry) error {
 		return dateB.Compare(dateA)
 	})
 
-	// Convert nodes to minimal representations for cache efficiency
-	// Tag pages only need title, date, permalink - not full content
 	pageList := make([]map[string]any, len(sortedPages))
 	for i, node := range sortedPages {
 		pageList[i] = map[string]any{
@@ -102,7 +100,7 @@ func (b *Builder) generateTagPage(tag string, entry *parser.TagEntry) error {
 		"Page": map[string]any{
 			"Title":     fmt.Sprintf("Tag: %s", tag),
 			"Tag":       tag,
-			"Pages":     pageList, // Use minimal representation instead of full nodes
+			"Pages":     pageList,
 			"Permalink": b.buildTagPermalink(tag),
 			"Path":      b.buildTagPermalink(tag),
 		},
@@ -126,7 +124,7 @@ func (b *Builder) buildTagURL(tagLink string) string {
 	return b.site.BaseURL + tagLink
 }
 
-// generateSelectiveTags generates only the specified tag pages (for incremental builds)
+// generateSelectiveTags generates only the specified tag pages.
 func (b *Builder) generateSelectiveTags(affectedTags []string) error {
 	tagTemplateExists := b.hasTemplate("tag.html")
 
@@ -139,7 +137,6 @@ func (b *Builder) generateSelectiveTags(affectedTags []string) error {
 		return err
 	}
 
-	// Generate only the affected tag pages
 	for _, tag := range affectedTags {
 		if entry, exists := b.parser.Tags[tag]; exists {
 			if err := b.generateTagPage(tag, entry); err != nil {
@@ -148,7 +145,6 @@ func (b *Builder) generateSelectiveTags(affectedTags []string) error {
 		}
 	}
 
-	// Also regenerate the tags index since tag counts may have changed
 	if b.hasTemplate("tags.html") {
 		if err := b.generateTagsIndex(); err != nil {
 			return err

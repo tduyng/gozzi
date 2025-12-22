@@ -124,20 +124,16 @@ func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
 
 	ext := filepath.Ext(event.Name)
 	relevant := map[string]bool{
-		// Content and templates
 		".md":   true,
 		".html": true,
-		// Stylesheets and scripts
-		".css": true,
-		".js":  true,
-		// Images
+		".css":  true,
+		".js":   true,
 		".png":  true,
 		".jpg":  true,
 		".jpeg": true,
 		".gif":  true,
 		".webp": true,
 		".svg":  true,
-		// Other assets
 		".ico":  true,
 		".xml":  true,
 		".json": true,
@@ -146,8 +142,7 @@ func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
 	return relevant[ext]
 }
 
-// findParentMarkdownFile finds the markdown file that owns an asset
-// For content/blog/post-name/img/image.png -> content/blog/post-name/index.md
+// findParentMarkdownFile finds the markdown file that owns an asset.
 func (s *DevServer) findParentMarkdownFile(assetPath string) string {
 	dir := filepath.Dir(assetPath)
 
@@ -274,13 +269,10 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	log.Printf("Change detected, build done in %dms", time.Since(start).Milliseconds())
 }
 
-// hasFileChanged checks if a file's content has actually changed by comparing hashes.
-// Returns true if the file is new or its content changed, false for no-op writes.
+// hasFileChanged checks if a file's content has actually changed.
 func (s *DevServer) hasFileChanged(filePath string) bool {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		// If we can't read the file, assume it changed (e.g., deleted)
-		// Clean up the hash for deleted files
 		s.fileHashesMu.Lock()
 		delete(s.fileHashes, filePath)
 		s.fileHashesMu.Unlock()
@@ -294,12 +286,10 @@ func (s *DevServer) hasFileChanged(filePath string) bool {
 
 	oldHash, exists := s.fileHashes[filePath]
 	if !exists || oldHash != newHash {
-		// File is new or changed, update hash
 		s.fileHashes[filePath] = newHash
 		return true
 	}
 
-	// File content unchanged (no-op write from vim :w, etc.)
 	return false
 }
 

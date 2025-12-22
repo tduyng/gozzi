@@ -25,11 +25,10 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		})
 	}
 
-	// Incremental parsing: Check if content has actually changed
 	p.stats.TotalFiles.Add(1)
 	if !p.hashCache.HasChanged(path, mdContent) {
 		p.stats.FilesSkipped.Add(1)
-		return nil // Content unchanged, skip parsing
+		return nil
 	}
 	p.stats.FilesParsed.Add(1)
 
@@ -107,7 +106,7 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	return nil
 }
 
-// GetOrCreateSection retrieves or creates a section node for the given directory.
+// GetOrCreateSection retrieves or creates a section node.
 func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 	if node, exists := p.ContentMap[dir]; exists {
 		return node

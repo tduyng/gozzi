@@ -32,7 +32,7 @@ func NewWorkerPool(ctx context.Context) *WorkerPool {
 	}
 }
 
-// ProcessFiles processes files concurrently using Go 1.25.x patterns.
+// ProcessFiles processes files concurrently.
 func (wp *WorkerPool) ProcessFiles(files []string, processor func(ctx context.Context, filePath string) error) error {
 	if len(files) == 0 {
 		return nil

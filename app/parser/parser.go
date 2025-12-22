@@ -79,8 +79,6 @@ func NewParser(cfg *config.Site) *ContentParser {
 
 // Parse walks the content directory and parses all markdown files.
 func (p *ContentParser) Parse(rootDir string) error {
-	// Clear the existing map instead of creating a new one
-	// This preserves the reference held by the template engine
 	p.mu.Lock()
 	for k := range p.ContentMap {
 		delete(p.ContentMap, k)
@@ -102,9 +100,7 @@ func (p *ContentParser) Parse(rootDir string) error {
 }
 
 // ParseFiles parses only the specified files for incremental rebuilds.
-// This is used by the dev server to avoid re-parsing the entire content directory.
 func (p *ContentParser) ParseFiles(rootDir string, files []string) error {
-	// Filter to only markdown files
 	var mdFiles []string
 	for _, f := range files {
 		if filepath.Ext(f) == ".md" || filepath.Base(f) == "_index.md" {
@@ -119,7 +115,7 @@ func (p *ContentParser) ParseFiles(rootDir string, files []string) error {
 	return p.parseFiles(rootDir, mdFiles)
 }
 
-// parseFiles is the internal implementation that parses a list of files
+// parseFiles is the internal implementation that parses a list of files.
 func (p *ContentParser) parseFiles(rootDir string, files []string) error {
 	ctx := context.Background()
 	pool := utils.NewWorkerPool(ctx)

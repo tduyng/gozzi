@@ -20,8 +20,7 @@ import (
 func (b *Builder) generateSection(node *content.Node) error {
 	outputPath := filepath.Join(b.site.OutputDir, node.Slug, "index.html")
 
-	// Sections need their full content because templates like prose.html render {{.Section.Content}}
-	// Some sections (like /about/, /contact/) are primarily content pages, not just listings
+	// Templates render {{.Section.Content}} so sections need full content
 	nodeMap := node.ToMap()
 
 	data := map[string]any{
@@ -48,7 +47,7 @@ func (b *Builder) generatePage(node *content.Node) error {
 		}
 	}
 	nodeMap := node.ToMap()
-	// Use minimal representation for parent section (doesn't need full content of siblings)
+	// Parent section doesn't need full content
 	parentMap := node.Parent.ToMapMinimal()
 
 	data := map[string]any{
@@ -119,8 +118,7 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 
 	var cacheKey any
 	if node != nil {
-		// For regular pages, include node content and config
-		// Convert time.Time to stable string representation
+		// Convert time.Time to stable string for cache key
 		key := map[string]any{
 			"Path":      node.Path,
 			"Content":   string(node.Content),
@@ -128,7 +126,6 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 			"ReadTime":  node.ReadTime,
 		}
 
-		// Add config fields that affect rendering
 		if title, ok := node.Config["title"].(string); ok {
 			key["Title"] = title
 		}
@@ -141,26 +138,20 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		if tags, ok := node.Config["tags"]; ok {
 			key["Tags"] = fmt.Sprint(tags)
 		}
-		// Include extra config which contains comment, reaction, toc, copy, etc.
-		// These fields affect template rendering via partials
+		// Extra config affects template rendering via partials
 		if extra, ok := node.Config["extra"]; ok {
-			// Store as-is, the cache hash function handles maps deterministically
 			key["Extra"] = extra
 		}
 
-		// For section pages, include children metadata in cache key
-		// Templates iterate over children and use their config (images, featured status, etc.)
+		// Section pages include children metadata in cache key
 		if node.Type == content.NodeTypeSection {
-			// Special handling for homepage: include blog posts since home.html uses get_section("blog")
 			isHomepage := node.Path == "." || node.Path == "" || node.Path == "_index.md" ||
 				node.Slug == "" || node.Slug == "/"
 
 			if isHomepage {
-				// Homepage template uses get_section("blog").Children
 				if blogSection, exists := b.parser.ContentMap["blog"]; exists && len(blogSection.Children) > 0 {
 					blogChildKeys := make([]string, len(blogSection.Children))
 					for i, post := range blogSection.Children {
-						// Include fields that affect homepage rendering
 						parts := []string{post.Path}
 
 						if title, ok := post.Config["title"].(string); ok {
@@ -173,7 +164,6 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 							parts = append(parts, desc)
 						}
 
-						// Critical: include extra config (contains img, featured, etc.)
 						if extra, ok := post.Config["extra"]; ok {
 							if extraMap, ok := extra.(map[string]any); ok {
 								keys := make([]string, 0, len(extraMap))
@@ -194,7 +184,6 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 					key["BlogPosts"] = blogChildKeys
 				}
 			} else if len(node.Children) > 0 {
-				// Other sections: include direct children metadata
 				childKeys := make([]string, len(node.Children))
 				for i, child := range node.Children {
 					parts := []string{child.Path}
@@ -206,17 +195,14 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 						parts = append(parts, date.Format("2006-01-02"))
 					}
 
-					// Include description for blog posts
 					if desc, ok := child.Config["description"].(string); ok {
 						parts = append(parts, desc)
 					}
 
-					// Include content for notes (since notes.html renders child content)
 					if node.Slug == "notes" {
 						parts = append(parts, string(child.Content))
 					}
 
-					// Include extra config (contains img, featured, etc.)
 					if extra, ok := child.Config["extra"]; ok {
 						if extraMap, ok := extra.(map[string]any); ok {
 							keys := make([]string, 0, len(extraMap))
@@ -240,16 +226,12 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 			}
 		}
 
-		// Include site config extra fields that affect rendering (e.g., default og:image)
-		// Templates use .Site.Config.extra.img as fallback when page doesn't have custom image
 		if b.site.Extra != nil {
 			key["SiteExtra"] = b.site.Extra
 		}
 
 		cacheKey = key
 	} else {
-		// For auxiliary pages (tags, 404, etc.), create a stable cache key
-		// by extracting only the data that affects rendering, converted to stable strings
 		cacheKey = b.createStableCacheKey(tplName, data)
 	}
 
@@ -270,7 +252,6 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		})
 	}
 
-	// If not cached and minification is enabled, minify before storing
 	if !cached && b.site.MinifyHTML {
 		m := minify.New()
 		if minified, err := m.MinifyHTML(content); err == nil {
@@ -318,7 +299,7 @@ func (b *Builder) executeTemplate(tpl *template.Template, data any) ([]byte, err
 	return content, nil
 }
 
-// renderTemplateDirect renders template without caching (fallback).
+// renderTemplateDirect renders template without caching.
 func (b *Builder) renderTemplateDirect(tpl *template.Template, outputPath string, data any) error {
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
@@ -359,7 +340,6 @@ func (b *Builder) renderTemplateDirect(tpl *template.Template, outputPath string
 }
 
 // createStableCacheKey creates a deterministic cache key for auxiliary pages.
-// It converts unstable data (time.Time, maps) into stable representations.
 func (b *Builder) createStableCacheKey(templateName string, data any) map[string]any {
 	key := map[string]any{
 		"Template": templateName,
@@ -375,15 +355,12 @@ func (b *Builder) createStableCacheKey(templateName string, data any) map[string
 		return key
 	}
 
-	// For tag pages: Tag name + sorted list of (permalink, title, date)
 	if tag, ok := pageData["Tag"].(string); ok {
 		key["Tag"] = tag
 
 		if pages, ok := pageData["Pages"].([]map[string]any); ok {
-			// Create stable representation of pages
 			pageKeys := make([]string, len(pages))
 			for i, page := range pages {
-				// Build a stable string: "permalink|title|date"
 				parts := []string{}
 
 				if permalink, ok := page["Permalink"].(string); ok {
@@ -395,10 +372,8 @@ func (b *Builder) createStableCacheKey(templateName string, data any) map[string
 						parts = append(parts, title)
 					}
 					if date, ok := config["date"].(time.Time); ok {
-						// Convert time to stable string (day precision)
 						parts = append(parts, date.Format("2006-01-02"))
 					}
-					// Add featured status if present
 					if extra, ok := config["extra"].(map[string]any); ok {
 						if featured, ok := extra["featured"].(bool); ok {
 							parts = append(parts, fmt.Sprintf("featured:%v", featured))
@@ -412,7 +387,6 @@ func (b *Builder) createStableCacheKey(templateName string, data any) map[string
 		}
 	}
 
-	// For tags index page: sorted list of (tag name, count, permalink)
 	if tags, ok := pageData["Tags"].([]map[string]any); ok {
 		tagKeys := make([]string, len(tags))
 		for i, tag := range tags {
@@ -424,21 +398,16 @@ func (b *Builder) createStableCacheKey(templateName string, data any) map[string
 		key["Tags"] = tagKeys
 	}
 
-	// For 404 and other pages: use title
 	if title, ok := pageData["Title"].(string); ok {
 		key["Title"] = title
 	}
 
-	// Use path for additional uniqueness
 	if path, ok := pageData["Path"].(string); ok {
 		key["Path"] = path
 	}
 
-	// Include relevant Site.Config data that affects rendering
-	// (404 page uses site title and base URL)
 	if siteData, ok := dataMap["Site"].(map[string]any); ok {
 		if config, ok := siteData["Config"].(map[string]any); ok {
-			// Include fields that are actually rendered in templates
 			if baseURL, ok := config["base_url"]; ok {
 				key["SiteBaseURL"] = fmt.Sprint(baseURL)
 			}
@@ -468,14 +437,10 @@ func (b *Builder) copyPageAssets(node *content.Node) error {
 		filepath.Base(assets),
 	)
 
-	// Check if source assets directory exists
 	if _, err := os.Stat(assets); os.IsNotExist(err) {
-		// Source deleted - remove destination directory if it exists
 		return os.RemoveAll(dest)
 	}
 
-	// Remove existing destination directory to clean up deleted files
-	// This ensures incremental builds properly sync deletions
 	if err := os.RemoveAll(dest); err != nil && !os.IsNotExist(err) {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 			Operation: "remove_old_assets",

@@ -11,8 +11,6 @@ import (
 )
 
 // ContentHash stores a 64-bit xxHash value (8 bytes).
-// xxHash is 50-100x faster than SHA-256 while providing excellent collision resistance
-// for cache key purposes (we don't need cryptographic security).
 type ContentHash [8]byte
 
 func (h ContentHash) String() string {
@@ -20,8 +18,6 @@ func (h ContentHash) String() string {
 }
 
 // HashCache tracks content hashes and provides change detection.
-// This is the foundation for incremental computation - we only reprocess
-// content when the actual content changes, not just when the filesystem event fires.
 type HashCache struct {
 	mu     sync.RWMutex
 	hashes map[string]ContentHash
@@ -69,7 +65,6 @@ func (c *HashCache) Set(path string, hash ContentHash) {
 }
 
 // HasChanged checks if content has changed since last seen.
-// Returns true if the content is new or different from cached hash.
 func (c *HashCache) HasChanged(path string, content []byte) bool {
 	newHash := ComputeHash(content)
 	oldHash, exists := c.Get(path)
@@ -87,7 +82,7 @@ func (c *HashCache) HasChanged(path string, content []byte) bool {
 	return false
 }
 
-// Update stores a new hash for a path and returns whether it changed
+// Update stores a new hash for a path and returns whether it changed.
 func (c *HashCache) Update(path string, content []byte) (changed bool, hash ContentHash) {
 	newHash := ComputeHash(content)
 	oldHash, exists := c.Get(path)

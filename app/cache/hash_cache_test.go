@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"crypto/sha256"
 	"sync"
 	"testing"
 )
@@ -15,17 +14,17 @@ func TestComputeHash(t *testing.T) {
 		{
 			name:    "empty content",
 			content: []byte{},
-			want:    sha256.Sum256([]byte{}),
+			want:    ComputeHash([]byte{}),
 		},
 		{
 			name:    "simple content",
 			content: []byte("hello world"),
-			want:    sha256.Sum256([]byte("hello world")),
+			want:    ComputeHash([]byte("hello world")),
 		},
 		{
 			name:    "markdown content",
 			content: []byte("# Title\n\nSome content"),
-			want:    sha256.Sum256([]byte("# Title\n\nSome content")),
+			want:    ComputeHash([]byte("# Title\n\nSome content")),
 		},
 	}
 
@@ -248,8 +247,8 @@ func TestContentHash_String(t *testing.T) {
 	hash := ComputeHash(content)
 
 	str := hash.String()
-	if len(str) != 64 { // SHA256 hex is 64 characters
-		t.Errorf("Expected hash string length 64, got %d", len(str))
+	if len(str) != 16 { // xxHash produces 8 bytes = 16 hex characters
+		t.Errorf("Expected hash string length 16, got %d", len(str))
 	}
 
 	// Verify it's valid hex

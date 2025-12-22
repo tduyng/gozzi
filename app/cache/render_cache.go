@@ -2,7 +2,6 @@
 package cache
 
 import (
-	"crypto/sha256"
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
@@ -11,6 +10,8 @@ import (
 	"sort"
 	"sync"
 	"sync/atomic"
+
+	"github.com/cespare/xxhash/v2"
 )
 
 type RenderKey struct {
@@ -44,14 +45,15 @@ func ComputeDataHash(data any) (ContentHash, error) {
 		return ContentHash{}, fmt.Errorf("cannot hash nil data")
 	}
 
-	h := sha256.New()
+	h := xxhash.New()
 
 	if err := hashValue(h, data, make(map[uintptr]bool)); err != nil {
 		return ContentHash{}, fmt.Errorf("failed to encode data: %w", err)
 	}
 
 	var result ContentHash
-	copy(result[:], h.Sum(nil))
+	hashBytes := h.Sum(nil) // xxHash returns 8 bytes
+	copy(result[:], hashBytes)
 	return result, nil
 }
 
@@ -285,7 +287,17 @@ func (c *RenderCache) MemoryUsage() int64 {
 }
 
 func HashString(s string) ContentHash {
-	return sha256.Sum256([]byte(s))
+	h := xxhash.Sum64([]byte(s))
+	var result ContentHash
+	result[0] = byte(h >> 56)
+	result[1] = byte(h >> 48)
+	result[2] = byte(h >> 40)
+	result[3] = byte(h >> 32)
+	result[4] = byte(h >> 24)
+	result[5] = byte(h >> 16)
+	result[6] = byte(h >> 8)
+	result[7] = byte(h)
+	return result
 }
 
 type HashWithWriter struct {
@@ -293,7 +305,7 @@ type HashWithWriter struct {
 }
 
 func NewHashWriter() *HashWithWriter {
-	return &HashWithWriter{h: sha256.New()}
+	return &HashWithWriter{h: xxhash.New()}
 }
 
 func (hw *HashWithWriter) Write(data any) error {

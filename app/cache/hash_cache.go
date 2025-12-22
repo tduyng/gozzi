@@ -2,14 +2,18 @@
 package cache
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"sync"
 	"sync/atomic"
+
+	"github.com/cespare/xxhash/v2"
 )
 
-type ContentHash [32]byte
+// ContentHash stores a 64-bit xxHash value (8 bytes).
+// xxHash is 50-100x faster than SHA-256 while providing excellent collision resistance
+// for cache key purposes (we don't need cryptographic security).
+type ContentHash [8]byte
 
 func (h ContentHash) String() string {
 	return hex.EncodeToString(h[:])
@@ -32,7 +36,18 @@ func NewHashCache() *HashCache {
 }
 
 func ComputeHash(content []byte) ContentHash {
-	return sha256.Sum256(content)
+	h := xxhash.Sum64(content)
+	var result ContentHash
+	// Convert uint64 to [8]byte in big-endian order for consistent string representation
+	result[0] = byte(h >> 56)
+	result[1] = byte(h >> 48)
+	result[2] = byte(h >> 40)
+	result[3] = byte(h >> 32)
+	result[4] = byte(h >> 24)
+	result[5] = byte(h >> 16)
+	result[6] = byte(h >> 8)
+	result[7] = byte(h)
+	return result
 }
 
 func (c *HashCache) Get(path string) (ContentHash, bool) {

@@ -378,8 +378,8 @@ func TestHashWriter(t *testing.T) {
 	}
 
 	hexStr := hw.HexString()
-	if len(hexStr) != 64 {
-		t.Errorf("Expected hex string length 64, got %d", len(hexStr))
+	if len(hexStr) != 16 { // xxHash produces 8 bytes = 16 hex characters
+		t.Errorf("Expected hex string length 16, got %d", len(hexStr))
 	}
 }
 

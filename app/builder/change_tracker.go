@@ -11,31 +11,33 @@ import (
 
 // ChangeTracker analyzes changed files and determines what needs regeneration
 type ChangeTracker struct {
-	changedPaths map[string]bool          // Content paths that changed
-	changedNodes map[*content.Node]bool   // Nodes that need regeneration
-	affectedTags map[string]bool          // Tags that need regeneration
-	needsSitemap bool                     // Whether sitemap needs regeneration
-	needsFeed    bool                     // Whether Atom feed needs regeneration
-	needsRobots  bool                     // Whether robots.txt needs regeneration
-	needs404     bool                     // Whether 404 page needs regeneration
-	needsHome    bool                     // Whether homepage needs regeneration
-	contentMap   map[string]*content.Node // Reference to content map
-	parser       *parser.ContentParser    // Reference to parser for tag lookup
+	changedPaths     map[string]bool          // Content paths that changed
+	changedNodes     map[*content.Node]bool   // Nodes that need regeneration
+	affectedTags     map[string]bool          // Tags that need regeneration
+	needsSitemap     bool                     // Whether sitemap needs regeneration
+	needsFeed        bool                     // Whether Atom feed needs regeneration
+	needsRobots      bool                     // Whether robots.txt needs regeneration
+	needs404         bool                     // Whether 404 page needs regeneration
+	needsHome        bool                     // Whether homepage needs regeneration
+	needsBlogListing bool                     // Whether blog listing page needs regeneration
+	contentMap       map[string]*content.Node // Reference to content map
+	parser           *parser.ContentParser    // Reference to parser for tag lookup
 }
 
 // NewChangeTracker creates a new change tracker
 func NewChangeTracker(contentMap map[string]*content.Node, p *parser.ContentParser) *ChangeTracker {
 	return &ChangeTracker{
-		changedPaths: make(map[string]bool),
-		changedNodes: make(map[*content.Node]bool),
-		affectedTags: make(map[string]bool),
-		contentMap:   contentMap,
-		parser:       p,
-		needsSitemap: false,
-		needsFeed:    false,
-		needsRobots:  false,
-		needs404:     false,
-		needsHome:    false,
+		changedPaths:     make(map[string]bool),
+		changedNodes:     make(map[*content.Node]bool),
+		affectedTags:     make(map[string]bool),
+		contentMap:       contentMap,
+		parser:           p,
+		needsSitemap:     false,
+		needsFeed:        false,
+		needsRobots:      false,
+		needs404:         false,
+		needsHome:        false,
+		needsBlogListing: false,
 	}
 }
 
@@ -92,6 +94,9 @@ func (ct *ChangeTracker) analyzeFile(file, contentDir string) {
 		// Homepage needs regeneration if blog posts changed
 		// (homepage displays featured posts with images from extra config)
 		ct.needsHome = true
+		// Blog listing page needs regeneration if blog posts changed
+		// (blog listing displays all posts with preview images)
+		ct.needsBlogListing = true
 	}
 }
 
@@ -206,6 +211,11 @@ func (ct *ChangeTracker) ShouldRegenerate404() bool {
 // ShouldRegenerateHome returns true if homepage needs regeneration
 func (ct *ChangeTracker) ShouldRegenerateHome() bool {
 	return ct.needsHome
+}
+
+// ShouldRegenerateBlogListing returns true if blog listing page needs regeneration
+func (ct *ChangeTracker) ShouldRegenerateBlogListing() bool {
+	return ct.needsBlogListing
 }
 
 // GetChangedNodesCount returns the number of nodes that need regeneration

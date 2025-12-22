@@ -288,6 +288,18 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
+	// Blog listing: regenerate if blog posts changed (listing displays all posts)
+	if tracker.ShouldRegenerateBlogListing() {
+		if blogNode, exists := b.parser.ContentMap["blog"]; exists {
+			if err := b.processNode(blogNode); err != nil {
+				return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
+					Operation: "regenerate_blog_listing",
+					Component: "builder",
+				})
+			}
+		}
+	}
+
 	// Tag pages: only regenerate affected tags
 	if tracker.GetAffectedTagsCount() > 0 {
 		if err := b.generateSelectiveTags(tracker.GetAffectedTags()); err != nil {

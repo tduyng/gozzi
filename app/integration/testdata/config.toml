@@ -1,0 +1,19 @@
+# ABOUTME: Minimal test site configuration for integration tests
+# ABOUTME: Tests build/serve modes, caching, and image handling
+
+base_url = "https://test.example.com"
+title = "Test Site"
+language_code = "en"
+
+[extra]
+site_image = "/img/default.jpg"
+author = "Test Author"
+description = "Test site description"
+
+[pagination]
+per_page = 10
+
+[build]
+minify_html = true
+generate_feed = true
+feed_filename = "atom.xml"

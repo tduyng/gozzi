@@ -11,7 +11,7 @@
                     <h1 class="hero-title">{{ .Site.Config.extra.name }}</h1>
                     <p class="hero-tagline">{{ .Site.Config.extra.tagline }}</p>
                     <div class="hero-actions">
-                        <a href="{{ .Site.Config.base_url }}/getting-started" class="btn btn-primary">Get Started</a>
+                        <a href="{{ .Site.Config.extra.base_path }}/getting-started" class="btn btn-primary">Get Started</a>
                         <a href="{{ .Site.Config.extra.repo_url }}" class="btn btn-secondary" target="_blank">View on GitHub</a>
                     </div>
                 </div>
@@ -25,7 +25,7 @@
         </div>
     </div>
 
-    <script src="{{ .Site.Config.base_url }}/js/main.js"></script>
+    <script src="{{ .Site.Config.extra.base_path }}/js/main.js"></script>
     
     <!-- KaTeX auto-render -->
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>

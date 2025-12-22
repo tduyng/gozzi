@@ -1,4 +1,4 @@
-base_url = ""
+base_url = "https://gozzi.tduyng.com"
 title = "Gozzi Documentation"
 description = "A Go static site generator born from curiosity - Fast, flexible, and built for developers"
 language = "en"
@@ -6,6 +6,7 @@ output_dir = "public"
 syntax_theme = "github-dark"  # Chroma syntax highlighting theme (dracula, monokai, github-dark, native, etc.)
 
 [extra]
+base_path = ""
 name = "Gozzi"
 tagline = "Built for learning. Simple by design."
 version = "0.1.0"

@@ -6,7 +6,7 @@
     <title>{{ if .Page.Config.title }}{{ .Page.Config.title }} | {{ end }}{{ .Site.Config.title }}</title>
     <meta name="description" content="{{ if .Page.Config.description }}{{ .Page.Config.description }}{{ else }}{{ .Site.Config.description }}{{ end }}">
     
-    <link rel="stylesheet" href="{{ .Site.Config.base_url }}/css/main.css">
+    <link rel="stylesheet" href="{{ .Site.Config.extra.base_path }}/css/main.css">
     
     <!-- Umami Analytics -->
     <script defer src="https://cloud.umami.is/script.js" data-website-id="a2cf2b97-b75a-40e7-989b-604531272e4c"></script>
@@ -15,10 +15,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
     
     <!-- Favicons -->
-    <link rel="icon" type="image/x-icon" href="{{ .Site.Config.base_url }}/favicon.ico">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ .Site.Config.base_url }}/images/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ .Site.Config.base_url }}/images/favicon-32x32.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ .Site.Config.base_url }}/images/apple-touch-icon.png">
+    <link rel="icon" type="image/x-icon" href="{{ .Site.Config.extra.base_path }}/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ .Site.Config.extra.base_path }}/images/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ .Site.Config.extra.base_path }}/images/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ .Site.Config.extra.base_path }}/images/apple-touch-icon.png">
     
     <!-- Open Graph -->
     <meta property="og:title" content="{{ if .Page.Config.title }}{{ .Page.Config.title }}{{ else }}{{ .Site.Config.title }}{{ end }}">

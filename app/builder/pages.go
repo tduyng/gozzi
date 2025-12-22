@@ -20,14 +20,9 @@ import (
 func (b *Builder) generateSection(node *content.Node) error {
 	outputPath := filepath.Join(b.site.OutputDir, node.Slug, "index.html")
 
-	// Notes section needs full content of children (notes.html renders {{ .Content }})
-	// Other sections can use minimal representation for cache efficiency
-	var nodeMap map[string]any
-	if node.Slug == "notes" {
-		nodeMap = node.ToMap()
-	} else {
-		nodeMap = node.ToMapMinimal()
-	}
+	// Sections need their full content because templates like prose.html render {{.Section.Content}}
+	// Some sections (like /about/, /contact/) are primarily content pages, not just listings
+	nodeMap := node.ToMap()
 
 	data := map[string]any{
 		"Site": map[string]any{

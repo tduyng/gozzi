@@ -484,4 +484,18 @@ func TestPageTypes(t *testing.T) {
 		verifyFileExists(t, sitePath, "style.css")
 		verifyFileContent(t, sitePath, "style.css", "font-family")
 	})
+
+	t.Run("SectionContentRendering", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		// Sections with _index.md should render their markdown content
+		// This is CRITICAL - sections like /about/ must show their content, not be empty!
+		verifyFileExists(t, sitePath, "about/index.html")
+
+		// The page MUST contain the markdown content that was rendered
+		verifyFileContent(t, sitePath, "about/index.html", "About This Test Site")
+		verifyFileContent(t, sitePath, "about/index.html", "integration testing")
+		verifyFileContent(t, sitePath, "about/index.html", "Section pages with content")
+	})
 }

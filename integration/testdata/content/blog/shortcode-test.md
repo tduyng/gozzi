@@ -18,8 +18,8 @@ This post tests various shortcodes.
 
 ## Alert
 
-{{{% alert type="warning" title="Important" %}}
+{{% alert type="warning" title="Important" %}}
 This is a warning message with **markdown** support!
-{{%/ alert %}}
+{%/ alert %}}
 
 End of post.

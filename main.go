@@ -193,13 +193,17 @@ func initApp(configPath, contentDir string, buildDrafts bool) (*config.Site, *pa
 	site.BuildDrafts = buildDrafts
 
 	contentParser := parser.NewParser(site)
-	if err := contentParser.Parse(contentDir); err != nil {
-		log.Fatalf("Error parsing content from %s: %v", contentDir, err)
-	}
 
+	// Create builder first to load templates (including shortcodes)
 	gen, err := builder.NewBuilder(site, contentParser)
 	if err != nil {
 		log.Fatalf("Error creating builder: %v", err)
 	}
+
+	// Now parse content with shortcode support enabled
+	if err := contentParser.Parse(contentDir); err != nil {
+		log.Fatalf("Error parsing content from %s: %v", contentDir, err)
+	}
+
 	return site, contentParser, gen
 }

@@ -45,6 +45,18 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		return nil
 	}
 
+	// Process shortcodes if processor is available
+	if p.shortcodeProcessor != nil {
+		contentPart, err = p.shortcodeProcessor.Process(contentPart)
+		if err != nil {
+			return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{
+				Operation: "process_shortcodes",
+				Component: "content_parser",
+				Path:      path,
+			})
+		}
+	}
+
 	pc := parser.NewContext()
 	doc := p.md.Parser().Parse(text.NewReader(contentPart), parser.WithContext(pc))
 	toc, _ := pc.Get(0).([]map[string]any)

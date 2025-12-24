@@ -68,13 +68,16 @@ func buildSite(t *testing.T, sitePath string) (*builder.Builder, *parser.Content
 	site.BuildTime = time.Now()
 
 	contentParser := parser.NewParser(site)
-	if err := contentParser.Parse(contentDir); err != nil {
-		t.Fatalf("failed to parse content: %v", err)
-	}
 
+	// Create builder first to load templates (including shortcodes)
 	gen, err := builder.NewBuilder(site, contentParser)
 	if err != nil {
 		t.Fatalf("failed to create builder: %v", err)
+	}
+
+	// Now parse content with shortcode support enabled
+	if err := contentParser.Parse(contentDir); err != nil {
+		t.Fatalf("failed to parse content: %v", err)
 	}
 
 	if err := gen.Generate(contentParser.ContentMap["."]); err != nil {

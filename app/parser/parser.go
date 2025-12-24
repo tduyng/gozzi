@@ -34,13 +34,14 @@ type ParseStats struct {
 
 // ContentParser parses markdown content files and builds the content tree.
 type ContentParser struct {
-	Site       *config.Site
-	ContentMap map[string]*content.Node
-	Tags       map[string]*TagEntry
-	mu         sync.Mutex
-	md         goldmark.Markdown
-	hashCache  *cache.HashCache // Content hash cache for incremental parsing
-	stats      *ParseStats      // Statistics for monitoring
+	Site               *config.Site
+	ContentMap         map[string]*content.Node
+	Tags               map[string]*TagEntry
+	mu                 sync.Mutex
+	md                 goldmark.Markdown
+	shortcodeProcessor *markdown.ShortcodeProcessor
+	hashCache          *cache.HashCache // Content hash cache for incremental parsing
+	stats              *ParseStats      // Statistics for monitoring
 }
 
 // NewParser creates a new ContentParser with the given site configuration.
@@ -163,6 +164,9 @@ func (p *ContentParser) SetShortcodeTemplates(templates *template.Template) {
 		syntaxTheme = "dracula"
 	}
 
+	// Initialize shortcode processor
+	p.shortcodeProcessor = markdown.NewShortcodeProcessor(templates)
+
 	p.md = goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
@@ -174,7 +178,6 @@ func (p *ContentParser) SetShortcodeTemplates(templates *template.Template) {
 			markdown.NewMathExtension(),
 			markdown.NewMermaidExtension(),
 			markdown.NewTocExtension(),
-			markdown.NewShortcodeExtension(templates),
 		),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),

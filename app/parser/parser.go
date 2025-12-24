@@ -3,6 +3,7 @@ package parser
 
 import (
 	"context"
+	"html/template"
 	"io/fs"
 	"math"
 	"path/filepath"
@@ -153,6 +154,35 @@ func calculateReadStats(content string) (int, int) {
 // GetMarkdownProcessor returns the configured goldmark markdown processor.
 func (p *ContentParser) GetMarkdownProcessor() goldmark.Markdown {
 	return p.md
+}
+
+// SetShortcodeTemplates updates the markdown processor with shortcode support.
+func (p *ContentParser) SetShortcodeTemplates(templates *template.Template) {
+	syntaxTheme := p.Site.SyntaxTheme
+	if syntaxTheme == "" {
+		syntaxTheme = "dracula"
+	}
+
+	p.md = goldmark.New(
+		goldmark.WithExtensions(
+			extension.GFM,
+			extension.Footnote,
+			highlight.NewHighlighting(
+				highlight.WithGuessLanguage(true),
+				highlight.WithStyle(syntaxTheme),
+			),
+			markdown.NewMathExtension(),
+			markdown.NewMermaidExtension(),
+			markdown.NewTocExtension(),
+			markdown.NewShortcodeExtension(templates),
+		),
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+		),
+		goldmark.WithRendererOptions(
+			html.WithUnsafe(),
+		),
+	)
 }
 
 func buildPermalink(slug string) string {

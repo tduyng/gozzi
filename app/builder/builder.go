@@ -56,6 +56,10 @@ func NewBuilder(site *config.Site, parser *parser.ContentParser) (*Builder, erro
 	}
 
 	b.templ = tmpl
+
+	// Initialize shortcode support in markdown processor
+	parser.SetShortcodeTemplates(tmpl)
+
 	return b, nil
 }
 
@@ -72,6 +76,10 @@ func (b *Builder) ReloadTemplates() error {
 	b.mu.Lock()
 	b.templ = tmpl
 	b.mu.Unlock()
+
+	// Update shortcodes in markdown processor
+	b.parser.SetShortcodeTemplates(tmpl)
+
 	return nil
 }
 

@@ -236,11 +236,38 @@ public/
 
 You can now deploy the `public/` folder to any static hosting service!
 
+## Optional: Add Shortcodes
+
+Want to make your content even cleaner? Create reusable components with shortcodes!
+
+Create a `shortcodes/` directory:
+
+```bash
+mkdir shortcodes
+```
+
+Create `shortcodes/callout.html`:
+
+```html
+<blockquote class="callout" style="padding: 1rem; margin: 1.5rem 0; border-left: 4px solid #10b981; background: #f0fdf4;">{{ if .title }}<p style="margin: 0 0 0.5rem 0; font-weight: 600;">{{ .title }}</p>{{ end }}<div>{{ .Content }}</div></blockquote>
+```
+
+Now use it in your markdown:
+
+```markdown
+{{% callout title="Pro Tip" %}}
+Shortcodes make your content cleaner and more maintainable!
+{%/ callout %}}
+```
+
+Learn more in the [Shortcodes Guide](/features/shortcodes).
+
 ## What's Next?
 
 - [Content Structure](/content-structure) - Organize pages and sections
 - [Configuration](/config/) - Customize your site
 - [Templates](/templates/) - Build custom layouts
+- [Shortcodes](/features/shortcodes) - Reusable content components
 - [Features](/features/) - Tags, pagination, math, diagrams
 - [Examples](/examples/quick-start) - Complete blog example
 

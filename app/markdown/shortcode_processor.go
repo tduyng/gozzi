@@ -96,7 +96,7 @@ func (sp *ShortcodeProcessor) renderShortcode(match string, isSelfClosing bool) 
 	}
 
 	// Prepare template data
-	data := map[string]interface{}{
+	data := map[string]any{
 		"Params":  params,
 		"Content": template.HTML(content),
 	}

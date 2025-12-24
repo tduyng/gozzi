@@ -30,6 +30,13 @@ Gozzi includes essential features for static sites:
 
 ## 🎨 Content Rendering
 
+**[Shortcodes](/features/shortcodes):**
+- Hugo-compatible syntax
+- Reusable HTML components in markdown
+- Self-closing and paired variants
+- Access to template functions
+- Clean, maintainable content
+
 **[Syntax Highlighting](/features/syntax-highlighting):**
 - 100+ languages supported
 - Multiple themes (GitHub, Monokai, etc.)

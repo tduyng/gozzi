@@ -33,7 +33,7 @@ gozzi serve --port 1313
 # Edit any template file:
 # - templates/*.html
 # - templates/partials/*.html  
-# - templates/macros/*.html
+# - shortcodes/*.html
 
 # Browser automatically refreshes with changes!
 ```
@@ -118,7 +118,7 @@ open http://localhost:1313/
 **Instant reload:**
 - Template file changes (`.html`)
 - Partial changes (`partials/*.html`)
-- Macro changes (`macros/*.html`)
+- Shortcode changes (`shortcodes/*.html`)
 
 **Build + reload:**
 - Content changes (`.md`)

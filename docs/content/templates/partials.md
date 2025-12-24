@@ -356,6 +356,5 @@ templates/partials/
 ---
 
 **Related:**
-- [Macros](/templates/macros)
 - [Template Structure](/templates/structure)
 - [Examples](/templates/examples)

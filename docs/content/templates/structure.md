@@ -19,23 +19,16 @@ templates/
 ├── tags.html            # All tags index
 ├── tag.html             # Posts under a specific tag
 ├── 404.html             # Custom 404 page
-├── partials/            # Shared snippets
-│   ├── _head.html
-│   ├── _header.html
-│   ├── _footer.html
-│   ├── _scripts.html
-│   ├── _toc.html        # Table of contents
-│   ├── _word_count.html # Reading time
-│   ├── _sharing.html    # Social sharing
-│   ├── _comment.html    # Comments section
-│   └── _reaction.html   # Reaction buttons
-└── macros/              # Reusable components
-    ├── alert.html
-    ├── codeblock.html
-    ├── important.html
-    ├── mermaid.html
-    ├── pagination.html
-    └── warning.html
+└── partials/            # Shared snippets
+    ├── _head.html
+    ├── _header.html
+    ├── _footer.html
+    ├── _scripts.html
+    ├── _toc.html        # Table of contents
+    ├── _word_count.html # Reading time
+    ├── _sharing.html    # Social sharing
+    ├── _comment.html    # Comments section
+    └── _reaction.html   # Reaction buttons
 ```
 
 ## Template Hierarchy
@@ -46,7 +39,6 @@ Templates follow an inheritance pattern:
 2. **Section templates** - Handle list pages  
 3. **Page templates** - Render individual content
 4. **Partials** - Provide reusable components
-5. **Macros** - Offer advanced functionality
 
 ## Template Types
 
@@ -135,18 +127,6 @@ templates/partials/
 ```
 
 **Naming convention:** Prefix with underscore (`_`) to indicate partial templates.
-
-### Macros Directory
-
-Complex, reusable components:
-
-```
-templates/macros/
-├── alert.html       # Alert boxes (info, warning, error)
-├── codeblock.html   # Enhanced code blocks
-├── pagination.html  # Pagination controls
-└── mermaid.html     # Mermaid diagram wrapper
-```
 
 ## Output Directory Structure
 

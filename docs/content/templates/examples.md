@@ -54,7 +54,7 @@ Complete, real-world template examples you can use as starting points for your G
         </div>
         
         {{ if gt (len $posts) 10 }}
-            {{ template "macros/pagination.html" (dict "posts" $posts "per_page" 10) }}
+            {{ template "partials/pagination.html" (dict "posts" $posts "per_page" 10) }}
         {{ end }}
     </main>
     
@@ -172,7 +172,7 @@ Complete, real-world template examples you can use as starting points for your G
             <h2>Featured Posts</h2>
             <div class="post-grid">
                 {{ range first 3 $featured }}
-                    {{ template "macros/post_card.html" (dict 
+                    {{ template "partials/post_card.html" (dict 
                         "title" .Config.title
                         "description" .Config.description
                         "url" .Permalink

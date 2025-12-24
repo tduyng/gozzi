@@ -208,7 +208,7 @@ Load different partials based on context:
 
 ```html
 <!-- Render nested comment threads -->
-<!-- macros/comment_thread.html -->
+<!-- templates/partials/comment_thread.html -->
 <div class="comment" data-id="{{ .id }}">
     <div class="comment-body">
         <strong>{{ .author }}</strong>
@@ -218,7 +218,7 @@ Load different partials based on context:
     {{ if .replies }}
         <div class="comment-replies">
             {{ range .replies }}
-                {{ template "macros/comment_thread.html" . }}
+                {{ template "partials/comment_thread.html" . }}
             {{ end }}
         </div>
     {{ end }}

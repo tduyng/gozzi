@@ -23,7 +23,7 @@ A fully-functional blog with:
 
 ```bash
 mkdir gozzi-blog && cd gozzi-blog
-mkdir -p content/blog static/css templates/{partials,macros}
+mkdir -p content/blog static/css templates/partials shortcodes
 ```
 
 ### 2. Configuration

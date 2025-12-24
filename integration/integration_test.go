@@ -1048,3 +1048,67 @@ func TestStaticAssets(t *testing.T) {
 		verifyFileContent(t, sitePath, "images/icons/test.svg", "<svg>")
 	})
 }
+
+// TestShortcodes tests shortcode functionality
+func TestShortcodes(t *testing.T) {
+	t.Run("YouTube_Shortcode", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		// Verify YouTube shortcode rendered
+		verifyFileExists(t, sitePath, "blog/shortcode-test/index.html")
+		verifyFileContent(t, sitePath, "blog/shortcode-test/index.html", "youtube.com/embed/dQw4w9WgXcQ")
+		verifyFileContent(t, sitePath, "blog/shortcode-test/index.html", "video-wrapper")
+	})
+
+	t.Run("Image_Shortcode", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		verifyFileContent(t, sitePath, "blog/shortcode-test/index.html", `src="/img/test.jpg"`)
+		verifyFileContent(t, sitePath, "blog/shortcode-test/index.html", `alt="Test Image"`)
+		verifyFileContent(t, sitePath, "blog/shortcode-test/index.html", `width="600"`)
+		verifyFileContent(t, sitePath, "blog/shortcode-test/index.html", `loading="lazy"`)
+	})
+
+	t.Run("Alert_Shortcode", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		verifyFileContent(t, sitePath, "blog/shortcode-test/index.html", "callout callout-warning")
+		verifyFileContent(t, sitePath, "blog/shortcode-test/index.html", "Important")
+		verifyFileContent(t, sitePath, "blog/shortcode-test/index.html", "warning message")
+	})
+
+	t.Run("Shortcodes_MixedWithMarkdown", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		output := filepath.Join(sitePath, "public/blog/shortcode-test/index.html")
+		content, err := os.ReadFile(output)
+		if err != nil {
+			t.Fatalf("failed to read output: %v", err)
+		}
+
+		// Should have markdown headings
+		if !strings.Contains(string(content), "<h1") {
+			t.Error("missing h1 heading")
+		}
+		if !strings.Contains(string(content), "Testing Shortcodes") {
+			t.Error("missing heading text")
+		}
+
+		// Should have shortcodes
+		if !strings.Contains(string(content), "youtube.com/embed") {
+			t.Error("missing youtube shortcode")
+		}
+		if !strings.Contains(string(content), "callout") {
+			t.Error("missing alert shortcode")
+		}
+
+		// Regular markdown after shortcodes
+		if !strings.Contains(string(content), "End of post") {
+			t.Error("missing post content")
+		}
+	})
+}

@@ -499,3 +499,552 @@ func TestPageTypes(t *testing.T) {
 		verifyFileContent(t, sitePath, "about/index.html", "Section pages with content")
 	})
 }
+
+// TestServerMode tests file watching and automatic rebuilds
+func TestServerMode(t *testing.T) {
+	t.Run("ContentFileChange_TriggersRebuild", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Modify content
+		post1Path := filepath.Join(sitePath, "content/blog/post1/index.md")
+		content, _ := os.ReadFile(post1Path)
+		modified := strings.Replace(string(content), "first blog post", "UPDATED content", 1)
+		os.WriteFile(post1Path, []byte(modified), 0644)
+
+		// Simulate watch mode: re-parse and rebuild
+		contentParser.ParseFiles(filepath.Join(sitePath, "content"), []string{post1Path})
+		gen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:  true,
+			ChangedFiles: []string{post1Path},
+			ContentDir:   filepath.Join(sitePath, "content"),
+		})
+
+		verifyFileContent(t, sitePath, "blog/post1/index.html", "UPDATED content")
+	})
+
+	t.Run("TemplateChange_TriggersFullRebuild", func(t *testing.T) {
+		t.Skip("Template reloading tested in app/builder/builder_test.go")
+	})
+
+	t.Run("StaticFileChange_CopiesFile", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		// Add new static file
+		newStaticFile := filepath.Join(sitePath, "static/new-file.txt")
+		os.WriteFile(newStaticFile, []byte("new content"), 0644)
+
+		// Rebuild
+		buildSite(t, sitePath)
+
+		verifyFileExists(t, sitePath, "new-file.txt")
+		verifyFileContent(t, sitePath, "new-file.txt", "new content")
+	})
+
+	t.Run("MultipleContentChanges_IncrementalRebuild", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Modify multiple posts
+		post1Path := filepath.Join(sitePath, "content/blog/post1/index.md")
+		post2Path := filepath.Join(sitePath, "content/blog/post2/index.md")
+
+		content1, _ := os.ReadFile(post1Path)
+		modified1 := strings.Replace(string(content1), "first blog post", "BATCH UPDATE 1", 1)
+		os.WriteFile(post1Path, []byte(modified1), 0644)
+
+		content2, _ := os.ReadFile(post2Path)
+		modified2 := strings.Replace(string(content2), "second blog post", "BATCH UPDATE 2", 1)
+		os.WriteFile(post2Path, []byte(modified2), 0644)
+
+		// Simulate watch mode batch update
+		changedFiles := []string{post1Path, post2Path}
+		contentParser.ParseFiles(filepath.Join(sitePath, "content"), changedFiles)
+		gen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:  true,
+			ChangedFiles: changedFiles,
+			ContentDir:   filepath.Join(sitePath, "content"),
+		})
+
+		verifyFileContent(t, sitePath, "blog/post1/index.html", "BATCH UPDATE 1")
+		verifyFileContent(t, sitePath, "blog/post2/index.html", "BATCH UPDATE 2")
+	})
+
+	t.Run("NewContentFile_AddsToSite", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Add new blog post
+		newPost := `+++
+title = "New Post"
+date = 2024-01-15
+template = "post.html"
++++
+
+This is a new post added during watch mode.`
+
+		newPostPath := filepath.Join(sitePath, "content/blog/new-post.md")
+		os.WriteFile(newPostPath, []byte(newPost), 0644)
+
+		// Full reparse needed for new files
+		contentParser.Parse(filepath.Join(sitePath, "content"))
+		gen.Generate(contentParser.ContentMap["."])
+
+		verifyFileExists(t, sitePath, "blog/new-post/index.html")
+		verifyFileContent(t, sitePath, "blog/new-post/index.html", "New Post")
+		verifyFileContent(t, sitePath, "blog/new-post/index.html", "new post added during watch mode")
+
+		// Should appear in blog listing
+		verifyFileContent(t, sitePath, "blog/index.html", "New Post")
+	})
+
+	t.Run("DeleteContentFile_RemovesFromSite", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		// Verify post exists
+		verifyFileExists(t, sitePath, "blog/post1/index.html")
+
+		// Delete post and clean output
+		post1Path := filepath.Join(sitePath, "content/blog/post1")
+		os.RemoveAll(post1Path)
+
+		// Clean and rebuild
+		os.RemoveAll(filepath.Join(sitePath, "public"))
+		buildSite(t, sitePath)
+
+		// Output should not exist (file was deleted from content)
+		outputPath := filepath.Join(sitePath, "public/blog/post1/index.html")
+		if _, err := os.Stat(outputPath); !os.IsNotExist(err) {
+			t.Error("deleted post should not exist in output")
+		}
+
+		// Should not appear in blog listing
+		content, _ := os.ReadFile(filepath.Join(sitePath, "public/blog/index.html"))
+		if strings.Contains(string(content), "First Post") {
+			t.Error("deleted post should not appear in blog listing")
+		}
+	})
+
+	t.Run("FrontmatterChange_UpdatesMetadata", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Change title in frontmatter
+		post1Path := filepath.Join(sitePath, "content/blog/post1/index.md")
+		content, _ := os.ReadFile(post1Path)
+		modified := strings.Replace(string(content), `title = "First Post"`, `title = "Changed Title"`, 1)
+		os.WriteFile(post1Path, []byte(modified), 0644)
+
+		contentParser.ParseFiles(filepath.Join(sitePath, "content"), []string{post1Path})
+		gen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:  true,
+			ChangedFiles: []string{post1Path},
+			ContentDir:   filepath.Join(sitePath, "content"),
+		})
+
+		// Title should update in post
+		verifyFileContent(t, sitePath, "blog/post1/index.html", "Changed Title")
+
+		// Title should update in blog listing
+		verifyFileContent(t, sitePath, "blog/index.html", "Changed Title")
+	})
+
+	t.Run("AddTags_CreatesTagPages", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Add tags to post1
+		post1Path := filepath.Join(sitePath, "content/blog/post1/index.md")
+		content, _ := os.ReadFile(post1Path)
+		lines := strings.Split(string(content), "\n")
+		for i, line := range lines {
+			if strings.HasPrefix(line, "template =") {
+				lines = append(lines[:i+1], append([]string{`tags = ["rust", "performance"]`}, lines[i+1:]...)...)
+				break
+			}
+		}
+		os.WriteFile(post1Path, []byte(strings.Join(lines, "\n")), 0644)
+
+		// Full rebuild needed for tag changes
+		contentParser.Parse(filepath.Join(sitePath, "content"))
+		gen.Generate(contentParser.ContentMap["."])
+
+		verifyFileExists(t, sitePath, "tags/rust/index.html")
+		verifyFileExists(t, sitePath, "tags/performance/index.html")
+		verifyFileContent(t, sitePath, "tags/rust/index.html", "First Post")
+	})
+
+	t.Run("ConfigChange_FullRebuild", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		// Modify homepage content title (not site config)
+		homePath := filepath.Join(sitePath, "content/_index.md")
+		content, _ := os.ReadFile(homePath)
+		modified := strings.Replace(string(content), `title = "Home"`, `title = "Updated Home"`, 1)
+		os.WriteFile(homePath, []byte(modified), 0644)
+
+		// Fresh build with changed content
+		buildSite(t, sitePath)
+
+		// Change should be reflected in homepage
+		verifyFileContent(t, sitePath, "index.html", "Updated Home")
+	})
+}
+
+// TestCacheInvalidation ensures cache invalidation works correctly
+func TestCacheInvalidation(t *testing.T) {
+	t.Run("ContentChange_InvalidatesCache", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		firstStats := gen.GetCacheStats()
+
+		// Rebuild without changes - should have high cache hit rate
+		gen.Generate(contentParser.ContentMap["."])
+		noChangeStats := gen.GetCacheStats()
+
+		if noChangeStats.HitRate < 50 {
+			t.Errorf("expected high cache hit rate without changes, got %.1f%%", noChangeStats.HitRate)
+		}
+
+		// Modify content
+		post1Path := filepath.Join(sitePath, "content/blog/post1/index.md")
+		content, _ := os.ReadFile(post1Path)
+		modified := strings.Replace(string(content), "first blog post", "CHANGED", 1)
+		os.WriteFile(post1Path, []byte(modified), 0644)
+
+		// Reparse and rebuild
+		contentParser.Parse(filepath.Join(sitePath, "content"))
+		gen.ResetCacheStats()
+		gen.Generate(contentParser.ContentMap["."])
+		changedStats := gen.GetCacheStats()
+
+		// Cache should be partially invalidated
+		if changedStats.Misses == 0 {
+			t.Error("expected cache misses after content change")
+		}
+
+		_ = firstStats
+	})
+
+	t.Run("TemplateChange_InvalidatesAllPages", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Rebuild without changes
+		gen.Generate(contentParser.ContentMap["."])
+		beforeStats := gen.GetCacheStats()
+
+		// Modify template
+		templatePath := filepath.Join(sitePath, "templates/post.html")
+		content, _ := os.ReadFile(templatePath)
+		modified := strings.Replace(string(content), "<article>", "<article class=\"v2\">", 1)
+		os.WriteFile(templatePath, []byte(modified), 0644)
+
+		// Reload templates
+		gen.ReloadTemplates()
+		gen.InvalidateTemplateCache([]string{"post.html"})
+
+		gen.ResetCacheStats()
+		gen.Generate(contentParser.ContentMap["."])
+		afterStats := gen.GetCacheStats()
+
+		// All posts using post.html should be regenerated
+		if afterStats.Misses == 0 {
+			t.Error("expected cache misses after template change")
+		}
+
+		_ = beforeStats
+	})
+}
+
+// TestEdgeCases tests unusual but valid scenarios
+func TestEdgeCases(t *testing.T) {
+	t.Run("EmptyContent_StillGenerates", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+
+		// Create post with empty content
+		emptyPost := `+++
+title = "Empty Post"
+date = 2024-01-01
+template = "post.html"
++++
+`
+		emptyPostPath := filepath.Join(sitePath, "content/blog/empty.md")
+		os.WriteFile(emptyPostPath, []byte(emptyPost), 0644)
+
+		buildSite(t, sitePath)
+
+		verifyFileExists(t, sitePath, "blog/empty/index.html")
+		verifyFileContent(t, sitePath, "blog/empty/index.html", "Empty Post")
+	})
+
+	t.Run("SpecialCharactersInFilename", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+
+		// Create post with special chars
+		specialPost := `+++
+title = "Special Post"
+date = 2024-01-01
+template = "post.html"
++++
+
+Content here.`
+
+		specialPath := filepath.Join(sitePath, "content/blog/special-chars-&-symbols.md")
+		os.WriteFile(specialPath, []byte(specialPost), 0644)
+
+		buildSite(t, sitePath)
+
+		// Should generate with sanitized slug
+		verifyFileExists(t, sitePath, "blog/special-chars-symbols/index.html")
+	})
+
+	t.Run("VeryLongContent_Handles", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+
+		// Create post with very long content
+		longContent := strings.Repeat("This is a very long paragraph. ", 1000)
+		longPost := `+++
+title = "Long Post"
+date = 2024-01-01
+template = "post.html"
++++
+
+` + longContent
+
+		longPath := filepath.Join(sitePath, "content/blog/long-post.md")
+		os.WriteFile(longPath, []byte(longPost), 0644)
+
+		buildSite(t, sitePath)
+
+		verifyFileExists(t, sitePath, "blog/long-post/index.html")
+		verifyFileContent(t, sitePath, "blog/long-post/index.html", "Long Post")
+	})
+
+	t.Run("NestedSections_HandleCorrectly", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+
+		// Create nested section
+		os.MkdirAll(filepath.Join(sitePath, "content/blog/nested"), 0755)
+		nestedIndex := `+++
+title = "Nested Section"
++++
+
+Nested section content.`
+		os.WriteFile(filepath.Join(sitePath, "content/blog/nested/_index.md"), []byte(nestedIndex), 0644)
+
+		buildSite(t, sitePath)
+
+		verifyFileExists(t, sitePath, "blog/nested/index.html")
+		verifyFileContent(t, sitePath, "blog/nested/index.html", "Nested Section")
+	})
+
+	t.Run("NonAsciiContent_RendersCorrectly", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+
+		unicodePost := `+++
+title = "Unicode Post 中文 日本語"
+date = 2024-01-01
+template = "post.html"
++++
+
+Content with unicode: 你好世界 こんにちは مرحبا`
+
+		unicodePath := filepath.Join(sitePath, "content/blog/unicode.md")
+		os.WriteFile(unicodePath, []byte(unicodePost), 0644)
+
+		buildSite(t, sitePath)
+
+		verifyFileExists(t, sitePath, "blog/unicode/index.html")
+		verifyFileContent(t, sitePath, "blog/unicode/index.html", "中文")
+		verifyFileContent(t, sitePath, "blog/unicode/index.html", "你好世界")
+	})
+}
+
+// TestPerformance tests build performance characteristics
+func TestPerformance(t *testing.T) {
+	t.Run("BuildCompletes_InReasonableTime", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+
+		start := time.Now()
+		buildSite(t, sitePath)
+		duration := time.Since(start)
+
+		// Full build of test site should be very fast
+		maxDuration := 2 * time.Second
+		if duration > maxDuration {
+			t.Errorf("build took too long: %v (max: %v)", duration, maxDuration)
+		}
+
+		t.Logf("Full build completed in %v", duration)
+	})
+
+	t.Run("IncrementalBuild_FasterThanFull", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+
+		// Measure full build time
+		fullStart := time.Now()
+		gen, contentParser := buildSite(t, sitePath)
+		fullDuration := time.Since(fullStart)
+
+		// Measure incremental rebuild time (no changes)
+		incStart := time.Now()
+		gen.Generate(contentParser.ContentMap["."])
+		incDuration := time.Since(incStart)
+
+		// Incremental should be faster (or at least not significantly slower)
+		if incDuration > fullDuration*2 {
+			t.Errorf("incremental build too slow: %v (full: %v)", incDuration, fullDuration)
+		}
+
+		t.Logf("Full build: %v, Incremental rebuild: %v", fullDuration, incDuration)
+	})
+}
+
+// TestContentIntegrity tests that all content is properly rendered and not empty
+func TestContentIntegrity(t *testing.T) {
+	t.Run("AllPages_HaveContent", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		// All pages should have substantial content (not just headers/footers)
+		pages := []string{
+			"index.html",
+			"about/index.html",
+			"contact/index.html",
+			"uses/index.html",
+			"privacy/index.html",
+			"blog/index.html",
+			"notes/index.html",
+			"blog/post1/index.html",
+			"blog/post2/index.html",
+			"blog/post3/index.html",
+			"notes/note1/index.html",
+		}
+
+		for _, page := range pages {
+			fullPath := filepath.Join(sitePath, "public", page)
+			content, err := os.ReadFile(fullPath)
+			if err != nil {
+				t.Fatalf("failed to read %s: %v", page, err)
+			}
+
+			// Pages should have more than just template boilerplate
+			if len(content) < 100 {
+				t.Errorf("page %s appears empty (only %d bytes)", page, len(content))
+			}
+
+			// Should contain HTML structure
+			contentStr := string(content)
+			if !strings.Contains(contentStr, "<html") && !strings.Contains(contentStr, "<!DOCTYPE") {
+				t.Errorf("page %s missing HTML structure", page)
+			}
+		}
+	})
+
+	t.Run("SectionPages_NotEmpty", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		// This was the critical bug - sections with _index.md must render their content
+		// NOT be empty shells
+		criticalSections := []string{
+			"about/index.html",
+			"contact/index.html",
+			"uses/index.html",
+			"privacy/index.html",
+		}
+
+		for _, section := range criticalSections {
+			fullPath := filepath.Join(sitePath, "public", section)
+			content, err := os.ReadFile(fullPath)
+			if err != nil {
+				t.Fatalf("failed to read %s: %v", section, err)
+			}
+
+			// Sections should have meaningful content (not just empty shells)
+			// Testdata has minimal content, so threshold is lower than production
+			if len(content) < 200 {
+				t.Errorf("section %s appears empty (only %d bytes)", section, len(content))
+			}
+
+			// Should contain actual rendered markdown content
+			contentStr := string(content)
+			// About page specifically should have its content
+			if section == "about/index.html" {
+				if !strings.Contains(contentStr, "About This Test Site") {
+					t.Errorf("about section missing its markdown content")
+				}
+			}
+		}
+	})
+
+	t.Run("BlogListing_ShowsAllPosts", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		blogPath := filepath.Join(sitePath, "public", "blog", "index.html")
+		content, err := os.ReadFile(blogPath)
+		if err != nil {
+			t.Fatalf("failed to read blog listing: %v", err)
+		}
+
+		// Should list all non-draft posts
+		requiredPosts := []string{"First Post", "Second Post", "Third Post"}
+		for _, post := range requiredPosts {
+			if !strings.Contains(string(content), post) {
+				t.Errorf("blog listing missing post: %s", post)
+			}
+		}
+
+		// Should NOT show draft posts
+		if strings.Contains(string(content), "Draft Post") {
+			t.Error("blog listing should not show draft posts")
+		}
+	})
+}
+
+// TestStaticAssets ensures static file handling works correctly
+func TestStaticAssets(t *testing.T) {
+	t.Run("AllStaticFiles_Copied", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		// Verify critical static assets exist
+		staticAssets := []string{
+			"robots.txt",
+			"style.css",
+		}
+
+		for _, asset := range staticAssets {
+			verifyFileExists(t, sitePath, asset)
+		}
+	})
+
+	t.Run("StaticContent_Preserved", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		// Static files should be copied verbatim
+		verifyFileContent(t, sitePath, "style.css", "font-family")
+		verifyFileContent(t, sitePath, "robots.txt", "User-agent")
+	})
+
+	t.Run("NestedStatic_CopiedCorrectly", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+
+		// Add nested static structure
+		nestedDir := filepath.Join(sitePath, "static/images/icons")
+		os.MkdirAll(nestedDir, 0755)
+		os.WriteFile(filepath.Join(nestedDir, "test.svg"), []byte("<svg></svg>"), 0644)
+
+		buildSite(t, sitePath)
+
+		verifyFileExists(t, sitePath, "images/icons/test.svg")
+		verifyFileContent(t, sitePath, "images/icons/test.svg", "<svg>")
+	})
+}

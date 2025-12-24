@@ -39,8 +39,13 @@ func (p *Paginator) processSection(section *content.Node) {
 	}
 
 	slices.SortStableFunc(pages, func(a, b *content.Node) int {
-		dateA := a.Config["date"].(time.Time)
-		dateB := b.Config["date"].(time.Time)
+		var dateA, dateB time.Time
+		if d, ok := a.Config["date"].(time.Time); ok {
+			dateA = d
+		}
+		if d, ok := b.Config["date"].(time.Time); ok {
+			dateB = d
+		}
 		return dateA.Compare(dateB)
 	})
 	section.Children = append(pages, otherNodes...)

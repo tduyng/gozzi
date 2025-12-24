@@ -1,23 +1,21 @@
 +++
 title = "Shortcode Examples"
-weight = 3
+weight = 6
 +++
 
 # Shortcode Examples
 
-This page demonstrates practical shortcode examples you can use in your Gozzi site.
+Real-world examples of shortcodes in action. All examples are fully functional - copy and use them in your site!
 
-## Basic Shortcodes
+## Content Organization
 
-### YouTube Video
+### 1. YouTube Videos
 
-{{% callout title="Try it" %}}
-Embed YouTube videos cleanly without iframes in your markdown.
-{%/ callout %}}
+Embed videos with responsive wrapper:
 
-**Shortcode template** (`shortcodes/youtube.html`):
+**Template:** `shortcodes/youtube.html`
 ```html
-<div class="video-wrapper" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;"><iframe src="https://www.youtube.com/embed/{{ .id }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen loading="lazy"></iframe></div>
+<div class="video-wrapper" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 1.5rem 0;"><iframe src="https://www.youtube.com/embed/{{ .id }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>
 ```
 
 **Usage:**
@@ -25,187 +23,415 @@ Embed YouTube videos cleanly without iframes in your markdown.
 {{</* youtube id="dQw4w9WgXcQ" */>}}
 ```
 
-### Callout/Alert Box
+---
 
-**Shortcode template** (`shortcodes/callout.html`):
+### 2. GitHub Gists
+
+Embed code snippets from GitHub:
+
+**Template:** `shortcodes/gist.html`
 ```html
-<blockquote class="callout callout-{{ .type | default "info" }}" style="padding: 1rem; margin: 1.5rem 0; border-left: 4px solid #0ea5e9; background: #f0f9ff;">{{ if .title }}<p style="margin: 0 0 0.5rem 0; font-weight: 600;">{{ .title }}</p>{{ end }}<div>{{ .Content }}</div></blockquote>
+<script src="https://gist.github.com/{{ .user }}/{{ .id }}.js"></script>
 ```
 
 **Usage:**
 ```markdown
-{{% callout title="Important" type="warning" %}}
-This is an important message that users should pay attention to.
-{%/ callout %}}
+{{</* gist user="tduyng" id="ca720cd3a49c84e60ecb4c7c60b45f7d" */>}}
 ```
 
-**Different types:**
-```markdown
-{{% callout title="Info" type="info" %}}
-Informational message
-{%/ callout %}}
+---
 
-{{% callout title="Success" type="success" %}}
-Success message
-{%/ callout %}}
+### 3. Twitter Embeds
 
-{{% callout title="Warning" type="warning" %}}
-Warning message
-{%/ callout %}}
+Embed tweets with dark theme:
 
-{{% callout title="Danger" type="danger" %}}
-Danger/error message
-{%/ callout %}}
-```
-
-### Code Block with Filename
-
-**Shortcode template** (`shortcodes/codeblock.html`):
+**Template:** `shortcodes/tweet.html`
 ```html
-<div class="codeblock-with-filename" style="margin: 1.5rem 0;"><div class="filename" style="background: #1e293b; color: #94a3b8; padding: 0.5rem 1rem; font-family: monospace; font-size: 0.875rem; border-radius: 0.375rem 0.375rem 0 0;">{{ .name }}</div><div style="margin-top: -0.375rem;">{{ .Content }}</div></div>
+<blockquote class="twitter-tweet" data-theme="dark"><a href="https://twitter.com/{{ .user }}/status/{{ .id }}">Tweet by @{{ .user }}</a></blockquote><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+```
+
+**Usage:**
+```markdown
+{{</* tweet user="golang" id="1234567890" */>}}
+```
+
+---
+
+### 4. CodePen Embeds
+
+Embed interactive code examples:
+
+**Template:** `shortcodes/codepen.html`
+```html
+<div class="codepen-embed" style="margin: 1.5rem 0;"><iframe height="{{ default .height "400" }}" style="width: 100%;" scrolling="no" title="{{ .title }}" src="https://codepen.io/{{ .user }}/embed/{{ .id }}?default-tab={{ default .tab "result" }}" frameborder="no" loading="lazy" allowtransparency="true" allowfullscreen="true"></iframe></div>
+```
+
+**Usage:**
+```markdown
+{{</* codepen user="chriscoyier" id="gfdDu" title="CSS Triangle" tab="css,result" height="300" */>}}
+```
+
+---
+
+## Callouts & Alerts
+
+### 5. Alert Callout
+
+Info/tip callouts with SVG icons:
+
+**Template:** `shortcodes/alert.html`
+```html
+<blockquote class="callout alert">{{ $icon := load "static/icon/alert.svg" }}<div class="icon">{{ $icon }}</div><div class="content">{{ if .title }}<p><strong>{{ .title }}</strong></p>{{ end }}{{ .Content }}</div></blockquote>
+```
+
+**Usage:**
+```markdown
+{{% alert title="Pro Tip" %}}
+Use shortcodes to keep your markdown clean and maintainable!
+{%/ alert %}}
+```
+
+**Required:** Create `static/icon/alert.svg` icon file
+
+---
+
+### 6. Warning Callout
+
+Warning messages with icon:
+
+**Template:** `shortcodes/warning.html`
+```html
+<blockquote class="callout warning">{{ $icon := load "static/icon/warning.svg" }}<div class="icon">{{ $icon }}</div><div class="content">{{ if .title }}<p><strong>{{ .title }}</strong></p>{{ end }}{{ .Content }}</div></blockquote>
+```
+
+**Usage:**
+```markdown
+{{% warning title="Be Careful" %}}
+Shortcode templates must be single-line to avoid Goldmark escaping!
+{%/ warning %}}
+```
+
+---
+
+### 7. Important Callout
+
+Critical information callout:
+
+**Template:** `shortcodes/important.html`
+```html
+<blockquote class="callout important">{{ $icon := load "static/icon/important.svg" }}<div class="icon">{{ $icon }}</div><div class="content">{{ if .title }}<p><strong>{{ .title }}</strong></p>{{ end }}{{ .Content }}</div></blockquote>
+```
+
+**Usage:**
+```markdown
+{{% important title="Critical" %}}
+Always test your shortcodes before deploying to production!
+{%/ important %}}
+```
+
+---
+
+## Images & Media
+
+### 8. Image Gallery
+
+Side-by-side image layout:
+
+**Template:** `shortcodes/gallery.html`
+```html
+<div class="image-gallery" style="display: flex; gap: 16px; flex-wrap: wrap;">{{ .Content }}</div>
+```
+
+**Usage:**
+```markdown
+{{% gallery %}}
+  <img src="img/photo1.jpg" alt="Photo 1">
+  <img src="img/photo2.jpg" alt="Photo 2">
+  <img src="img/photo3.jpg" alt="Photo 3">
+{%/ gallery %}}
+```
+
+---
+
+### 9. Figure with Caption
+
+Image with centered caption:
+
+**Template:** `shortcodes/figure.html`
+```html
+<figure class="image-with-caption" style="display: flex; flex-direction: column; align-items: center;">{{ if .src }}<img src="{{ .src }}" alt="{{ .alt }}" {{ if .width }}width="{{ .width }}"{{ end }} loading="lazy">{{ end }}{{ if .caption }}<figcaption>{{ .caption }}</figcaption>{{ end }}</figure>
+```
+
+**Usage:**
+```markdown
+{{</* figure src="img/screenshot.png" alt="Dashboard" caption="Admin Dashboard View" width="800" */>}}
+```
+
+---
+
+## Code Presentation
+
+### 10. Code Block with Filename
+
+Code with file label:
+
+**Template:** `shortcodes/codeblock.html`
+```html
+<div class="codeblock-with-filename"><div class="filename">{{ .name }}</div>{{ .Content }}</div>
 ```
 
 **Usage:**
 ````markdown
 {{% codeblock name="config.toml" %}}
 ```toml
-title = "My Site"
+title = "My Gozzi Site"
 base_url = "https://example.com"
 ```
 {%/ codeblock %}}
 ````
 
-## Advanced Shortcodes
+**CSS Required:**
+```css
+.codeblock-with-filename {
+    margin: 1.5rem 0;
+}
+.codeblock-with-filename .filename {
+    background: #282a36;
+    color: #f8f8f2;
+    padding: 0.5rem 1rem;
+    font-family: monospace;
+    font-size: 0.9em;
+    border-radius: 4px 4px 0 0;
+}
+.codeblock-with-filename pre {
+    margin-top: 0;
+    border-radius: 0 0 4px 4px;
+}
+```
 
-### Image Gallery
+---
 
-**Shortcode template** (`shortcodes/gallery.html`):
+### 11. Mermaid Diagrams
+
+Flowcharts and diagrams:
+
+**Template:** `shortcodes/mermaid.html`
 ```html
-<div class="image-gallery" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 1.5rem 0;">{{ .Content }}</div>
+<pre class="mermaid">{{ .Content }}</pre>
 ```
 
 **Usage:**
 ```markdown
+{{% mermaid %}}
+graph TD
+    A[Start] --> B{Is it working?}
+    B -->|Yes| C[Great!]
+    B -->|No| D[Debug]
+    D --> B
+    C --> E[Done]
+{%/ mermaid %}}
+```
+
+**Required:** Add Mermaid.js to your template:
+```html
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+</script>
+```
+
+---
+
+## Advanced Examples
+
+### 12. Responsive Video (Generic)
+
+Works with YouTube, Vimeo, etc:
+
+**Template:** `shortcodes/video.html`
+```html
+<div class="video-responsive" style="position: relative; padding-bottom: {{ default .ratio "56.25%" }}; height: 0; margin: 1.5rem 0;"><iframe src="{{ .src }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen loading="lazy"></iframe></div>
+```
+
+**Usage:**
+```markdown
+{{</* video src="https://player.vimeo.com/video/123456789" ratio="75%" */>}}
+```
+
+---
+
+### 13. Button/CTA
+
+Call-to-action button:
+
+**Template:** `shortcodes/button.html`
+```html
+<a href="{{ .url }}" class="cta-button {{ .style }}" {{ if .newtab }}target="_blank" rel="noopener noreferrer"{{ end }}>{{ .text }}</a>
+```
+
+**Usage:**
+```markdown
+{{</* button url="/download" text="Download Now" style="primary" newtab="true" */>}}
+```
+
+---
+
+### 14. Two-Column Layout
+
+Side-by-side content:
+
+**Template:** `shortcodes/columns.html`
+```html
+<div class="columns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1.5rem 0;">{{ .Content }}</div>
+```
+
+**Usage:**
+```markdown
+{{% columns %}}
+<div>
+Left column content
+</div>
+<div>
+Right column content
+</div>
+{%/ columns %}}
+```
+
+---
+
+### 15. Details/Disclosure
+
+Collapsible content:
+
+**Template:** `shortcodes/details.html`
+```html
+<details {{ if .open }}open{{ end }}><summary>{{ .title }}</summary><div class="details-content">{{ .Content }}</div></details>
+```
+
+**Usage:**
+```markdown
+{{% details title="Click to expand" open="true" %}}
+Hidden content revealed!
+{%/ details %}}
+```
+
+---
+
+## Complete Example
+
+Here's a blog post using multiple shortcodes:
+
+```markdown
++++
+title = "My Awesome Tutorial"
+date = 2024-12-24
++++
+
+# Getting Started
+
+{{% alert title="Prerequisites" %}}
+Make sure you have Go 1.22+ installed before proceeding.
+{%/ alert %}}
+
+## Installation
+
+{{% codeblock name="install.sh" %}}
+\`\`\`bash
+git clone https://github.com/user/repo.git
+cd repo
+go install
+\`\`\`
+{%/ codeblock %}}
+
+## Video Tutorial
+
+{{< youtube id="dQw4w9WgXcQ" >}}
+
+## Architecture
+
+{{% mermaid %}}
+graph LR
+    A[Client] --> B[API]
+    B --> C[Database]
+    B --> D[Cache]
+{%/ mermaid %}}
+
+## Screenshots
+
 {{% gallery %}}
-<img src="/img/photo1.jpg" alt="Photo 1">
-<img src="/img/photo2.jpg" alt="Photo 2">
-<img src="/img/photo3.jpg" alt="Photo 3">
+  <img src="img/step1.png" alt="Step 1">
+  <img src="img/step2.png" alt="Step 2">
 {%/ gallery %}}
+
+{{% warning title="Common Pitfall" %}}
+Don't forget to set environment variables!
+{%/ warning %}}
+
+## Try It Live
+
+{{< codepen user="example" id="abc123" title="Live Demo" >}}
 ```
 
-### Figure with Caption
+---
 
-**Shortcode template** (`shortcodes/figure.html`):
-```html
-<figure style="margin: 1.5rem 0; text-align: center;">{{ if .src }}<img src="{{ .src }}" alt="{{ .alt }}" {{ if .width }}width="{{ .width }}"{{ end }} style="max-width: 100%; height: auto;" loading="lazy">{{ end }}{{ if .caption }}<figcaption style="margin-top: 0.5rem; font-size: 0.875rem; color: #666;">{{ .caption }}</figcaption>{{ end }}</figure>
+## CSS Styling
+
+Basic CSS for shortcodes:
+
+```css
+/* Callouts */
+.callout {
+    padding: 1rem;
+    margin: 1.5rem 0;
+    border-left: 4px solid;
+    border-radius: 4px;
+    display: flex;
+    gap: 1rem;
+}
+
+.callout.alert {
+    background: rgba(66, 153, 225, 0.1);
+    border-color: #4299e1;
+}
+
+.callout.warning {
+    background: rgba(237, 137, 54, 0.1);
+    border-color: #ed8936;
+}
+
+.callout.important {
+    background: rgba(159, 122, 234, 0.1);
+    border-color: #9f7aea;
+}
+
+.callout .icon {
+    flex-shrink: 0;
+}
+
+/* Gallery */
+.image-gallery img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+/* Figure */
+.image-with-caption figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.9em;
+    color: #718096;
+    text-align: center;
+}
 ```
 
-**Usage:**
-```markdown
-{{</* figure src="/img/screenshot.png" alt="Dashboard" caption="Admin Dashboard Interface" width="800" */>}}
-```
-
-### GitHub Gist
-
-**Shortcode template** (`shortcodes/gist.html`):
-```html
-<script src="https://gist.github.com/{{ .user }}/{{ .id }}.js{{ if .file }}?file={{ .file }}{{ end }}"></script>
-```
-
-**Usage:**
-```markdown
-{{</* gist user="tduyng" id="abc123" */>}}
-{{</* gist user="tduyng" id="abc123" file="example.go" */>}}
-```
-
-## Utility Shortcodes
-
-### Button/Link
-
-**Shortcode template** (`shortcodes/button.html`):
-```html
-<a href="{{ .url }}" class="button" style="display: inline-block; padding: 0.5rem 1rem; background: #10b981; color: white; text-decoration: none; border-radius: 0.375rem; font-weight: 500;" {{ if .external }}target="_blank" rel="noopener noreferrer"{{ end }}>{{ .text }}</a>
-```
-
-**Usage:**
-```markdown
-{{</* button url="https://github.com/tduyng/gozzi" text="View on GitHub" external="true" */>}}
-```
-
-### Table of Contents
-
-**Shortcode template** (`shortcodes/toc.html`):
-```html
-<nav class="table-of-contents" style="background: #f9fafb; padding: 1rem; border-radius: 0.375rem; margin: 1.5rem 0;"><p style="font-weight: 600; margin: 0 0 0.5rem 0;">Table of Contents</p>{{ .Content }}</nav>
-```
-
-**Usage:**
-```markdown
-{{% toc %}}
-- [Introduction](#introduction)
-- [Installation](#installation)
-- [Usage](#usage)
-{%/ toc %}}
-```
-
-### Highlight Box
-
-**Shortcode template** (`shortcodes/highlight.html`):
-```html
-<div class="highlight-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 0.5rem; margin: 1.5rem 0;">{{ if .title }}<h3 style="margin: 0 0 1rem 0; color: white;">{{ .title }}</h3>{{ end }}<div>{{ .Content }}</div></div>
-```
-
-**Usage:**
-```markdown
-{{% highlight title="Featured Content" %}}
-Check out our latest release with amazing new features!
-{%/ highlight %}}
-```
-
-## Social Media Shortcodes
-
-### Twitter/X Embed
-
-**Shortcode template** (`shortcodes/twitter.html`):
-```html
-<blockquote class="twitter-tweet"><a href="https://twitter.com/{{ .user }}/status/{{ .id }}">Tweet</a></blockquote><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-```
-
-**Usage:**
-```markdown
-{{</* twitter user="tduyng" id="1234567890" */>}}
-```
-
-### CodePen Embed
-
-**Shortcode template** (`shortcodes/codepen.html`):
-```html
-<iframe height="{{ .height | default "300" }}" style="width: 100%;" scrolling="no" src="https://codepen.io/{{ .user }}/embed/{{ .id }}?default-tab={{ .tab | default "result" }}" frameborder="no" loading="lazy" allowtransparency="true" allowfullscreen="true"></iframe>
-```
-
-**Usage:**
-```markdown
-{{</* codepen user="tduyng" id="abc123" height="500" tab="html,result" */>}}
-```
-
-## Best Practices
-
-1. **Keep templates simple** - Start with basic HTML, add complexity as needed
-2. **Use single-line templates** - Avoid newlines that Goldmark interprets as code blocks
-3. **Provide defaults** - Use `{{ .param | default "value" }}` for optional parameters
-4. **Add inline styles** - Makes shortcodes self-contained and portable
-5. **Document your shortcodes** - Create a README in your `shortcodes/` directory
+---
 
 ## Tips
 
-- **Test in isolation** - Create a test page with all your shortcodes
-- **Version control** - Keep shortcodes in git for team sharing
-- **Share across sites** - Copy `shortcodes/` folder between projects
-- **Style with CSS** - For complex styling, use classes and external CSS
-- **Progressive enhancement** - Start simple, enhance gradually
+1. **Keep templates single-line** to avoid Goldmark escaping
+2. **Use `default` function** for optional parameters
+3. **Load icons once** with the `load` function (it's cached)
+4. **Test in production** builds to ensure CSS is applied
+5. **Document usage** in comments or README
 
-## See Also
-
-- [Shortcodes Documentation](/features/shortcodes) - Complete shortcode reference
-- [Template Functions](/functions/) - Available functions in shortcodes
-- [Real World Examples](/examples/real-world) - Production site examples
+Happy shortcoding! 🎉

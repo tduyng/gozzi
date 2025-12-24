@@ -196,14 +196,14 @@ func TestPaginator_processSection_PanicHandling(t *testing.T) {
 		wantPanic bool
 	}{
 		{
-			name:      "panics with page missing date config",
+			name:      "handles page missing date config gracefully",
 			section:   createPageWithoutDate("no-date"),
-			wantPanic: true,
+			wantPanic: false,
 		},
 		{
-			name:      "panics with page with wrong date type",
+			name:      "handles page with wrong date type gracefully",
 			section:   createPageWithWrongDateType("wrong-type"),
-			wantPanic: true,
+			wantPanic: false,
 		},
 	}
 

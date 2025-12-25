@@ -58,6 +58,13 @@ func (b *Builder) generatePage(node *content.Node) error {
 		"Page":   nodeMap, "Section": parentMap,
 	}
 
+	// Add series navigation if this page is part of a series
+	if seriesName, ok := node.Config["series"].(string); ok && seriesName != "" {
+		if seriesNav := b.getSeriesNavigation(node, seriesName); seriesNav != nil {
+			data["Series"] = seriesNav
+		}
+	}
+
 	return b.renderTemplate(node, outputPath, data)
 }
 
@@ -450,4 +457,89 @@ func (b *Builder) copyPageAssets(node *content.Node) error {
 	}
 
 	return copyDir(assets, dest)
+}
+
+// getSeriesNavigation builds series navigation data for a page.
+func (b *Builder) getSeriesNavigation(node *content.Node, seriesName string) map[string]any {
+	// Get the series taxonomy
+	seriesTaxonomy, exists := b.parser.Taxonomies["series"]
+	if !exists {
+		return nil
+	}
+
+	// Find the series entry
+	slug := urlizeHelper(seriesName)
+	entry, exists := seriesTaxonomy.Entries[slug]
+	if !exists {
+		return nil
+	}
+
+	// Get ordered series pages
+	seriesPages := entry.GetSeriesPages()
+	if len(seriesPages) == 0 {
+		return nil
+	}
+
+	// Find current page position
+	var currentPosition int
+	var prevPage, nextPage map[string]any
+
+	for i, sp := range seriesPages {
+		if sp.Node.Path == node.Path {
+			currentPosition = sp.Position
+
+			// Get previous page
+			if i > 0 {
+				prev := seriesPages[i-1]
+				prevPage = map[string]any{
+					"Title":     prev.Node.Config["title"],
+					"Permalink": prev.Node.Permalink,
+					"Position":  prev.Position,
+				}
+			}
+
+			// Get next page
+			if i < len(seriesPages)-1 {
+				next := seriesPages[i+1]
+				nextPage = map[string]any{
+					"Title":     next.Node.Config["title"],
+					"Permalink": next.Node.Permalink,
+					"Position":  next.Position,
+				}
+			}
+			break
+		}
+	}
+
+	// Build series navigation data
+	return map[string]any{
+		"Name":         entry.Term,
+		"Slug":         slug,
+		"Permalink":    b.buildTaxonomyPermalink("series", slug),
+		"TotalPosts":   len(seriesPages),
+		"CurrentPart":  currentPosition,
+		"PreviousPost": prevPage,
+		"NextPost":     nextPage,
+	}
+}
+
+// urlizeHelper converts a string to URL-friendly slug (helper for series nav).
+func urlizeHelper(s string) string {
+	s = strings.ToLower(s)
+	s = strings.ReplaceAll(s, " ", "-")
+	s = strings.ReplaceAll(s, "_", "-")
+
+	var result strings.Builder
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			result.WriteRune(r)
+		}
+	}
+
+	slug := result.String()
+	for strings.Contains(slug, "--") {
+		slug = strings.ReplaceAll(slug, "--", "-")
+	}
+
+	return strings.Trim(slug, "-")
 }

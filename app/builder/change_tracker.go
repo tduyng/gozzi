@@ -11,33 +11,35 @@ import (
 
 // ChangeTracker tracks which content changed for incremental builds.
 type ChangeTracker struct {
-	changedPaths     map[string]bool          // Content paths that changed
-	changedNodes     map[*content.Node]bool   // Nodes that need regeneration
-	affectedTags     map[string]bool          // Tags that need regeneration
-	needsSitemap     bool                     // Whether sitemap needs regeneration
-	needsFeed        bool                     // Whether Atom feed needs regeneration
-	needsRobots      bool                     // Whether robots.txt needs regeneration
-	needs404         bool                     // Whether 404 page needs regeneration
-	needsHome        bool                     // Whether homepage needs regeneration
-	needsBlogListing bool                     // Whether blog listing page needs regeneration
-	contentMap       map[string]*content.Node // Reference to content map
-	parser           *parser.ContentParser    // Reference to parser for tag lookup
+	changedPaths       map[string]bool            // Content paths that changed
+	changedNodes       map[*content.Node]bool     // Nodes that need regeneration
+	affectedTags       map[string]bool            // Tags that need regeneration (deprecated, use affectedTaxonomies)
+	affectedTaxonomies map[string]map[string]bool // taxonomyName -> {term slugs}
+	needsSitemap       bool                       // Whether sitemap needs regeneration
+	needsFeed          bool                       // Whether Atom feed needs regeneration
+	needsRobots        bool                       // Whether robots.txt needs regeneration
+	needs404           bool                       // Whether 404 page needs regeneration
+	needsHome          bool                       // Whether homepage needs regeneration
+	needsBlogListing   bool                       // Whether blog listing page needs regeneration
+	contentMap         map[string]*content.Node   // Reference to content map
+	parser             *parser.ContentParser      // Reference to parser for taxonomy lookup
 }
 
 // NewChangeTracker creates a new change tracker
 func NewChangeTracker(contentMap map[string]*content.Node, p *parser.ContentParser) *ChangeTracker {
 	return &ChangeTracker{
-		changedPaths:     make(map[string]bool),
-		changedNodes:     make(map[*content.Node]bool),
-		affectedTags:     make(map[string]bool),
-		contentMap:       contentMap,
-		parser:           p,
-		needsSitemap:     false,
-		needsFeed:        false,
-		needsRobots:      false,
-		needs404:         false,
-		needsHome:        false,
-		needsBlogListing: false,
+		changedPaths:       make(map[string]bool),
+		changedNodes:       make(map[*content.Node]bool),
+		affectedTags:       make(map[string]bool),
+		affectedTaxonomies: make(map[string]map[string]bool),
+		contentMap:         contentMap,
+		parser:             p,
+		needsSitemap:       false,
+		needsFeed:          false,
+		needsRobots:        false,
+		needs404:           false,
+		needsHome:          false,
+		needsBlogListing:   false,
 	}
 }
 
@@ -116,6 +118,7 @@ func (ct *ChangeTracker) determineNodeImpact(relPath string) {
 					ct.changedNodes[child] = true
 
 					ct.trackAffectedTags(child)
+					ct.trackAffectedTaxonomies(child)
 					break
 				}
 			}
@@ -139,6 +142,86 @@ func (ct *ChangeTracker) trackAffectedTags(node *content.Node) {
 			}
 		}
 	}
+}
+
+// trackAffectedTaxonomies identifies which taxonomy terms need regeneration.
+func (ct *ChangeTracker) trackAffectedTaxonomies(node *content.Node) {
+	// Track tags
+	if tags, ok := node.Config["tags"]; ok {
+		ct.trackTaxonomyTerms("tags", tags)
+	}
+
+	// Track categories
+	if categories, ok := node.Config["categories"]; ok {
+		ct.trackTaxonomyTerms("categories", categories)
+	}
+
+	// Track series
+	if series, ok := node.Config["series"]; ok {
+		ct.trackTaxonomyTerms("series", series)
+	}
+
+	// Track custom taxonomies from extra.taxonomies
+	if extra, ok := node.Config["extra"].(map[string]any); ok {
+		if taxonomies, ok := extra["taxonomies"].(map[string]any); ok {
+			for taxName, terms := range taxonomies {
+				ct.trackTaxonomyTerms(taxName, terms)
+			}
+		}
+	}
+}
+
+// trackTaxonomyTerms adds terms to the affected taxonomies map.
+func (ct *ChangeTracker) trackTaxonomyTerms(taxonomyName string, terms any) {
+	if ct.affectedTaxonomies[taxonomyName] == nil {
+		ct.affectedTaxonomies[taxonomyName] = make(map[string]bool)
+	}
+
+	// Convert terms to slugs and track them
+	switch termList := terms.(type) {
+	case string:
+		// Single term (e.g., series)
+		slug := urlizeTracker(termList)
+		ct.affectedTaxonomies[taxonomyName][slug] = true
+	case []string:
+		for _, term := range termList {
+			slug := urlizeTracker(term)
+			ct.affectedTaxonomies[taxonomyName][slug] = true
+		}
+	case []interface{}:
+		for _, term := range termList {
+			if termStr, ok := term.(string); ok {
+				slug := urlizeTracker(termStr)
+				ct.affectedTaxonomies[taxonomyName][slug] = true
+			}
+		}
+	}
+}
+
+// urlizeTracker converts a term to a URL-friendly slug (matches parser.urlize).
+func urlizeTracker(s string) string {
+	s = strings.ToLower(s)
+	s = strings.ReplaceAll(s, " ", "-")
+	s = strings.ReplaceAll(s, "_", "-")
+
+	// Remove non-alphanumeric characters except hyphens
+	var result strings.Builder
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			result.WriteRune(r)
+		}
+	}
+
+	// Remove consecutive hyphens
+	slug := result.String()
+	for strings.Contains(slug, "--") {
+		slug = strings.ReplaceAll(slug, "--", "-")
+	}
+
+	// Trim hyphens from start/end
+	slug = strings.Trim(slug, "-")
+
+	return slug
 }
 
 // isBlogPost checks if a path represents a blog post.
@@ -258,4 +341,28 @@ func (ct *ChangeTracker) GetAffectedTags() []string {
 		tags = append(tags, tag)
 	}
 	return tags
+}
+
+// GetAffectedTaxonomies returns a map of taxonomy names to affected term slugs.
+func (ct *ChangeTracker) GetAffectedTaxonomies() map[string][]string {
+	result := make(map[string][]string)
+	for taxonomyName, terms := range ct.affectedTaxonomies {
+		termList := make([]string, 0, len(terms))
+		for slug := range terms {
+			termList = append(termList, slug)
+		}
+		if len(termList) > 0 {
+			result[taxonomyName] = termList
+		}
+	}
+	return result
+}
+
+// GetAffectedTaxonomyCount returns the total number of affected taxonomy terms across all taxonomies.
+func (ct *ChangeTracker) GetAffectedTaxonomyCount() int {
+	count := 0
+	for _, terms := range ct.affectedTaxonomies {
+		count += len(terms)
+	}
+	return count
 }

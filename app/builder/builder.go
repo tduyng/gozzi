@@ -166,9 +166,9 @@ func (b *Builder) fullGenerate(contentRoot *content.Node) error {
 		})
 	}
 
-	if err := b.generateTagPages(); err != nil {
+	if err := b.generateTaxonomyPages(); err != nil {
 		return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
-			Operation: "generate_tag_pages",
+			Operation: "generate_taxonomy_pages",
 			Component: "builder",
 		})
 	}
@@ -280,6 +280,20 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
+	// Regenerate affected taxonomy pages
+	if tracker.GetAffectedTaxonomyCount() > 0 {
+		affectedTaxonomies := tracker.GetAffectedTaxonomies()
+		for taxonomyName, termSlugs := range affectedTaxonomies {
+			if err := b.generateSelectiveTaxonomies(taxonomyName, termSlugs); err != nil {
+				return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
+					Operation: fmt.Sprintf("generate_selective_%s", taxonomyName),
+					Component: "builder",
+				})
+			}
+		}
+	}
+
+	// Backwards compatibility: also handle old tag-based incremental builds
 	if tracker.GetAffectedTagsCount() > 0 {
 		if err := b.generateSelectiveTags(tracker.GetAffectedTags()); err != nil {
 			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{

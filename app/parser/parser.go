@@ -36,7 +36,8 @@ type ParseStats struct {
 type ContentParser struct {
 	Site               *config.Site
 	ContentMap         map[string]*content.Node
-	Tags               map[string]*TagEntry
+	Tags               map[string]*TagEntry // Deprecated: Use Taxonomies["tags"] instead
+	Taxonomies         map[string]*Taxonomy // All taxonomies (tags, categories, series, custom)
 	mu                 sync.Mutex
 	md                 goldmark.Markdown
 	shortcodeProcessor *markdown.ShortcodeProcessor
@@ -55,6 +56,7 @@ func NewParser(cfg *config.Site) *ContentParser {
 		Site:       cfg,
 		ContentMap: make(map[string]*content.Node),
 		Tags:       make(map[string]*TagEntry),
+		Taxonomies: make(map[string]*Taxonomy),
 		hashCache:  cache.NewHashCache(),
 		stats:      &ParseStats{},
 		md: goldmark.New(

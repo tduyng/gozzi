@@ -124,6 +124,10 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		parent.Children = append(parent.Children, pageNode)
 	}
 
+	// Parse all taxonomies (tags, categories, series, custom)
+	p.ParseTaxonomies(pageConfig, pageNode)
+
+	// Maintain backwards compatibility with Tags field
 	if len(pageConfig.Tags) > 0 {
 		p.parseTags(pageConfig, pageNode)
 	}

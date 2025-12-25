@@ -12,24 +12,25 @@ import (
 
 // Site represents the site-wide configuration loaded from config.toml.
 type Site struct {
-	BaseURL         string         `toml:"base_url"`
-	FeedURL         string         `toml:"feed_url"`
-	Description     string         `toml:"Description"`
-	Extra           map[string]any `toml:"extra"`
-	GenerateFeed    bool           `toml:"generate_feed"`
-	Theme           string         `toml:"theme"`
-	Img             string         `toml:"img"`
-	Lang            string         `toml:"language"`
-	OutputDir       string         `toml:"output_dir"`
-	Title           string         `toml:"title"`
-	StrictTemplates bool           `toml:"strict_templates"`
-	SyntaxTheme     string         `toml:"syntax_theme"`
-	MinifyCSS       bool           `toml:"minify_css"`
-	MinifyHTML      bool           `toml:"minify_html"`
-	MinifyJS        bool           `toml:"minify_js"`
-	MinifyJSON      bool           `toml:"minify_json"`
-	MinifySVG       bool           `toml:"minify_svg"`
-	MinifyXML       bool           `toml:"minify_xml"`
+	BaseURL         string           `toml:"base_url"`
+	FeedURL         string           `toml:"feed_url"`
+	Description     string           `toml:"Description"`
+	Extra           map[string]any   `toml:"extra"`
+	GenerateFeed    bool             `toml:"generate_feed"`
+	Theme           string           `toml:"theme"`
+	Img             string           `toml:"img"`
+	Lang            string           `toml:"language"`
+	OutputDir       string           `toml:"output_dir"`
+	Title           string           `toml:"title"`
+	StrictTemplates bool             `toml:"strict_templates"`
+	SyntaxTheme     string           `toml:"syntax_theme"`
+	MinifyCSS       bool             `toml:"minify_css"`
+	MinifyHTML      bool             `toml:"minify_html"`
+	MinifyJS        bool             `toml:"minify_js"`
+	MinifyJSON      bool             `toml:"minify_json"`
+	MinifySVG       bool             `toml:"minify_svg"`
+	MinifyXML       bool             `toml:"minify_xml"`
+	Taxonomies      TaxonomiesConfig `toml:"taxonomies"`
 	BuildTime       time.Time
 	BuildDrafts     bool
 }
@@ -44,6 +45,9 @@ type FrontMatter struct {
 	Img          string         `toml:"img"`
 	Lang         string         `toml:"language"`
 	Tags         []string       `toml:"tags"`
+	Categories   []string       `toml:"categories"`
+	Series       string         `toml:"series"`
+	SeriesOrder  int            `toml:"series_order"`
 	Template     string         `toml:"template"`
 	Title        string         `toml:"title"`
 	Featured     bool           `toml:"featured"`
@@ -60,6 +64,20 @@ func LoadSite(path string) (*Site, error) {
 			Path:      path,
 		})
 	}
+
+	// Initialize default taxonomies if not configured
+	if cfg.Taxonomies == nil {
+		cfg.Taxonomies = DefaultTaxonomiesConfig()
+	} else {
+		// Merge with defaults for any missing taxonomies
+		defaults := DefaultTaxonomiesConfig()
+		for name, defaultCfg := range defaults {
+			if _, exists := cfg.Taxonomies[name]; !exists {
+				cfg.Taxonomies[name] = defaultCfg
+			}
+		}
+	}
+
 	return &cfg, nil
 }
 
@@ -109,6 +127,9 @@ func (frontMatter *FrontMatter) ToConfig() map[string]any {
 	config["featured"] = frontMatter.Featured
 	config["draft"] = frontMatter.Draft
 	config["tags"] = frontMatter.Tags
+	config["categories"] = frontMatter.Categories
+	config["series"] = frontMatter.Series
+	config["series_order"] = frontMatter.SeriesOrder
 	config["date"] = frontMatter.Date
 	config["updated"] = frontMatter.Updated
 	config["extra"] = MergeExtra(make(map[string]any), frontMatter.Extra)
@@ -150,6 +171,9 @@ func mergeFrontMatter(merged, frontMatter map[string]any) map[string]any {
 	}
 
 	merged["tags"] = frontMatter["tags"]
+	merged["categories"] = frontMatter["categories"]
+	merged["series"] = frontMatter["series"]
+	merged["series_order"] = frontMatter["series_order"]
 
 	if date, ok := frontMatter["date"].(time.Time); ok && !date.IsZero() {
 		merged["date"] = date

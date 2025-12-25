@@ -17,3 +17,7 @@ per_page = 10
 minify_html = true
 generate_feed = true
 feed_filename = "atom.xml"
+
+[taxonomies]
+tags = { enabled = true, paginate_by = 0 }
+series = { enabled = true, paginate_by = 0 }

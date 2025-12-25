@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>All Series</title>
+</head>
+<body>
+    <h1>All Series</h1>
+    <div class="series-list">
+        {{range .Page.Terms}}
+        <div class="series-item" data-series="{{.Slug}}">
+            <a href="{{.Permalink}}">{{.Name}}</a>
+            <span class="count">({{.Count}} posts)</span>
+        </div>
+        {{end}}
+    </div>
+</body>
+</html>

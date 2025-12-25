@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Series: {{.Page.Term}}</title>
+</head>
+<body>
+    <h1>Series: {{.Page.Term}}</h1>
+    <p class="series-count">{{.Page.Count}} posts in this series</p>
+    <div class="series-posts">
+        {{range .Page.Pages}}
+        <article class="series-post" data-position="{{.Position}}">
+            <span class="part-number">Part {{.Position}}</span>
+            <h2><a href="{{.Permalink}}">{{.Config.title}}</a></h2>
+            <time>{{.Config.date}}</time>
+        </article>
+        {{end}}
+    </div>
+</body>
+</html>

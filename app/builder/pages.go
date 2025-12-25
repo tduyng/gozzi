@@ -50,19 +50,19 @@ func (b *Builder) generatePage(node *content.Node) error {
 	// Parent section doesn't need full content
 	parentMap := node.Parent.ToMapMinimal()
 
+	// Add series navigation if this page is part of a series
+	if seriesName, ok := node.Config["series"].(string); ok && seriesName != "" {
+		if seriesNav := b.getSeriesNavigation(node, seriesName); seriesNav != nil {
+			nodeMap["Series"] = seriesNav
+		}
+	}
+
 	data := map[string]any{
 		"Site": map[string]any{
 			"Config": b.site.ToConfig(),
 		},
 		"Config": node.Config,
 		"Page":   nodeMap, "Section": parentMap,
-	}
-
-	// Add series navigation if this page is part of a series
-	if seriesName, ok := node.Config["series"].(string); ok && seriesName != "" {
-		if seriesNav := b.getSeriesNavigation(node, seriesName); seriesNav != nil {
-			data["Series"] = seriesNav
-		}
 	}
 
 	return b.renderTemplate(node, outputPath, data)

@@ -39,6 +39,7 @@ func NewBuilder(site *config.Site, parser *parser.ContentParser) (*Builder, erro
 		ContentMap:      parser.ContentMap,
 		Markdown:        parser.GetMarkdownProcessor(),
 		StrictTemplates: site.StrictTemplates,
+		I18n:            site.I18n,
 	})
 
 	b := &Builder{

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/tduyng/gozzi/app/i18n"
 	"github.com/tduyng/gozzi/app/utils"
 )
 
@@ -36,6 +37,7 @@ type Site struct {
 	BuildTime       time.Time
 	BuildDrafts     bool
 	Data            map[string]any `toml:"-"` // Loaded from data/ directory, not from TOML
+	I18n            *i18n.I18n     `toml:"-"` // Loaded from config languages section and data/ directory
 }
 
 // FrontMatter represents the TOML front matter in markdown content files.
@@ -82,6 +84,15 @@ func LoadSite(path string) (*Site, error) {
 		}
 	}
 
+	// Load i18n configuration from config file
+	if err := cfg.loadI18nConfig(path); err != nil {
+		return nil, utils.WrapWithContext(utils.ErrConfig, err, utils.ErrorContext{
+			Operation: "load_i18n_config",
+			Component: "config",
+			Path:      path,
+		})
+	}
+
 	return &cfg, nil
 }
 
@@ -101,6 +112,81 @@ func (s *Site) LoadDataFiles(projectDir string) error {
 	} else {
 		// No data loader registered, initialize empty
 		s.Data = make(map[string]any)
+	}
+
+	return nil
+}
+
+// loadI18nConfig loads internationalization configuration from the config file.
+func (s *Site) loadI18nConfig(configPath string) error {
+	// Parse the raw TOML to extract languages section
+	var rawConfig struct {
+		Languages map[string]map[string]any `toml:"languages"`
+	}
+
+	if _, err := toml.DecodeFile(configPath, &rawConfig); err != nil {
+		// If we can't decode, languages section probably doesn't exist, which is fine
+		return nil
+	}
+
+	// If no languages configured, i18n is disabled
+	if len(rawConfig.Languages) == 0 {
+		return nil
+	}
+
+	// Find default language
+	defaultLang := ""
+	if defLangRaw, exists := rawConfig.Languages["default"]; exists {
+		if defLangStr, ok := defLangRaw[""].(string); ok {
+			defaultLang = defLangStr
+		}
+	}
+
+	// If no default specified, check if site.Lang is set
+	if defaultLang == "" && s.Lang != "" {
+		defaultLang = s.Lang
+	}
+
+	// If still no default, use "en"
+	if defaultLang == "" {
+		defaultLang = "en"
+	}
+
+	// Get project directory from config path
+	projectDir := filepath.Dir(configPath)
+	dataDir := filepath.Join(projectDir, "data")
+
+	// Create i18n manager
+	s.I18n = i18n.NewI18n(defaultLang, dataDir)
+
+	// Add each language
+	for langCode, langConfig := range rawConfig.Languages {
+		// Skip the "default" key
+		if langCode == "default" {
+			continue
+		}
+
+		name := langCode // Default name is the code
+		if nameRaw, exists := langConfig["name"]; exists {
+			if nameStr, ok := nameRaw.(string); ok {
+				name = nameStr
+			}
+		}
+
+		weight := 0
+		if weightRaw, exists := langConfig["weight"]; exists {
+			switch v := weightRaw.(type) {
+			case int:
+				weight = v
+			case int64:
+				weight = int(v)
+			case float64:
+				weight = int(v)
+			}
+		}
+
+		isDefault := langCode == defaultLang
+		s.I18n.AddLanguage(langCode, name, weight, isDefault)
 	}
 
 	return nil

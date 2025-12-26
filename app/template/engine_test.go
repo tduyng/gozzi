@@ -190,7 +190,7 @@ func TestCreateDefaultRegistry(t *testing.T) {
 		// Data
 		"dict", "safe", "load", "load_attribute",
 		// Site-specific
-		"asset", "get_section", "markdown",
+		"asset", "get_section", "markdown", "i18n",
 	}
 
 	registeredFuncs := r.List()

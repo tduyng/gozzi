@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/tduyng/gozzi/app/content"
+	"github.com/tduyng/gozzi/app/i18n"
 	"github.com/yuin/goldmark"
 )
 
@@ -17,6 +18,7 @@ type SiteContext struct {
 	BaseURL    string
 	ContentMap map[string]*content.Node
 	Markdown   goldmark.Markdown
+	I18n       *i18n.I18n
 }
 
 // SiteFuncs holds template functions that require site context.
@@ -90,6 +92,53 @@ func (sf *SiteFuncs) RenderMarkdown(input string) (template.HTML, error) {
 		return "", fmt.Errorf("failed to render markdown: %w", err)
 	}
 	return template.HTML(buf.String()), nil
+}
+
+// Translate returns a translation for the given key in the specified language.
+// Usage in templates:
+//
+//	{{ i18n "section.contact" }}  - uses current page language from context
+//	{{ i18n "hello" "fr" }}       - explicit language
+func (sf *SiteFuncs) Translate(key string, langOrContext ...any) (string, error) {
+	if sf.ctx.I18n == nil {
+		return key, nil // If i18n not configured, return the key itself
+	}
+
+	var langCode string
+
+	// Try to extract language from arguments
+	if len(langOrContext) > 0 {
+		// Check if first argument is a string (explicit language code)
+		if lang, ok := langOrContext[0].(string); ok {
+			langCode = lang
+		} else if node, ok := langOrContext[0].(*content.Node); ok {
+			// Try to get language from node config
+			if lang, exists := node.Config["lang"]; exists {
+				if langStr, ok := lang.(string); ok {
+					langCode = langStr
+				}
+			}
+		} else if configMap, ok := langOrContext[0].(map[string]any); ok {
+			// Try to get language from config map
+			if lang, exists := configMap["lang"]; exists {
+				if langStr, ok := lang.(string); ok {
+					langCode = langStr
+				}
+			}
+		}
+	}
+
+	// If no language specified, use default
+	if langCode == "" {
+		langCode = sf.ctx.I18n.GetDefaultLanguage().Code
+	}
+
+	result, err := sf.ctx.I18n.Translate(langCode, key)
+	if err != nil {
+		// If translation fails, return the key itself (graceful fallback)
+		return key, nil
+	}
+	return result, nil
 }
 
 // LoadData loads file content as HTML (unescaped).

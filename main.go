@@ -195,6 +195,13 @@ func initApp(configPath, contentDir string, buildDrafts bool) (*config.Site, *pa
 		log.Fatalf("Error loading data files: %v", err)
 	}
 
+	// Load i18n translations if i18n is configured
+	if site.I18n != nil {
+		if err := site.I18n.LoadTranslations(); err != nil {
+			log.Fatalf("Error loading i18n translations: %v", err)
+		}
+	}
+
 	contentParser := parser.NewParser(site)
 
 	// Create builder first to load templates (including shortcodes)

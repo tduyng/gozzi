@@ -6,6 +6,7 @@ import (
 	"html/template"
 
 	"github.com/tduyng/gozzi/app/content"
+	"github.com/tduyng/gozzi/app/i18n"
 	"github.com/tduyng/gozzi/app/template/funcs"
 	"github.com/yuin/goldmark"
 )
@@ -79,6 +80,8 @@ func (r *FuncRegistry) BuildFuncMap(ctx *funcs.SiteContext) template.FuncMap {
 				funcMap[name] = siteFuncs.GetSection
 			case "markdown":
 				funcMap[name] = siteFuncs.RenderMarkdown
+			case "i18n":
+				funcMap[name] = siteFuncs.Translate
 			}
 		} else if !def.RequiresCtx {
 			funcMap[name] = def.Fn
@@ -140,6 +143,7 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("asset", FuncDef{Fn: nil, RequiresCtx: true, Description: "Generate asset URL"})
 	r.MustRegister("get_section", FuncDef{Fn: nil, RequiresCtx: true, Description: "Get section by path"})
 	r.MustRegister("markdown", FuncDef{Fn: nil, RequiresCtx: true, Description: "Render markdown to HTML"})
+	r.MustRegister("i18n", FuncDef{Fn: nil, RequiresCtx: true, Description: "Translate key to current language"})
 
 	return r
 }
@@ -150,6 +154,7 @@ type EngineConfig struct {
 	ContentMap      map[string]*content.Node
 	Markdown        goldmark.Markdown
 	StrictTemplates bool // Error on undefined variables
+	I18n            *i18n.I18n
 }
 
 // Engine manages template loading and execution.
@@ -172,6 +177,7 @@ func (e *Engine) CreateFuncMap() template.FuncMap {
 		BaseURL:    e.config.BaseURL,
 		ContentMap: e.config.ContentMap,
 		Markdown:   e.config.Markdown,
+		I18n:       e.config.I18n,
 	}
 	return e.registry.BuildFuncMap(ctx)
 }

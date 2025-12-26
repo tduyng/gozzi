@@ -145,6 +145,17 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		if tags, ok := node.Config["tags"]; ok {
 			key["Tags"] = fmt.Sprint(tags)
 		}
+		// Include series in cache key (affects navigation rendering)
+		if series, ok := node.Config["series"]; ok {
+			key["Series"] = fmt.Sprint(series)
+		}
+		if seriesOrder, ok := node.Config["series_order"]; ok {
+			key["SeriesOrder"] = fmt.Sprint(seriesOrder)
+		}
+		// Include categories in cache key
+		if categories, ok := node.Config["categories"]; ok {
+			key["Categories"] = fmt.Sprint(categories)
+		}
 		// Extra config affects template rendering via partials
 		if extra, ok := node.Config["extra"]; ok {
 			key["Extra"] = extra
@@ -403,6 +414,19 @@ func (b *Builder) createStableCacheKey(templateName string, data any) map[string
 			tagKeys[i] = fmt.Sprintf("%s:%s:%s", name, count, permalink)
 		}
 		key["Tags"] = tagKeys
+	}
+
+	// Handle taxonomy index pages with Terms field (series, categories, etc.)
+	if terms, ok := pageData["Terms"].([]map[string]any); ok {
+		termKeys := make([]string, len(terms))
+		for i, term := range terms {
+			name := fmt.Sprint(term["Name"])
+			slug := fmt.Sprint(term["Slug"])
+			count := fmt.Sprint(term["Count"])
+			permalink := fmt.Sprint(term["Permalink"])
+			termKeys[i] = fmt.Sprintf("%s:%s:%s:%s", name, slug, count, permalink)
+		}
+		key["Terms"] = termKeys
 	}
 
 	if title, ok := pageData["Title"].(string); ok {

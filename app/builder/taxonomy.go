@@ -61,13 +61,14 @@ func (b *Builder) generateTaxonomyIndex(taxonomyName string, taxonomy *parser.Ta
 	terms := make([]map[string]any, 0, len(taxonomy.Entries))
 	for slug, entry := range taxonomy.Entries {
 		permalink := b.buildTaxonomyPermalink(taxonomyName, slug)
-		terms = append(terms, map[string]any{
+		term := map[string]any{
 			"Name":      entry.Term,
 			"Slug":      slug,
 			"Count":     entry.Count,
 			"Permalink": permalink,
 			"URL":       b.buildTaxonomyURL(permalink),
-		})
+		}
+		terms = append(terms, term)
 	}
 
 	// Sort alphabetically by term name
@@ -260,9 +261,20 @@ func (b *Builder) generateSelectiveTaxonomies(taxonomyName string, affectedTerms
 
 	// Regenerate affected term pages
 	for _, slug := range affectedTerms {
-		if entry, exists := taxonomy.Entries[slug]; exists {
+		// Skip empty slugs (invalid)
+		if slug == "" || strings.TrimSpace(slug) == "" {
+			continue
+		}
+
+		if entry, exists := taxonomy.Entries[slug]; exists && entry.Count > 0 {
 			if err := b.generateTaxonomyTerm(taxonomyName, slug, entry, termTemplate); err != nil {
 				return err
+			}
+		} else {
+			// Term no longer exists or has zero posts, delete the term page
+			termDir := filepath.Join(b.site.OutputDir, taxonomyName, slug)
+			if err := os.RemoveAll(termDir); err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("failed to remove empty term directory %s: %w", termDir, err)
 			}
 		}
 	}

@@ -73,6 +73,7 @@ func TestServeMode_TaxonomyChanges(t *testing.T) {
 
 		// Verify series index lists new series
 		verifyFileExists(t, sitePath, "series/index.html")
+
 		verifyFileContent(t, sitePath, "series/index.html", "new-series")
 	})
 
@@ -145,7 +146,7 @@ Test content.`
 title = "Part 1"
 date = 2024-01-01
 template = "post.html"
-series = "test-series"
+series = "order-test-series"
 series_order = 1
 +++
 Content 1`
@@ -154,7 +155,7 @@ Content 1`
 title = "Part 2"
 date = 2024-01-02
 template = "post.html"
-series = "test-series"
+series = "order-test-series"
 series_order = 2
 +++
 Content 2`

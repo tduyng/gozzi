@@ -322,18 +322,30 @@ func (ct *ChangeTracker) trackTaxonomyTerms(taxonomyName string, terms any) {
 	switch termList := terms.(type) {
 	case string:
 		// Single term (e.g., series)
+		if termList == "" {
+			return
+		}
 		slug := urlizeTracker(termList)
-		ct.affectedTaxonomies[taxonomyName][slug] = true
+		if slug != "" {
+			ct.affectedTaxonomies[taxonomyName][slug] = true
+		}
 	case []string:
 		for _, term := range termList {
+			if term == "" {
+				continue
+			}
 			slug := urlizeTracker(term)
-			ct.affectedTaxonomies[taxonomyName][slug] = true
+			if slug != "" {
+				ct.affectedTaxonomies[taxonomyName][slug] = true
+			}
 		}
 	case []interface{}:
 		for _, term := range termList {
-			if termStr, ok := term.(string); ok {
+			if termStr, ok := term.(string); ok && termStr != "" {
 				slug := urlizeTracker(termStr)
-				ct.affectedTaxonomies[taxonomyName][slug] = true
+				if slug != "" {
+					ct.affectedTaxonomies[taxonomyName][slug] = true
+				}
 			}
 		}
 	}
@@ -365,6 +377,38 @@ func urlizeTracker(s string) string {
 	return slug
 }
 
+// markSeriesPostsForRegeneration marks all posts in a series for regeneration.
+// This ensures that when a post is added/removed/reordered in a series,
+// all posts get regenerated with updated prev/next navigation.
+func (ct *ChangeTracker) markSeriesPostsForRegeneration(seriesValue any) {
+	seriesName, ok := seriesValue.(string)
+	if !ok || seriesName == "" {
+		return
+	}
+
+	// Get the series taxonomy
+	if ct.parser == nil || ct.parser.Taxonomies == nil {
+		return
+	}
+
+	seriesTaxonomy, exists := ct.parser.Taxonomies["series"]
+	if !exists {
+		return
+	}
+
+	// Find the series entry
+	slug := urlizeTracker(seriesName)
+	entry, exists := seriesTaxonomy.Entries[slug]
+	if !exists {
+		return
+	}
+
+	// Mark all posts in this series for regeneration
+	for _, node := range entry.Pages {
+		ct.changedNodes[node] = true
+	}
+}
+
 // compareTaxonomies compares old and new taxonomy values and tracks both.
 // This ensures that when a post moves from one taxonomy term to another,
 // both the old and new term pages are regenerated.
@@ -388,9 +432,34 @@ func (ct *ChangeTracker) compareTaxonomies(relPath string, newNode *content.Node
 		oldValue, oldExists := oldValues[field]
 		newValue, newExists := newNode.Config[field]
 
-		// If the value changed or was removed, track the old value
-		if oldExists && (!newExists || !equalTaxonomyValue(oldValue, newValue)) {
-			ct.trackTaxonomyTerms(field, oldValue)
+		// Special handling for series: mark all posts in affected series for regeneration
+		// This ensures prev/next navigation is updated for all posts in the series
+		if field == "series" {
+			// Series was added
+			if !oldExists && newExists {
+				ct.markSeriesPostsForRegeneration(newValue)
+			}
+
+			// Series was changed
+			if oldExists && newExists && !equalTaxonomyValue(oldValue, newValue) {
+				ct.markSeriesPostsForRegeneration(oldValue)
+				ct.markSeriesPostsForRegeneration(newValue)
+			}
+
+			// Series was removed
+			if oldExists && !newExists {
+				ct.markSeriesPostsForRegeneration(oldValue)
+			}
+
+			// If series changed or removed, track old taxonomy terms
+			if oldExists && (!newExists || !equalTaxonomyValue(oldValue, newValue)) {
+				ct.trackTaxonomyTerms(field, oldValue)
+			}
+		} else {
+			// For non-series taxonomies, use the original logic
+			if oldExists && (!newExists || !equalTaxonomyValue(oldValue, newValue)) {
+				ct.trackTaxonomyTerms(field, oldValue)
+			}
 		}
 	}
 
@@ -551,7 +620,8 @@ func (ct *ChangeTracker) GetChangedNodes() []*content.Node {
 
 // GetChangedNodesAfterParse re-resolves node pointers after parsing completes.
 func (ct *ChangeTracker) GetChangedNodesAfterParse(contentMap map[string]*content.Node) []*content.Node {
-	nodes := make([]*content.Node, 0, len(ct.changedNodes))
+	// Use a map to avoid duplicates
+	nodeSet := make(map[*content.Node]bool)
 
 	for relPath := range ct.changedPaths {
 		dir := filepath.Dir(relPath)
@@ -561,7 +631,7 @@ func (ct *ChangeTracker) GetChangedNodesAfterParse(contentMap map[string]*conten
 
 		if filepath.Base(relPath) == "_index.md" {
 			if node, exists := contentMap[dir]; exists {
-				nodes = append(nodes, node)
+				nodeSet[node] = true
 
 				// Compare old vs new taxonomy values
 				ct.compareTaxonomies(relPath, node)
@@ -581,7 +651,7 @@ func (ct *ChangeTracker) GetChangedNodesAfterParse(contentMap map[string]*conten
 			for _, child := range parentSection.Children {
 				if child.Type == content.NodeTypePage {
 					if strings.Contains(child.Path, relPath) || strings.Contains(relPath, child.Path) {
-						nodes = append(nodes, child)
+						nodeSet[child] = true
 
 						// Compare old vs new taxonomy values for this child
 						ct.compareTaxonomies(relPath, child)
@@ -590,6 +660,18 @@ func (ct *ChangeTracker) GetChangedNodesAfterParse(contentMap map[string]*conten
 				}
 			}
 		}
+	}
+
+	// After comparing taxonomies, include all nodes marked for regeneration
+	// This includes nodes added by markSeriesPostsForRegeneration
+	for node := range ct.changedNodes {
+		nodeSet[node] = true
+	}
+
+	// Convert set to slice
+	nodes := make([]*content.Node, 0, len(nodeSet))
+	for node := range nodeSet {
+		nodes = append(nodes, node)
 	}
 
 	return nodes

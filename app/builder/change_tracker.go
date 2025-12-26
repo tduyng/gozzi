@@ -82,7 +82,6 @@ func (ct *ChangeTracker) snapshotOldTaxonomyValues(changedFiles []string, conten
 		node := ct.findNodeByPath(relPath)
 		if node != nil {
 			ct.oldTaxonomyValues[relPath] = ct.extractTaxonomyValues(node)
-		} else {
 		}
 	}
 }

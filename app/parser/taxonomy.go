@@ -63,10 +63,8 @@ func (te *TaxonomyEntry) AddPage(node *content.Node, metadata map[string]any) {
 			if page.Path == node.Path {
 				te.Pages[i] = node
 				// Update metadata if provided
-				if metadata != nil {
-					for k, v := range metadata {
-						te.Metadata[k] = v
-					}
+				for k, v := range metadata {
+					te.Metadata[k] = v
 				}
 				break
 			}
@@ -80,10 +78,8 @@ func (te *TaxonomyEntry) AddPage(node *content.Node, metadata map[string]any) {
 	te.Count = len(te.Pages)
 
 	// Store metadata
-	if metadata != nil {
-		for k, v := range metadata {
-			te.Metadata[k] = v
-		}
+	for k, v := range metadata {
+		te.Metadata[k] = v
 	}
 }
 
@@ -130,7 +126,9 @@ func (te *TaxonomyEntry) GetSeriesPages() []*SeriesPage {
 			return false
 		}
 		// Both unordered, sort by date (newest first for fallback)
-		return seriesPages[i].Node.Config["date"].(interface{ Before(interface{}) bool }).Before(seriesPages[j].Node.Config["date"])
+		dateI := seriesPages[i].Node.Config["date"]
+		dateJ := seriesPages[j].Node.Config["date"]
+		return dateI.(interface{ Before(interface{}) bool }).Before(dateJ)
 	})
 
 	// Assign positions

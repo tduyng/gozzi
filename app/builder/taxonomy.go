@@ -13,6 +13,8 @@ import (
 
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/parser"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // generateTaxonomyPages generates all taxonomy pages (tags, categories, series, custom).
@@ -77,13 +79,14 @@ func (b *Builder) generateTaxonomyIndex(taxonomyName string, taxonomy *parser.Ta
 	})
 
 	// Build template data
+	caser := cases.Title(language.English)
 	data := map[string]any{
 		"Site": map[string]any{
 			"Config":     b.site.ToConfig(),
 			"Taxonomies": b.buildTaxonomiesMap(),
 		},
 		"Page": map[string]any{
-			"Title":    strings.Title(taxonomyName),
+			"Title":    caser.String(taxonomyName),
 			"Terms":    terms,
 			"Path":     "/" + taxonomyName,
 			"Taxonomy": taxonomyName,
@@ -95,7 +98,9 @@ func (b *Builder) generateTaxonomyIndex(taxonomyName string, taxonomy *parser.Ta
 }
 
 // generateTaxonomyTerm generates a single term page (e.g., /tags/go/, /series/git-mastery/).
-func (b *Builder) generateTaxonomyTerm(taxonomyName, slug string, entry *parser.TaxonomyEntry, templateName string) error {
+func (b *Builder) generateTaxonomyTerm(
+	taxonomyName, slug string, entry *parser.TaxonomyEntry, templateName string,
+) error {
 	var pageList []map[string]any
 
 	// Special handling for series - use ordered pages with prev/next navigation
@@ -107,13 +112,14 @@ func (b *Builder) generateTaxonomyTerm(taxonomyName, slug string, entry *parser.
 	}
 
 	// Build template data
+	caser := cases.Title(language.English)
 	data := map[string]any{
 		"Site": map[string]any{
 			"Config":     b.site.ToConfig(),
 			"Taxonomies": b.buildTaxonomiesMap(),
 		},
 		"Page": map[string]any{
-			"Title":     fmt.Sprintf("%s: %s", strings.Title(singularize(taxonomyName)), entry.Term),
+			"Title":     fmt.Sprintf("%s: %s", caser.String(singularize(taxonomyName)), entry.Term),
 			"Term":      entry.Term,
 			"Slug":      slug,
 			"Pages":     pageList,

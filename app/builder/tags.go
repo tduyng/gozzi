@@ -14,36 +14,6 @@ import (
 	"os"
 )
 
-func (b *Builder) generateTagPages() error {
-	tagsTemplateExists := b.hasTemplate("tags.html")
-	tagTemplateExists := b.hasTemplate("tag.html")
-
-	if !tagsTemplateExists && !tagTemplateExists {
-		return nil
-	}
-
-	tagsDir := filepath.Join(b.site.OutputDir, "tags")
-	if err := os.MkdirAll(tagsDir, 0755); err != nil {
-		return err
-	}
-
-	if tagsTemplateExists {
-		if err := b.generateTagsIndex(); err != nil {
-			return err
-		}
-	}
-
-	if tagTemplateExists {
-		for tag, pages := range b.parser.Tags {
-			if err := b.generateTagPage(tag, pages); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
 func (b *Builder) generateTagsIndex() error {
 	tags := make([]map[string]any, 0, len(b.parser.Tags))
 	for tag, entry := range b.parser.Tags {

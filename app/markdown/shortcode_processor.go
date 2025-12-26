@@ -104,7 +104,8 @@ func (sp *ShortcodeProcessor) renderShortcode(match string, isSelfClosing bool) 
 		if len(content) > 0 && (content[0] == '\n' || content[0] == '\r') {
 			trimmedContent = content[1:]
 		}
-		if len(trimmedContent) > 0 && (trimmedContent[len(trimmedContent)-1] == '\n' || trimmedContent[len(trimmedContent)-1] == '\r') {
+		lastChar := trimmedContent[len(trimmedContent)-1]
+		if len(trimmedContent) > 0 && (lastChar == '\n' || lastChar == '\r') {
 			trimmedContent = trimmedContent[:len(trimmedContent)-1]
 		}
 

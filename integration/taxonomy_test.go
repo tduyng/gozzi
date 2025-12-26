@@ -2,6 +2,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -289,7 +290,6 @@ This is a draft and should not affect series navigation.`
 // TestTaxonomy_Tags tests tag taxonomy functionality
 func TestTaxonomy_Tags(t *testing.T) {
 	t.Run("TagPages_Generated", func(t *testing.T) {
-		t.Skip("TODO: Enable tags/index.html generation in taxonomy system")
 		sitePath := setupTestSite(t)
 		buildSite(t, sitePath)
 
@@ -308,7 +308,6 @@ func TestTaxonomy_Tags(t *testing.T) {
 	})
 
 	t.Run("AddTag_CreatesTagPage", func(t *testing.T) {
-		t.Skip("TODO: Fix tag page creation and tags index update when new tags are added")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -331,7 +330,7 @@ func TestTaxonomy_Tags(t *testing.T) {
 	})
 
 	t.Run("RemoveTag_UpdatesPages", func(t *testing.T) {
-		t.Skip("TODO: Fix tag removal to update tag pages and remove posts from tag listings")
+		t.Skip("TODO: Fix full rebuild to properly clear old taxonomy data before reparsing")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -392,20 +391,20 @@ Content`
 	})
 
 	t.Run("TagCounts_AccurateOnIndex", func(t *testing.T) {
-		t.Skip("TODO: Fix tag page generation to create individual tag pages like tags/popular/index.html")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
 		// Create multiple posts with same tag
+		dates := []string{"01", "02", "03"}
 		for i := 1; i <= 3; i++ {
-			post := `+++
-title = "Popular Post ` + string(rune('0'+i)) + `"
-date = 2024-01-` + string(rune('0'+i)) + `
+			post := fmt.Sprintf(`+++
+title = "Popular Post %d"
+date = 2024-01-%s
 template = "post.html"
 tags = ["popular"]
 +++
-Content`
-			createPost(t, sitePath, "blog/popular"+string(rune('0'+i))+".md", post)
+Content`, i, dates[i-1])
+			createPost(t, sitePath, fmt.Sprintf("blog/popular%d/index.md", i), post)
 		}
 
 		fullRebuild(t, gen, contentParser, sitePath)
@@ -413,14 +412,14 @@ Content`
 		// Tag page should show all posts
 		tagContent := readFileContent(t, sitePath, "tags/popular/index.html")
 		for i := 1; i <= 3; i++ {
-			if !strings.Contains(tagContent, "Popular Post "+string(rune('0'+i))) {
+			if !strings.Contains(tagContent, fmt.Sprintf("Popular Post %d", i)) {
 				t.Errorf("tag page missing Popular Post %d", i)
 			}
 		}
 	})
 
 	t.Run("TagsWithSpecialCharacters_Sanitized", func(t *testing.T) {
-		t.Skip("TODO: Fix tag rendering to preserve special characters like C++ in output HTML")
+		t.Skip("TODO: Fix post template to render tag data in page content")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>All Tags</title>
+</head>
+<body>
+    <h1>All Tags</h1>
+    <div class="tags-list">
+        {{range .Page.Terms}}
+        <div class="tag-item" data-tag="{{.Slug}}">
+            <a href="{{.Permalink}}">{{.Name}}</a>
+            <span class="count">({{.Count}} posts)</span>
+        </div>
+        {{end}}
+    </div>
+</body>
+</html>

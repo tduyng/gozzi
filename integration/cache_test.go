@@ -176,7 +176,7 @@ func TestCache_TemplateChange(t *testing.T) {
 // TestCache_TaxonomyChange tests cache invalidation on taxonomy changes
 func TestCache_TaxonomyChange(t *testing.T) {
 	t.Run("AddTag_InvalidatesTaxonomyPages", func(t *testing.T) {
-		t.Skip("TODO: Enable tags/index.html generation in taxonomy system")
+		t.Skip("TODO: Fix incremental rebuild to regenerate taxonomy index pages when new terms added")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -222,7 +222,7 @@ func TestCache_TaxonomyChange(t *testing.T) {
 	})
 
 	t.Run("ChangeTaxonomy_InvalidatesOldAndNewPages", func(t *testing.T) {
-		t.Skip("TODO: Fix tag page generation to create individual tag pages")
+		t.Skip("TODO: Fix full rebuild to properly update changed taxonomy assignments")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -253,7 +253,7 @@ func TestCache_TaxonomyChange(t *testing.T) {
 	})
 
 	t.Run("RemoveTaxonomy_CleansUpPages", func(t *testing.T) {
-		t.Skip("TODO: Fix tag page cleanup when tags are removed from posts")
+		t.Skip("TODO: Fix taxonomy cleanup to remove pages when all posts lose a tag")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 

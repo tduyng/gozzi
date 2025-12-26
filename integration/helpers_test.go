@@ -273,34 +273,3 @@ func createPost(t *testing.T, sitePath string, relativePath string, content stri
 
 	return postPath
 }
-
-// deletePost removes a post file
-func deletePost(t *testing.T, sitePath string, relativePath string) {
-	t.Helper()
-
-	postPath := filepath.Join(sitePath, "content", relativePath)
-	if err := os.Remove(postPath); err != nil && !os.IsNotExist(err) {
-		t.Fatalf("failed to delete post: %v", err)
-	}
-}
-
-// assertCacheHitRate verifies cache hit rate is within expected range
-func assertCacheHitRate(t *testing.T, gen *builder.Builder, minRate float64, maxRate float64) {
-	t.Helper()
-
-	stats := gen.GetCacheStats()
-	if stats.HitRate < minRate || stats.HitRate > maxRate {
-		t.Errorf("cache hit rate %.1f%% not in expected range [%.1f%%, %.1f%%]",
-			stats.HitRate, minRate, maxRate)
-	}
-}
-
-// assertMinCacheMisses verifies there are at least N cache misses
-func assertMinCacheMisses(t *testing.T, gen *builder.Builder, minMisses uint64) {
-	t.Helper()
-
-	stats := gen.GetCacheStats()
-	if stats.Misses < minMisses {
-		t.Errorf("expected at least %d cache misses, got %d", minMisses, stats.Misses)
-	}
-}

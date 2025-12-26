@@ -70,10 +70,14 @@ jobs:
 
       - name: Run tests (with coverage)
         if: matrix.os == 'ubuntu-latest'
+        env:
+          TZ: UTC
         run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Run tests
         if: matrix.os != 'ubuntu-latest'
+        env:
+          TZ: UTC
         run: go test -v -race ./...
 
       - name: Upload coverage to Codecov

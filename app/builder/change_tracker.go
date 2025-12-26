@@ -23,6 +23,7 @@ type ChangeTracker struct {
 	needsBlogListing   bool                       // Whether blog listing page needs regeneration
 	contentMap         map[string]*content.Node   // Reference to content map
 	parser             *parser.ContentParser      // Reference to parser for taxonomy lookup
+	oldTaxonomyValues  map[string]map[string]any  // Snapshot of old taxonomy values: relPath -> {field -> value}
 }
 
 // NewChangeTracker creates a new change tracker
@@ -34,6 +35,7 @@ func NewChangeTracker(contentMap map[string]*content.Node, p *parser.ContentPars
 		affectedTaxonomies: make(map[string]map[string]bool),
 		contentMap:         contentMap,
 		parser:             p,
+		oldTaxonomyValues:  make(map[string]map[string]any),
 		needsSitemap:       false,
 		needsFeed:          false,
 		needsRobots:        false,
@@ -45,8 +47,147 @@ func NewChangeTracker(contentMap map[string]*content.Node, p *parser.ContentPars
 
 // AnalyzeChanges processes the list of changed files.
 func (ct *ChangeTracker) AnalyzeChanges(changedFiles []string, contentDir string) {
+	// Snapshot will either use provided values or try to snapshot from current contentMap
+	// Note: If snapshotting from contentMap, it may be too late if ParseFiles already ran
+	ct.snapshotOldTaxonomyValues(changedFiles, contentDir)
+
 	for _, file := range changedFiles {
 		ct.analyzeFile(file, contentDir)
+	}
+}
+
+// SetOldTaxonomyValues allows pre-snapshotted values to be set.
+// This should be used when values were captured before ParseFiles() updated the contentMap.
+func (ct *ChangeTracker) SetOldTaxonomyValues(values map[string]map[string]any) {
+	if values != nil {
+		ct.oldTaxonomyValues = values
+	}
+}
+
+// snapshotOldTaxonomyValues saves the current taxonomy values.
+// NOTE: This will only work correctly if called BEFORE ParseFiles updates the contentMap.
+func (ct *ChangeTracker) snapshotOldTaxonomyValues(changedFiles []string, contentDir string) {
+	// Skip if values were already set via SetOldTaxonomyValues
+	if len(ct.oldTaxonomyValues) > 0 {
+		return
+	}
+
+	for _, file := range changedFiles {
+		relPath := ct.normalizeFilePath(file, contentDir)
+		if relPath == "" {
+			continue
+		}
+
+		// Find the node for this file and snapshot its taxonomy values
+		node := ct.findNodeByPath(relPath)
+		if node != nil {
+			ct.oldTaxonomyValues[relPath] = ct.extractTaxonomyValues(node)
+		} else {
+		}
+	}
+}
+
+// findNodeByPath finds a node by its relative path.
+func (ct *ChangeTracker) findNodeByPath(relPath string) *content.Node {
+	dir := filepath.Dir(relPath)
+	if dir == "." {
+		dir = ""
+	}
+
+	if filepath.Base(relPath) == "_index.md" {
+		if node, exists := ct.contentMap[dir]; exists {
+			return node
+		}
+		return nil
+	}
+
+	parentDir := dir
+	if filepath.Base(relPath) == "index.md" {
+		parentDir = filepath.Dir(dir)
+		if parentDir == "." {
+			parentDir = ""
+		}
+	}
+
+	if parentSection, exists := ct.contentMap[parentDir]; exists {
+		for _, child := range parentSection.Children {
+			if child.Type == content.NodeTypePage {
+				if strings.Contains(child.Path, relPath) || strings.Contains(relPath, child.Path) {
+					return child
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// normalizeFilePath converts an absolute file path to a relative path.
+func (ct *ChangeTracker) normalizeFilePath(file, contentDir string) string {
+	absContentRaw, _ := filepath.Abs(contentDir)
+	absFileRaw, _ := filepath.Abs(file)
+
+	absContent, err := filepath.EvalSymlinks(absContentRaw)
+	if err != nil {
+		absContent = absContentRaw
+	}
+
+	absFile, err := filepath.EvalSymlinks(absFileRaw)
+	if err != nil {
+		absFile = absFileRaw
+	}
+
+	if !strings.HasPrefix(absFile, absContent) {
+		return ""
+	}
+
+	relPath, err := filepath.Rel(absContent, absFile)
+	if err != nil {
+		return ""
+	}
+
+	return filepath.ToSlash(relPath)
+}
+
+// extractTaxonomyValues extracts all taxonomy values from a node.
+func (ct *ChangeTracker) extractTaxonomyValues(node *content.Node) map[string]any {
+	values := make(map[string]any)
+
+	// Extract standard taxonomy fields
+	taxonomyFields := []string{"tags", "categories", "series"}
+	for _, field := range taxonomyFields {
+		if val, ok := node.Config[field]; ok {
+			values[field] = cloneTaxonomyValue(val)
+		}
+	}
+
+	// Extract custom taxonomies
+	if extra, ok := node.Config["extra"].(map[string]any); ok {
+		if taxonomies, ok := extra["taxonomies"].(map[string]any); ok {
+			for taxName, val := range taxonomies {
+				values["extra.taxonomies."+taxName] = cloneTaxonomyValue(val)
+			}
+		}
+	}
+
+	return values
+}
+
+// cloneTaxonomyValue creates a deep copy of a taxonomy value.
+func cloneTaxonomyValue(val any) any {
+	switch v := val.(type) {
+	case string:
+		return v
+	case []string:
+		clone := make([]string, len(v))
+		copy(clone, v)
+		return clone
+	case []interface{}:
+		clone := make([]interface{}, len(v))
+		copy(clone, v)
+		return clone
+	default:
+		return val
 	}
 }
 
@@ -224,6 +365,120 @@ func urlizeTracker(s string) string {
 	return slug
 }
 
+// compareTaxonomies compares old and new taxonomy values and tracks both.
+// This ensures that when a post moves from one taxonomy term to another,
+// both the old and new term pages are regenerated.
+func (ct *ChangeTracker) compareTaxonomies(relPath string, newNode *content.Node) {
+	// Track new taxonomy values (pages we're joining)
+	ct.trackAffectedTaxonomies(newNode)
+
+	// Get old taxonomy values from the snapshot
+	oldValues, hasOldValues := ct.oldTaxonomyValues[relPath]
+
+	if !hasOldValues {
+		// No old values to compare, this might be a new file
+		return
+	}
+
+	// Track old taxonomy values (pages we're leaving)
+	// We need to regenerate these to remove the post
+	taxonomyFields := []string{"tags", "categories", "series"}
+
+	for _, field := range taxonomyFields {
+		oldValue, oldExists := oldValues[field]
+		newValue, newExists := newNode.Config[field]
+
+		// If the value changed or was removed, track the old value
+		if oldExists && (!newExists || !equalTaxonomyValue(oldValue, newValue)) {
+			ct.trackTaxonomyTerms(field, oldValue)
+		}
+	}
+
+	// Also check custom taxonomies in extra.taxonomies
+	for key, oldValue := range oldValues {
+		if strings.HasPrefix(key, "extra.taxonomies.") {
+			taxName := strings.TrimPrefix(key, "extra.taxonomies.")
+
+			// Check if this taxonomy still exists in new node with same value
+			newHasThis := false
+			if newExtra, ok := newNode.Config["extra"].(map[string]any); ok {
+				if newTaxonomies, ok := newExtra["taxonomies"].(map[string]any); ok {
+					if newValue, exists := newTaxonomies[taxName]; exists {
+						if !equalTaxonomyValue(oldValue, newValue) {
+							// Value changed, track old terms
+							ct.trackTaxonomyTerms(taxName, oldValue)
+						}
+						newHasThis = true
+					}
+				}
+			}
+
+			// Taxonomy was removed, track old terms
+			if !newHasThis {
+				ct.trackTaxonomyTerms(taxName, oldValue)
+			}
+		}
+	}
+}
+
+// equalTaxonomyValue checks if two taxonomy values are equal.
+func equalTaxonomyValue(a, b any) bool {
+	// Handle string values (series)
+	if strA, okA := a.(string); okA {
+		if strB, okB := b.(string); okB {
+			return strA == strB
+		}
+		return false
+	}
+
+	// Handle []string values
+	if sliceA, okA := a.([]string); okA {
+		if sliceB, okB := b.([]string); okB {
+			if len(sliceA) != len(sliceB) {
+				return false
+			}
+			// Create maps for comparison
+			mapA := make(map[string]bool)
+			for _, v := range sliceA {
+				mapA[v] = true
+			}
+			for _, v := range sliceB {
+				if !mapA[v] {
+					return false
+				}
+			}
+			return true
+		}
+		return false
+	}
+
+	// Handle []interface{} values
+	if sliceA, okA := a.([]interface{}); okA {
+		if sliceB, okB := b.([]interface{}); okB {
+			if len(sliceA) != len(sliceB) {
+				return false
+			}
+			mapA := make(map[string]bool)
+			for _, v := range sliceA {
+				if strV, ok := v.(string); ok {
+					mapA[strV] = true
+				}
+			}
+			for _, v := range sliceB {
+				if strV, ok := v.(string); ok {
+					if !mapA[strV] {
+						return false
+					}
+				}
+			}
+			return true
+		}
+		return false
+	}
+
+	return false
+}
+
 // isBlogPost checks if a path represents a blog post.
 func (ct *ChangeTracker) isBlogPost(relPath string) bool {
 	if filepath.Base(relPath) == "_index.md" {
@@ -307,6 +562,9 @@ func (ct *ChangeTracker) GetChangedNodesAfterParse(contentMap map[string]*conten
 		if filepath.Base(relPath) == "_index.md" {
 			if node, exists := contentMap[dir]; exists {
 				nodes = append(nodes, node)
+
+				// Compare old vs new taxonomy values
+				ct.compareTaxonomies(relPath, node)
 			}
 			continue
 		}
@@ -324,6 +582,9 @@ func (ct *ChangeTracker) GetChangedNodesAfterParse(contentMap map[string]*conten
 				if child.Type == content.NodeTypePage {
 					if strings.Contains(child.Path, relPath) || strings.Contains(relPath, child.Path) {
 						nodes = append(nodes, child)
+
+						// Compare old vs new taxonomy values for this child
+						ct.compareTaxonomies(relPath, child)
 						break
 					}
 				}

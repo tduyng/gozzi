@@ -1,5 +1,3 @@
-// ABOUTME: Integration tests for the series taxonomy feature
-// ABOUTME: Comprehensive end-to-end testing of series generation, ordering, and navigation
 package integration
 
 import (

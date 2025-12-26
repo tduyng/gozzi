@@ -214,7 +214,12 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 	s.gen.ResetCacheStats()
 
 	parseStart := time.Now()
+	var oldTaxonomyValues map[string]map[string]any
+
 	if len(contentFiles) > 0 {
+		// Snapshot taxonomy values BEFORE ParseFiles updates the contentMap
+		oldTaxonomyValues = s.gen.SnapshotTaxonomyValues(contentFiles, s.contentDir)
+
 		if err := s.parser.ParseFiles(s.contentDir, contentFiles); err != nil {
 			log.Printf("Content parse error: %v", err)
 		}
@@ -232,9 +237,10 @@ func (s *DevServer) triggerRebuild(changedFiles []string) {
 
 	if len(contentFiles) > 0 && !hasConfigChange && len(templateFiles) == 0 {
 		err = s.gen.GenerateWithOptions(s.parser.ContentMap["."], builder.GenerateOptions{
-			Incremental:  true,
-			ChangedFiles: contentFiles,
-			ContentDir:   s.contentDir,
+			Incremental:       true,
+			ChangedFiles:      contentFiles,
+			ContentDir:        s.contentDir,
+			OldTaxonomyValues: oldTaxonomyValues,
 		})
 		if err != nil {
 			log.Printf("Incremental build error: %v", err)

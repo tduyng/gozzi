@@ -26,9 +26,10 @@ type Builder struct {
 
 // GenerateOptions configures how the site generation should run.
 type GenerateOptions struct {
-	Incremental  bool
-	ChangedFiles []string
-	ContentDir   string
+	Incremental       bool
+	ChangedFiles      []string
+	ContentDir        string
+	OldTaxonomyValues map[string]map[string]any // Pre-snapshotted taxonomy values: relPath -> {field -> value}
 }
 
 // NewBuilder creates a new Builder with loaded templates.
@@ -218,6 +219,12 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 	}
 
 	tracker := NewChangeTracker(b.parser.ContentMap, b.parser)
+
+	// Use pre-snapshotted taxonomy values if provided
+	if opts.OldTaxonomyValues != nil {
+		tracker.SetOldTaxonomyValues(opts.OldTaxonomyValues)
+	}
+
 	tracker.AnalyzeChanges(opts.ChangedFiles, contentDir)
 
 	changedNodes := tracker.GetChangedNodesAfterParse(b.parser.ContentMap)
@@ -331,6 +338,28 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 	}
 
 	return b.copyStaticAssets()
+}
+
+// SnapshotTaxonomyValues captures current taxonomy values for changed files.
+// This should be called BEFORE ParseFiles() to preserve old values for comparison.
+func (b *Builder) SnapshotTaxonomyValues(changedFiles []string, contentDir string) map[string]map[string]any {
+	tracker := NewChangeTracker(b.parser.ContentMap, b.parser)
+
+	// Create a temporary snapshot using the tracker's logic
+	tempSnapshot := make(map[string]map[string]any)
+	for _, file := range changedFiles {
+		relPath := tracker.normalizeFilePath(file, contentDir)
+		if relPath == "" {
+			continue
+		}
+
+		node := tracker.findNodeByPath(relPath)
+		if node != nil {
+			tempSnapshot[relPath] = tracker.extractTaxonomyValues(node)
+		}
+	}
+
+	return tempSnapshot
 }
 
 // GetCacheStats returns the current render cache statistics.

@@ -242,6 +242,7 @@ func (b *Builder) buildTaxonomyURL(permalink string) string {
 // generateSelectiveTaxonomies regenerates only affected taxonomy terms.
 func (b *Builder) generateSelectiveTaxonomies(taxonomyName string, affectedTerms []string) error {
 	taxonomy, exists := b.parser.Taxonomies[taxonomyName]
+
 	if !exists || len(affectedTerms) == 0 {
 		return nil
 	}

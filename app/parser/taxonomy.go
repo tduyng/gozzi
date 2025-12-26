@@ -192,6 +192,30 @@ func (p *ContentParser) ParseTaxonomies(pageConfig *config.FrontMatter, pageNode
 	}
 }
 
+// RemovePageFromAllTaxonomies removes a page from all taxonomy entries.
+// This should be called before re-parsing a page's taxonomies during incremental builds.
+func (p *ContentParser) RemovePageFromAllTaxonomies(pageNode *content.Node) {
+	for _, taxonomy := range p.Taxonomies {
+		for _, entry := range taxonomy.Entries {
+			// Remove this page from the entry
+			newPages := make([]*content.Node, 0, len(entry.Pages))
+			removed := false
+			for _, page := range entry.Pages {
+				if page.Path != pageNode.Path {
+					newPages = append(newPages, page)
+				} else {
+					removed = true
+				}
+			}
+			if removed {
+				entry.Pages = newPages
+				entry.Count = len(newPages)
+				delete(entry.Seen, pageNode.Path)
+			}
+		}
+	}
+}
+
 // parseTaxonomy processes a single taxonomy type.
 func (p *ContentParser) parseTaxonomy(name string, terms []string, node *content.Node, metadata map[string]any) {
 	// Get or create taxonomy

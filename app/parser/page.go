@@ -17,6 +17,7 @@ import (
 )
 
 func (p *ContentParser) parsePage(path, dir string) error {
+
 	mdContent, err := os.ReadFile(path)
 	if err != nil {
 		return utils.WrapWithContext(utils.ErrFileSystem, err, utils.ErrorContext{
@@ -88,7 +89,14 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		pagePath = dir
 	} else {
 		parent = p.GetOrCreateSection(dir)
-		pagePath = strings.TrimSuffix(path, "content/")
+		// Handle both absolute and relative paths
+		if filepath.IsAbs(path) {
+			// For absolute paths, construct the path from content/ + dir + filename
+			// to match the format used during initial build
+			pagePath = filepath.Join("content", dir, filepath.Base(path))
+		} else {
+			pagePath = strings.TrimSuffix(path, "content/")
+		}
 	}
 
 	slug := content.GenerateSlug(pagePath, parent)
@@ -115,6 +123,9 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	found := false
 	for i, child := range parent.Children {
 		if child.Path == pageNode.Path {
+			// This is an incremental update - remove the old page from all taxonomies
+			// before updating it with new taxonomy values
+			p.RemovePageFromAllTaxonomies(child)
 			parent.Children[i] = pageNode
 			found = true
 			break

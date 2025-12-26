@@ -219,6 +219,58 @@ func buildURL(baseURL, slug string) string {
 	return baseURL + "/" + slug
 }
 
+// detectLanguage detects the language for a content file from:
+// 1. Directory structure (e.g., content/en/, content/fr/)
+// 2. File suffix (e.g., about.en.md, about.fr.md)
+// 3. Frontmatter language field
+// 4. Site default language (fallback)
+func (p *ContentParser) detectLanguage(path, dir string, fm *config.FrontMatter) string {
+	// 1. Check frontmatter first (highest priority)
+	if fm != nil && fm.Lang != "" {
+		return fm.Lang
+	}
+
+	// 2. Check file suffix (e.g., about.en.md)
+	basename := filepath.Base(path)
+	if ext := filepath.Ext(basename); ext == ".md" {
+		nameWithoutExt := strings.TrimSuffix(basename, ext)
+		parts := strings.Split(nameWithoutExt, ".")
+		if len(parts) >= 2 {
+			// Last part before .md could be language code
+			potentialLang := parts[len(parts)-1]
+			// Validate it's a configured language
+			if p.Site.I18n != nil && p.Site.I18n.GetLanguage(potentialLang) != nil {
+				return potentialLang
+			}
+		}
+	}
+
+	// 3. Check directory structure (e.g., content/en/, content/fr/)
+	if dir != "." && dir != "" {
+		// Get the first directory component
+		parts := strings.Split(filepath.ToSlash(dir), "/")
+		if len(parts) > 0 {
+			firstDir := parts[0]
+			// Validate it's a configured language
+			if p.Site.I18n != nil && p.Site.I18n.GetLanguage(firstDir) != nil {
+				return firstDir
+			}
+		}
+	}
+
+	// 4. Fallback to site default language
+	if p.Site.I18n != nil {
+		return p.Site.I18n.GetDefaultLanguage().Code
+	}
+
+	// 5. Ultimate fallback
+	if p.Site.Lang != "" {
+		return p.Site.Lang
+	}
+
+	return "en"
+}
+
 // ResetStats resets parsing statistics
 func (p *ContentParser) ResetStats() {
 	p.stats.FilesSkipped.Store(0)

@@ -82,6 +82,10 @@ func (p *ContentParser) parsePage(path, dir string) error {
 
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, pageConfig.ToConfig())
 
+	// Detect and set language for this page
+	lang := p.detectLanguage(path, dir, pageConfig)
+	mergedConfig["lang"] = lang
+
 	var parent *content.Node
 	var pagePath string
 	if filepath.Base(path) == "index.md" {

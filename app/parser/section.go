@@ -71,6 +71,11 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	}
 	sectionConfig := frontMatter.ToConfig()
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, nil)
+
+	// Detect and set language for this section
+	lang := p.detectLanguage(path, dir, frontMatter)
+	mergedConfig["lang"] = lang
+
 	slug := content.GenerateSlug(path, nil)
 	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
 	mergedConfig["img_url"] = p.resolveImgURL(frontMatter, slug)

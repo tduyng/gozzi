@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
+	"github.com/tduyng/gozzi/app/i18n"
 )
 
 func TestNewParser(t *testing.T) {
@@ -362,4 +363,107 @@ func getKeys(m map[string]*content.Node) []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func TestDetectLanguage(t *testing.T) {
+	tests := []struct {
+		name         string
+		setupI18n    bool
+		path         string
+		dir          string
+		frontmatter  *config.FrontMatter
+		expectedLang string
+	}{
+		{
+			name:      "frontmatter language takes priority",
+			setupI18n: true,
+			path:      "content/blog/post.md",
+			dir:       "blog",
+			frontmatter: &config.FrontMatter{
+				Lang: "fr",
+			},
+			expectedLang: "fr",
+		},
+		{
+			name:      "file suffix detection",
+			setupI18n: true,
+			path:      "content/blog/about.fr.md",
+			dir:       "blog",
+			frontmatter: &config.FrontMatter{
+				Lang: "",
+			},
+			expectedLang: "fr",
+		},
+		{
+			name:      "directory structure detection",
+			setupI18n: true,
+			path:      "content/en/blog/post.md",
+			dir:       "en/blog",
+			frontmatter: &config.FrontMatter{
+				Lang: "",
+			},
+			expectedLang: "en",
+		},
+		{
+			name:      "fallback to default language",
+			setupI18n: true,
+			path:      "content/blog/post.md",
+			dir:       "blog",
+			frontmatter: &config.FrontMatter{
+				Lang: "",
+			},
+			expectedLang: "en",
+		},
+		{
+			name:      "no i18n - fallback to site lang",
+			setupI18n: false,
+			path:      "content/blog/post.md",
+			dir:       "blog",
+			frontmatter: &config.FrontMatter{
+				Lang: "",
+			},
+			expectedLang: "en",
+		},
+		{
+			name:      "file suffix with multiple dots",
+			setupI18n: true,
+			path:      "content/blog/my.awesome.post.fr.md",
+			dir:       "blog",
+			frontmatter: &config.FrontMatter{
+				Lang: "",
+			},
+			expectedLang: "fr",
+		},
+		{
+			name:      "nested directory structure",
+			setupI18n: true,
+			path:      "content/fr/blog/tech/post.md",
+			dir:       "fr/blog/tech",
+			frontmatter: &config.FrontMatter{
+				Lang: "",
+			},
+			expectedLang: "fr",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			site := &config.Site{
+				BaseURL: "https://example.com",
+				Lang:    "en",
+			}
+
+			if tt.setupI18n {
+				// Create i18n with English and French
+				site.I18n = i18n.NewI18n("en", "")
+				site.I18n.AddLanguage("en", "English", 1, true)
+				site.I18n.AddLanguage("fr", "Français", 2, false)
+			}
+
+			parser := NewParser(site)
+			lang := parser.detectLanguage(tt.path, tt.dir, tt.frontmatter)
+
+			assert.Equal(t, tt.expectedLang, lang, "Language detection mismatch")
+		})
+	}
 }

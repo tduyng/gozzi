@@ -163,7 +163,10 @@ func (sm *SnapshotMatcher) compareSnapshot(snapshotPath string, current *Snapsho
 	data, err := os.ReadFile(snapshotPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			sm.t.Errorf("Snapshot does not exist: %s\n\nRun tests with UPDATE_SNAPSHOTS=1 to create it:\n  UPDATE_SNAPSHOTS=1 go test ./integration -run %s",
+			sm.t.Errorf(
+				"Snapshot does not exist: %s\n\n"+
+					"Run tests with UPDATE_SNAPSHOTS=1 to create it:\n"+
+					"  UPDATE_SNAPSHOTS=1 go test ./integration -run %s",
 				sm.snapshotName, sm.t.Name())
 			return
 		}
@@ -268,7 +271,13 @@ func SnapshotFiles(t *testing.T, testName string, sitePath string, files []strin
 }
 
 // SnapshotFilesWithMetadata is a convenience function with metadata
-func SnapshotFilesWithMetadata(t *testing.T, testName string, sitePath string, files []string, metadata map[string]any) {
+func SnapshotFilesWithMetadata(
+	t *testing.T,
+	testName string,
+	sitePath string,
+	files []string,
+	metadata map[string]any,
+) {
 	t.Helper()
 	matcher := NewSnapshotMatcher(t, testName)
 	matcher.MatchSnapshotWithMetadata(sitePath, files, metadata)

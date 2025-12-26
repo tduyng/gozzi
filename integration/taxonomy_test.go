@@ -171,7 +171,6 @@ func TestTaxonomy_Series(t *testing.T) {
 	})
 
 	t.Run("AddPostToSeries_UpdatesPages", func(t *testing.T) {
-		t.Skip("TODO: Fix series navigation to update post counts and next/prev links when series grows")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -213,7 +212,6 @@ This is part 4 added dynamically.`
 	})
 
 	t.Run("ChangeSeriesOrder_RebuildsCorrectly", func(t *testing.T) {
-		t.Skip("TODO: Fix series order changes to recalculate part numbers and navigation links")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -224,8 +222,8 @@ This is part 4 added dynamically.`
 		// Rebuild
 		fullRebuild(t, gen, contentParser, sitePath)
 
-		// Part 2 should now be last (Part 5)
-		verifyFileContent(t, sitePath, "blog/series-part2/index.html", "Part 5 of 3 in")
+		// Part 2 should now be last (position 3, not 5)
+		verifyFileContent(t, sitePath, "blog/series-part2/index.html", "Part 3 of 3 in")
 
 		// Part 1 should now link to Part 3 as next
 		verifyFileContent(t, sitePath, "blog/series-part1/index.html", "Next:")

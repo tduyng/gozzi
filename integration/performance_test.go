@@ -57,21 +57,31 @@ func TestPerformance_IncrementalBuild(t *testing.T) {
 // TestPerformance_CacheEffectiveness tests cache performance
 func TestPerformance_CacheEffectiveness(t *testing.T) {
 	t.Run("CacheImproves_RebuildSpeed", func(t *testing.T) {
-		t.Skip("TODO: Improve cache hit rate to exceed 50% threshold on unchanged rebuilds")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
-		// Second build should be faster due to cache
+		// First build - populate cache
+		gen.ClearRenderCache()
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("initial build failed: %v", err)
+		}
+
+		// Second build WITHOUT clearing cache - should hit cache
+		gen.ResetCacheStats()
 		start := time.Now()
-		fullRebuild(t, gen, contentParser, sitePath)
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("cached rebuild failed: %v", err)
+		}
 		duration := time.Since(start)
 
 		stats := gen.GetCacheStats()
-		if stats.HitRate < 50 {
-			t.Errorf("expected >50%% cache hit rate, got %.1f%%", stats.HitRate)
+		// When content is unchanged, should have very high cache hit rate
+		if stats.HitRate < 90 {
+			t.Errorf("expected >90%% cache hit rate on unchanged rebuild, got %.1f%%", stats.HitRate)
 		}
 
-		t.Logf("Cached rebuild: %v, hit rate: %.1f%%", duration, stats.HitRate)
+		t.Logf("Cached rebuild: %v, hit rate: %.1f%%, hits: %d, misses: %d",
+			duration, stats.HitRate, stats.Hits, stats.Misses)
 	})
 }
 

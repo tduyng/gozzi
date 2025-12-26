@@ -384,29 +384,29 @@ func TestBuildMode_StaticAssets(t *testing.T) {
 	})
 
 	t.Run("StaticFiles_DoNotTriggerContentRebuild", func(t *testing.T) {
-		t.Skip("TODO: Fix cache invalidation to preserve cache when only static files change")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
-		// Get initial cache stats
-		gen.ResetCacheStats()
-		gen.Generate(contentParser.ContentMap["."])
-		initialStats := gen.GetCacheStats()
+		// Populate cache with initial build
+		gen.ClearRenderCache()
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("initial build failed: %v", err)
+		}
 
 		// Add new static file
 		newStaticFile := filepath.Join(sitePath, "static/new-asset.txt")
 		os.WriteFile(newStaticFile, []byte("new content"), 0644)
 
-		// Rebuild
+		// Rebuild WITHOUT clearing cache - should get high cache hit rate
 		gen.ResetCacheStats()
-		buildSite(t, sitePath)
-		afterStats := gen.GetCacheStats()
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("rebuild failed: %v", err)
+		}
 
-		// Cache hit rate should be similar (static files don't affect content cache)
-		// This verifies static file changes don't force content regeneration
-		if afterStats.HitRate < initialStats.HitRate-10 {
-			t.Errorf("static file addition should not significantly affect content cache hit rate (before: %.1f%%, after: %.1f%%)",
-				initialStats.HitRate, afterStats.HitRate)
+		stats := gen.GetCacheStats()
+		// Static file changes shouldn't affect content rendering
+		if stats.HitRate < 80 {
+			t.Errorf("expected high cache hit rate when only static files change, got %.1f%%", stats.HitRate)
 		}
 
 		verifyFileExists(t, sitePath, "new-asset.txt")

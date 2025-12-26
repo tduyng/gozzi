@@ -373,6 +373,13 @@ func (b *Builder) ResetCacheStats() {
 	b.renderCache.ResetStats()
 }
 
+// ClearRenderCache clears all cached rendered content.
+func (b *Builder) ClearRenderCache() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.renderCache.Clear()
+}
+
 func (b *Builder) processNode(node *content.Node) error {
 	switch node.Type {
 	case content.NodeTypeSection:

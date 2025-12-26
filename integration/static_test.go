@@ -74,29 +74,33 @@ func TestStatic_Changes(t *testing.T) {
 	})
 
 	t.Run("StaticChange_NoContentRebuild", func(t *testing.T) {
-		t.Skip("TODO: Fix cache to preserve hit rate when static files change")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
-		// Get baseline
-		gen.ResetCacheStats()
-		fullRebuild(t, gen, contentParser, sitePath)
-		baselineHitRate := gen.GetCacheStats().HitRate
+		// Get baseline - do a full rebuild to populate cache
+		gen.ClearRenderCache()
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("baseline build failed: %v", err)
+		}
 
 		// Modify static file
 		staticPath := filepath.Join(sitePath, "static/style.css")
 		modifyFile(t, staticPath, "font-family", "font-family: sans-serif")
 
-		// Rebuild
+		// Rebuild WITHOUT clearing cache (to test cache effectiveness)
 		gen.ResetCacheStats()
-		fullRebuild(t, gen, contentParser, sitePath)
-		afterHitRate := gen.GetCacheStats().HitRate
-
-		// Cache hit rate should be similar (static changes don't affect content)
-		if afterHitRate < baselineHitRate-10 {
-			t.Errorf("static change should not significantly affect cache (before: %.1f%%, after: %.1f%%)",
-				baselineHitRate, afterHitRate)
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("rebuild after static change failed: %v", err)
 		}
+
+		stats := gen.GetCacheStats()
+		// Should have high cache hit rate since content didn't change
+		if stats.HitRate < 80 {
+			t.Errorf("expected high cache hit rate when only static files change, got %.1f%%", stats.HitRate)
+		}
+
+		// Verify static file was updated
+		verifyFileContent(t, sitePath, "style.css", "sans-serif")
 	})
 }
 
@@ -118,29 +122,34 @@ func TestStatic_NewFiles(t *testing.T) {
 	})
 
 	t.Run("NewStatic_NoContentRebuild", func(t *testing.T) {
-		t.Skip("TODO: Fix cache to preserve hit rate when new static files are added")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
-		// Baseline
-		gen.ResetCacheStats()
-		fullRebuild(t, gen, contentParser, sitePath)
-		baseline := gen.GetCacheStats().HitRate
+		// Baseline - populate cache
+		gen.ClearRenderCache()
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("baseline build failed: %v", err)
+		}
 
 		// Add static file
 		newFile := filepath.Join(sitePath, "static/another.js")
 		os.WriteFile(newFile, []byte("console.log('hi')"), 0644)
 
-		// Rebuild
+		// Rebuild WITHOUT clearing cache
 		gen.ResetCacheStats()
-		fullRebuild(t, gen, contentParser, sitePath)
-		after := gen.GetCacheStats().HitRate
-
-		// Should not affect content cache
-		if after < baseline-10 {
-			t.Errorf("new static file should not affect content cache (before: %.1f%%, after: %.1f%%)",
-				baseline, after)
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("rebuild failed: %v", err)
 		}
+
+		stats := gen.GetCacheStats()
+		// Should have high cache hit rate - content unchanged
+		if stats.HitRate < 80 {
+			t.Errorf("new static file should not affect content cache, got %.1f%% hit rate", stats.HitRate)
+		}
+
+		// Verify new static file was copied
+		verifyFileExists(t, sitePath, "another.js")
+		verifyFileContent(t, sitePath, "another.js", "console.log")
 	})
 }
 

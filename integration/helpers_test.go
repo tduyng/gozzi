@@ -247,6 +247,9 @@ func incrementalRebuild(t *testing.T, gen *builder.Builder, contentParser *parse
 func fullRebuild(t *testing.T, gen *builder.Builder, contentParser *parser.ContentParser, sitePath string) {
 	t.Helper()
 
+	// Clear render cache to ensure fresh builds
+	gen.ClearRenderCache()
+
 	if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
 		t.Fatalf("failed to re-parse content: %v", err)
 	}

@@ -273,6 +273,48 @@ func copyFile(src, dst string) error {
 	return nil
 }
 
+// CopyStaticFile copies a single static file from static/ to the output directory
+func (b *Builder) CopyStaticFile(srcPath string) error {
+	// srcPath should be like "static/css/cv.css"
+	if !strings.HasPrefix(srcPath, "static") {
+		return nil // Not a static file
+	}
+
+	relPath, err := filepath.Rel("static", srcPath)
+	if err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "get_relative_path",
+			Component: "builder",
+			Path:      srcPath,
+		})
+	}
+
+	destPath := filepath.Join(b.site.OutputDir, relPath)
+
+	// Handle minification based on file type
+	if b.site.MinifyCSS && strings.HasSuffix(srcPath, ".css") {
+		return b.copyCSSWithMinify(srcPath, destPath)
+	}
+
+	if b.site.MinifyJS && strings.HasSuffix(srcPath, ".js") {
+		return b.copyJSWithMinify(srcPath, destPath)
+	}
+
+	if b.site.MinifyJSON && strings.HasSuffix(srcPath, ".json") {
+		return b.copyJSONWithMinify(srcPath, destPath)
+	}
+
+	if b.site.MinifySVG && strings.HasSuffix(srcPath, ".svg") {
+		return b.copySVGWithMinify(srcPath, destPath)
+	}
+
+	if b.site.MinifyXML && strings.HasSuffix(srcPath, ".xml") {
+		return b.copyXMLWithMinify(srcPath, destPath)
+	}
+
+	return copyFile(srcPath, destPath)
+}
+
 func copyDir(src, dst string) error {
 	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {

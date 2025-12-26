@@ -224,6 +224,37 @@ func (site *Site) ToConfig() map[string]any {
 		siteConfig["build_time"] = site.BuildTime
 		siteConfig["extra"] = MergeExtra(make(map[string]any), site.Extra)
 		siteConfig["data"] = site.Data
+
+		// Add i18n data if configured
+		if site.I18n != nil {
+			// Convert languages to a format usable in templates
+			languages := make([]map[string]any, 0)
+			for _, lang := range site.I18n.GetSortedLanguages() {
+				languages = append(languages, map[string]any{
+					"code":    lang.Code,
+					"name":    lang.Name,
+					"weight":  lang.Weight,
+					"default": lang.IsDefault,
+				})
+			}
+			siteConfig["languages"] = languages
+
+			// Add default language
+			if defaultLang := site.I18n.GetDefaultLanguage(); defaultLang != nil {
+				siteConfig["default_language"] = map[string]any{
+					"code":    defaultLang.Code,
+					"name":    defaultLang.Name,
+					"weight":  defaultLang.Weight,
+					"default": defaultLang.IsDefault,
+				}
+			}
+
+			// Add i18n enabled flag
+			siteConfig["i18n_enabled"] = site.I18n.IsEnabled()
+		} else {
+			siteConfig["languages"] = []map[string]any{}
+			siteConfig["i18n_enabled"] = false
+		}
 	}
 	if site.OutputDir == "" {
 		siteConfig["output_dir"] = "public"

@@ -85,7 +85,11 @@ type RebuildAnalyzer struct {
 }
 
 // NewRebuildAnalyzer creates a new analyzer
-func NewRebuildAnalyzer(contentMap map[string]*content.Node, p *parser.ContentParser, contentDir string) *RebuildAnalyzer {
+func NewRebuildAnalyzer(
+	contentMap map[string]*content.Node,
+	p *parser.ContentParser,
+	contentDir string,
+) *RebuildAnalyzer {
 	return &RebuildAnalyzer{
 		contentMap: contentMap,
 		parser:     p,
@@ -94,7 +98,10 @@ func NewRebuildAnalyzer(contentMap map[string]*content.Node, p *parser.ContentPa
 }
 
 // AnalyzeChanges determines what needs to be rebuilt based on changed files
-func (ra *RebuildAnalyzer) AnalyzeChanges(changedFiles []string, oldTaxonomies map[string]map[string]any) *RebuildScope {
+func (ra *RebuildAnalyzer) AnalyzeChanges(
+	changedFiles []string,
+	oldTaxonomies map[string]map[string]any,
+) *RebuildScope {
 	scope := NewRebuildScope()
 
 	for _, file := range changedFiles {
@@ -144,7 +151,12 @@ func (ra *RebuildAnalyzer) analyzeFile(file string, oldTaxonomies map[string]map
 }
 
 // analyzeTaxonomyChanges detects taxonomy changes and marks affected pages
-func (ra *RebuildAnalyzer) analyzeTaxonomyChanges(node *content.Node, relPath string, oldTaxonomies map[string]map[string]any, scope *RebuildScope) {
+func (ra *RebuildAnalyzer) analyzeTaxonomyChanges(
+	node *content.Node,
+	relPath string,
+	oldTaxonomies map[string]map[string]any,
+	scope *RebuildScope,
+) {
 	oldValues, hasOld := oldTaxonomies[relPath]
 	currentValues := ra.extractTaxonomyValues(node)
 

@@ -155,11 +155,7 @@ func (cd *ChangeDetector) shouldIgnoreDir(path string) bool {
 
 	// Ignore hidden directories
 	base := filepath.Base(path)
-	if strings.HasPrefix(base, ".") {
-		return true
-	}
-
-	return false
+	return strings.HasPrefix(base, ".")
 }
 
 // HasChanged checks if a file's content has actually changed using MD5 hash

@@ -301,7 +301,8 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 	}
 
 	// Backwards compatibility: also handle old tag-based incremental builds
-	if tracker.GetAffectedTagsCount() > 0 {
+	// Only use if new taxonomy system is not enabled for tags
+	if tracker.GetAffectedTagsCount() > 0 && !b.parser.Site.Taxonomies.IsEnabled("tags") {
 		if err := b.generateSelectiveTags(tracker.GetAffectedTags()); err != nil {
 			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
 				Operation: "generate_selective_tags",

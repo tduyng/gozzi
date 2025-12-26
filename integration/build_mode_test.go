@@ -133,17 +133,16 @@ func TestBuildMode_ConfigChange(t *testing.T) {
 	})
 
 	t.Run("ConfigChange_BaseURL_UpdatesAllLinks", func(t *testing.T) {
-		t.Skip("TODO: Fix sitemap.xml format to include full URLs with base_url")
 		sitePath := setupTestSite(t)
 		buildSite(t, sitePath)
 
 		// Verify initial base_url
-		verifyFileContent(t, sitePath, "sitemap.xml", "https://example.com")
+		verifyFileContent(t, sitePath, "sitemap.xml", "https://test.example.com")
 
 		// Change base_url
 		configPath := filepath.Join(sitePath, "config.toml")
 		config, _ := os.ReadFile(configPath)
-		modifiedConfig := strings.Replace(string(config), "https://example.com", "https://newsite.com", 1)
+		modifiedConfig := strings.Replace(string(config), "https://test.example.com", "https://newsite.com", 1)
 		os.WriteFile(configPath, []byte(modifiedConfig), 0644)
 
 		// Rebuild
@@ -157,7 +156,6 @@ func TestBuildMode_ConfigChange(t *testing.T) {
 // TestBuildMode_TemplateChange tests that template changes trigger affected pages rebuild
 func TestBuildMode_TemplateChange(t *testing.T) {
 	t.Run("TemplateChange_RegeneratesAffectedPages", func(t *testing.T) {
-		t.Skip("TODO: Fix template reload mechanism to properly invalidate and regenerate pages")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -165,10 +163,10 @@ func TestBuildMode_TemplateChange(t *testing.T) {
 		gen.Generate(contentParser.ContentMap["."])
 		beforeStats := gen.GetCacheStats()
 
-		// Modify template
+		// Modify template - use actual tag from template
 		templatePath := filepath.Join(sitePath, "templates/post.html")
 		content, _ := os.ReadFile(templatePath)
-		modified := strings.Replace(string(content), "<article>", "<article class=\"v2\">", 1)
+		modified := strings.Replace(string(content), "<body>", "<body class=\"v2\">", 1)
 		os.WriteFile(templatePath, []byte(modified), 0644)
 
 		// Reload templates
@@ -191,14 +189,13 @@ func TestBuildMode_TemplateChange(t *testing.T) {
 	})
 
 	t.Run("TemplateChange_DoesNotAffectOtherTemplates", func(t *testing.T) {
-		t.Skip("TODO: Fix template reload to propagate changes to affected pages only")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
 		// Modify post.html template
 		templatePath := filepath.Join(sitePath, "templates/post.html")
 		content, _ := os.ReadFile(templatePath)
-		modified := strings.Replace(string(content), "<article>", "<article data-test=\"modified\">", 1)
+		modified := strings.Replace(string(content), "<body>", "<body data-test=\"modified\">", 1)
 		os.WriteFile(templatePath, []byte(modified), 0644)
 
 		// Reload and rebuild
@@ -220,7 +217,6 @@ func TestBuildMode_TemplateChange(t *testing.T) {
 // TestBuildMode_TaxonomyGeneration tests full taxonomy generation
 func TestBuildMode_TaxonomyGeneration(t *testing.T) {
 	t.Run("TagPages_GeneratedCorrectly", func(t *testing.T) {
-		t.Skip("TODO: Enable tags index page generation in taxonomy system")
 		sitePath := setupTestSite(t)
 		buildSite(t, sitePath)
 

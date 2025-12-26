@@ -48,7 +48,6 @@ func TestShortcode_Image(t *testing.T) {
 // TestShortcode_Alert tests alert/callout shortcode
 func TestShortcode_Alert(t *testing.T) {
 	t.Run("Alert_RendersWithMarkdown", func(t *testing.T) {
-		t.Skip("TODO: Fix alert shortcode to properly render markdown content inside")
 		sitePath := setupTestSite(t)
 		buildSite(t, sitePath)
 

@@ -39,12 +39,11 @@ func TestContent_PageTypes(t *testing.T) {
 	})
 
 	t.Run("Notes_Generated", func(t *testing.T) {
-		t.Skip("TODO: Fix note content rendering to match expected format")
 		sitePath := setupTestSite(t)
 		buildSite(t, sitePath)
 
 		verifyFileExists(t, sitePath, "notes/note1/index.html")
-		verifyFileContent(t, sitePath, "notes/note1/index.html", "This is a note")
+		verifyFileContent(t, sitePath, "notes/note1/index.html", "This is a simple note in the notes section.")
 	})
 
 	t.Run("SectionPages_Generated", func(t *testing.T) {
@@ -59,7 +58,6 @@ func TestContent_PageTypes(t *testing.T) {
 // TestContent_MarkdownRendering tests markdown to HTML conversion
 func TestContent_MarkdownRendering(t *testing.T) {
 	t.Run("Headings_Rendered", func(t *testing.T) {
-		t.Skip("TODO: Fix markdown heading rendering to produce exact HTML format expected")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -76,9 +74,9 @@ template = "post.html"
 		createPost(t, sitePath, "blog/headings.md", post)
 		fullRebuild(t, gen, contentParser, sitePath)
 
-		verifyFileContent(t, sitePath, "blog/headings/index.html", "<h1>Heading 1</h1>")
-		verifyFileContent(t, sitePath, "blog/headings/index.html", "<h2>Heading 2</h2>")
-		verifyFileContent(t, sitePath, "blog/headings/index.html", "<h3>Heading 3</h3>")
+		verifyFileContent(t, sitePath, "blog/headings/index.html", `<h1 id="heading-1">Heading 1</h1>`)
+		verifyFileContent(t, sitePath, "blog/headings/index.html", `<h2 id="heading-2">Heading 2</h2>`)
+		verifyFileContent(t, sitePath, "blog/headings/index.html", `<h3 id="heading-3">Heading 3</h3>`)
 	})
 
 	t.Run("Links_Rendered", func(t *testing.T) {
@@ -100,7 +98,6 @@ template = "post.html"
 	})
 
 	t.Run("CodeBlocks_Rendered", func(t *testing.T) {
-		t.Skip("TODO: Fix code block rendering to include <pre> tags in output")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -115,8 +112,9 @@ template = "post.html"
 		createPost(t, sitePath, "blog/code.md", post)
 		fullRebuild(t, gen, contentParser, sitePath)
 
-		verifyFileContent(t, sitePath, "blog/code/index.html", "<pre>")
-		verifyFileContent(t, sitePath, "blog/code/index.html", "func main()")
+		// Code blocks are rendered with syntax highlighting (contains style attributes)
+		verifyFileContent(t, sitePath, "blog/code/index.html", "<pre style=")
+		verifyFileContent(t, sitePath, "blog/code/index.html", ">main</span>")
 	})
 
 	t.Run("Lists_Rendered", func(t *testing.T) {
@@ -476,13 +474,12 @@ func TestContent_AuxiliaryPages(t *testing.T) {
 	})
 
 	t.Run("Sitemap_Generated", func(t *testing.T) {
-		t.Skip("TODO: Fix sitemap generation to include full URLs with base_url")
 		sitePath := setupTestSite(t)
 		buildSite(t, sitePath)
 
 		verifyFileExists(t, sitePath, "sitemap.xml")
 		verifyFileContent(t, sitePath, "sitemap.xml", "<?xml")
-		verifyFileContent(t, sitePath, "sitemap.xml", "https://example.com")
+		verifyFileContent(t, sitePath, "sitemap.xml", "https://test.example.com")
 	})
 
 	t.Run("AtomFeed_Generated", func(t *testing.T) {

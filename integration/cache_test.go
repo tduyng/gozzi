@@ -123,13 +123,12 @@ New content here.`
 // TestCache_TemplateChange tests cache invalidation on template changes
 func TestCache_TemplateChange(t *testing.T) {
 	t.Run("TemplateChange_InvalidatesAllAffectedPages", func(t *testing.T) {
-		t.Skip("TODO: Fix template reload to propagate changes and regenerate pages correctly")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
 		// Modify post template
 		templatePath := filepath.Join(sitePath, "templates/post.html")
-		modifyFile(t, templatePath, "<article>", "<article class=\"v2\">")
+		modifyFile(t, templatePath, "<body>", "<body class=\"v2\">")
 
 		// Reload templates and invalidate cache
 		gen.ReloadTemplates()
@@ -151,13 +150,12 @@ func TestCache_TemplateChange(t *testing.T) {
 	})
 
 	t.Run("PartialTemplateChange_InvalidatesPages", func(t *testing.T) {
-		t.Skip("TODO: Fix section template changes to properly invalidate affected pages")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
-		// Modify section template (doesn't affect posts)
+		// Modify section template (doesn't affect posts) - use actual tag
 		templatePath := filepath.Join(sitePath, "templates/section.html")
-		modifyFile(t, templatePath, "<section>", "<section class=\"updated\">")
+		modifyFile(t, templatePath, "<body>", "<body class=\"updated\">")
 
 		// Reload and rebuild
 		gen.ReloadTemplates()
@@ -176,7 +174,6 @@ func TestCache_TemplateChange(t *testing.T) {
 // TestCache_TaxonomyChange tests cache invalidation on taxonomy changes
 func TestCache_TaxonomyChange(t *testing.T) {
 	t.Run("AddTag_InvalidatesTaxonomyPages", func(t *testing.T) {
-		t.Skip("TODO: Fix incremental rebuild to regenerate taxonomy index pages when new terms added")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -222,7 +219,6 @@ func TestCache_TaxonomyChange(t *testing.T) {
 	})
 
 	t.Run("ChangeTaxonomy_InvalidatesOldAndNewPages", func(t *testing.T) {
-		t.Skip("TODO: Fix full rebuild to properly update changed taxonomy assignments")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -237,9 +233,9 @@ func TestCache_TaxonomyChange(t *testing.T) {
 		gen.ResetCacheStats()
 		incrementalRebuild(t, gen, contentParser, sitePath, []string{post3Path})
 
-		// Old tag pages should not show post3
-		verifyFileNotContains(t, sitePath, "tags/golang/index.html", "Third Post")
-		verifyFileNotContains(t, sitePath, "tags/testing/index.html", "Third Post")
+		// Old tag pages should be removed (since only post3 had these tags)
+		verifyFileNotExists(t, sitePath, "tags/golang/index.html")
+		verifyFileNotExists(t, sitePath, "tags/testing/index.html")
 
 		// New tag pages should show post3
 		verifyFileExists(t, sitePath, "tags/rust/index.html")
@@ -253,7 +249,6 @@ func TestCache_TaxonomyChange(t *testing.T) {
 	})
 
 	t.Run("RemoveTaxonomy_CleansUpPages", func(t *testing.T) {
-		t.Skip("TODO: Fix taxonomy cleanup to remove pages when all posts lose a tag")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -279,11 +274,8 @@ Content`
 		gen.ResetCacheStats()
 		incrementalRebuild(t, gen, contentParser, sitePath, []string{tempPostPath})
 
-		// Tag page should not show the post
-		content := readFileContent(t, sitePath, "tags/temptag/index.html")
-		if len(content) > 0 {
-			verifyFileNotContains(t, sitePath, "tags/temptag/index.html", "Temp Post")
-		}
+		// Tag page should be removed (since no posts have this tag anymore)
+		verifyFileNotExists(t, sitePath, "tags/temptag/index.html")
 	})
 }
 
@@ -308,16 +300,15 @@ func TestCache_ConfigChange(t *testing.T) {
 	})
 
 	t.Run("ConfigChange_BaseURL_RegeneratesAll", func(t *testing.T) {
-		t.Skip("TODO: Fix sitemap.xml and atom.xml to use full URLs with base_url")
 		sitePath := setupTestSite(t)
 		buildSite(t, sitePath)
 
 		// Verify initial base_url
-		verifyFileContent(t, sitePath, "sitemap.xml", "https://example.com")
+		verifyFileContent(t, sitePath, "sitemap.xml", "https://test.example.com")
 
 		// Change base_url
 		configPath := filepath.Join(sitePath, "config.toml")
-		modifyFile(t, configPath, "https://example.com", "https://newdomain.com")
+		modifyFile(t, configPath, "https://test.example.com", "https://newdomain.com")
 
 		// Rebuild
 		buildSite(t, sitePath)

@@ -5,17 +5,38 @@ import (
 	"fmt"
 	"html/template"
 	"regexp"
+
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer/html"
 )
 
 // ShortcodeProcessor processes shortcodes in markdown before goldmark parsing.
 type ShortcodeProcessor struct {
 	templates *template.Template
+	md        goldmark.Markdown
 }
 
 // NewShortcodeProcessor creates a new shortcode processor.
 func NewShortcodeProcessor(templates *template.Template) *ShortcodeProcessor {
+	// Create a basic markdown processor for shortcode content
+	md := goldmark.New(
+		goldmark.WithExtensions(
+			extension.GFM,
+			extension.Typographer,
+		),
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+		),
+		goldmark.WithRendererOptions(
+			html.WithUnsafe(), // Allow raw HTML
+		),
+	)
+
 	return &ShortcodeProcessor{
 		templates: templates,
+		md:        md,
 	}
 }
 
@@ -75,6 +96,23 @@ func (sp *ShortcodeProcessor) renderShortcode(match string, isSelfClosing bool) 
 		name = matches[1]
 		paramsStr = matches[2]
 		content = matches[3]
+
+		// For {{% %}} shortcodes, process content as markdown
+		// Trim whitespace but preserve intentional formatting
+		trimmedContent := content
+		// Only trim if there's significant whitespace
+		if len(content) > 0 && (content[0] == '\n' || content[0] == '\r') {
+			trimmedContent = content[1:]
+		}
+		if len(trimmedContent) > 0 && (trimmedContent[len(trimmedContent)-1] == '\n' || trimmedContent[len(trimmedContent)-1] == '\r') {
+			trimmedContent = trimmedContent[:len(trimmedContent)-1]
+		}
+
+		// Convert markdown to HTML
+		var htmlBuf bytes.Buffer
+		if err := sp.md.Convert([]byte(trimmedContent), &htmlBuf); err == nil {
+			content = htmlBuf.String()
+		}
 	}
 
 	// Parse parameters

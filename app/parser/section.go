@@ -143,6 +143,8 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 	node := content.NewContentNode(dir, parent)
 	node.Type = content.NodeTypeSection
 	node.Slug = sectionSlug
+	node.Permalink = buildPermalink(sectionSlug)
+	node.URL = buildURL(p.Site.BaseURL, sectionSlug)
 
 	if parent != nil {
 		parent.Children = append(parent.Children, node)

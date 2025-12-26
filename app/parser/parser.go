@@ -87,6 +87,12 @@ func (p *ContentParser) Parse(rootDir string) error {
 	for k := range p.ContentMap {
 		delete(p.ContentMap, k)
 	}
+	for k := range p.Taxonomies {
+		delete(p.Taxonomies, k)
+	}
+	for k := range p.Tags {
+		delete(p.Tags, k)
+	}
 	p.mu.Unlock()
 
 	var files []string

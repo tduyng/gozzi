@@ -10,13 +10,12 @@ import (
 // TestTemplate_Changes tests template modification and reload
 func TestTemplate_Changes(t *testing.T) {
 	t.Run("TemplateChange_RegeneratesPages", func(t *testing.T) {
-		t.Skip("TODO: Fix template reload mechanism to apply changes to generated pages")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
-		// Modify template
+		// Modify template - change body tag to have a class
 		templatePath := filepath.Join(sitePath, "templates/post.html")
-		modifyFile(t, templatePath, "<article>", "<article class=\"modified\">")
+		modifyFile(t, templatePath, "<body>", "<body class=\"modified\">")
 
 		// Reload and rebuild
 		gen.ReloadTemplates()
@@ -28,7 +27,6 @@ func TestTemplate_Changes(t *testing.T) {
 	})
 
 	t.Run("TemplateChange_OnlyAffectsCorrectPages", func(t *testing.T) {
-		t.Skip("TODO: Fix template change detection to properly regenerate modified templates")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -37,7 +35,7 @@ func TestTemplate_Changes(t *testing.T) {
 
 		// Modify post template only
 		templatePath := filepath.Join(sitePath, "templates/post.html")
-		modifyFile(t, templatePath, "<article>", "<article data-v=\"2\">")
+		modifyFile(t, templatePath, "<body>", "<body data-v=\"2\">")
 
 		gen.ReloadTemplates()
 		gen.InvalidateTemplateCache([]string{"post.html"})
@@ -60,13 +58,12 @@ func TestTemplate_Changes(t *testing.T) {
 // TestTemplate_HotReload tests serve mode template reloading
 func TestTemplate_HotReload(t *testing.T) {
 	t.Run("HotReload_UpdatesImmediately", func(t *testing.T) {
-		t.Skip("TODO: Fix hot reload template changes to propagate to output files")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
 		// Simulate template change in serve mode
 		templatePath := filepath.Join(sitePath, "templates/post.html")
-		modifyFile(t, templatePath, "<article>", "<article class=\"reloaded\">")
+		modifyFile(t, templatePath, "<body>", "<body class=\"reloaded\">")
 
 		// Reload templates (like serve mode does)
 		gen.ReloadTemplates()
@@ -137,13 +134,12 @@ Content`
 // TestTemplate_CacheInvalidation tests template cache behavior
 func TestTemplate_CacheInvalidation(t *testing.T) {
 	t.Run("TemplateChange_InvalidatesCacheCompletely", func(t *testing.T) {
-		t.Skip("TODO: Fix template cache invalidation to regenerate pages with new template")
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
 		// Modify template
 		templatePath := filepath.Join(sitePath, "templates/post.html")
-		modifyFile(t, templatePath, "<article>", "<article data-cache-test=\"1\">")
+		modifyFile(t, templatePath, "<body>", "<body data-cache-test=\"1\">")
 
 		// Invalidate cache
 		gen.ReloadTemplates()

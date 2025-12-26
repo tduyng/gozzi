@@ -4,6 +4,7 @@ package config
 import (
 	"bytes"
 	"maps"
+	"path/filepath"
 	"reflect"
 	"time"
 
@@ -34,6 +35,7 @@ type Site struct {
 	Taxonomies      TaxonomiesConfig `toml:"taxonomies"`
 	BuildTime       time.Time
 	BuildDrafts     bool
+	Data            map[string]any `toml:"-"` // Loaded from data/ directory, not from TOML
 }
 
 // FrontMatter represents the TOML front matter in markdown content files.
@@ -56,6 +58,7 @@ type FrontMatter struct {
 }
 
 // LoadSite loads site configuration from a TOML file.
+// It also attempts to load data files from the data/ directory if it exists.
 func LoadSite(path string) (*Site, error) {
 	var cfg Site
 	if _, err := toml.DecodeFile(path, &cfg); err != nil {
@@ -82,6 +85,39 @@ func LoadSite(path string) (*Site, error) {
 	return &cfg, nil
 }
 
+// LoadDataFiles loads data from the data/ directory.
+// This is exposed to allow the builder to load data files without circular dependencies.
+func (s *Site) LoadDataFiles(projectDir string) error {
+	dataDir := filepath.Join(projectDir, "data")
+
+	// Import data loader dynamically to avoid circular imports
+	// We'll use a function variable pattern
+	if dataLoaderFunc != nil {
+		data, err := dataLoaderFunc(dataDir)
+		if err != nil {
+			return err
+		}
+		s.Data = data
+	} else {
+		// No data loader registered, initialize empty
+		s.Data = make(map[string]any)
+	}
+
+	return nil
+}
+
+// DataLoaderFunc is a function type for loading data files.
+type DataLoaderFunc func(dataDir string) (map[string]any, error)
+
+// dataLoaderFunc is the registered data loader (set by data package init).
+var dataLoaderFunc DataLoaderFunc
+
+// RegisterDataLoader registers the data loading function.
+// This is called by the data package to avoid circular dependencies.
+func RegisterDataLoader(loader DataLoaderFunc) {
+	dataLoaderFunc = loader
+}
+
 // LoadFrontMatter parses TOML front matter from markdown content.
 func LoadFrontMatter(content []byte) (*FrontMatter, []byte, error) {
 	return parseFrontMatter[FrontMatter](content)
@@ -101,6 +137,7 @@ func (site *Site) ToConfig() map[string]any {
 		siteConfig["strict_templates"] = site.StrictTemplates
 		siteConfig["build_time"] = site.BuildTime
 		siteConfig["extra"] = MergeExtra(make(map[string]any), site.Extra)
+		siteConfig["data"] = site.Data
 	}
 	if site.OutputDir == "" {
 		siteConfig["output_dir"] = "public"

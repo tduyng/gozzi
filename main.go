@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime/debug"
 	"time"
 
 	"github.com/tduyng/gozzi/app/builder"
 	"github.com/tduyng/gozzi/app/config"
+	_ "github.com/tduyng/gozzi/app/data" // Register data loader
 	"github.com/tduyng/gozzi/app/parser"
 	"github.com/tduyng/gozzi/app/server"
 )
@@ -185,6 +187,13 @@ func initApp(configPath, contentDir string, buildDrafts bool) (*config.Site, *pa
 	}
 
 	site.BuildDrafts = buildDrafts
+
+	// Load data files from data/ directory (if it exists)
+	// Get project directory from config path
+	projectDir := filepath.Dir(configPath)
+	if err := site.LoadDataFiles(projectDir); err != nil {
+		log.Fatalf("Error loading data files: %v", err)
+	}
 
 	contentParser := parser.NewParser(site)
 

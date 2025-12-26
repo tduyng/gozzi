@@ -4,6 +4,7 @@ package config
 import (
 	"bytes"
 	"maps"
+	"reflect"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -301,8 +302,79 @@ func parseFrontMatter[T any](content []byte) (*T, []byte, error) {
 			})
 		}
 
+		// Normalize dates to UTC for timezone-independent behavior
+		normalizeDatesToUTC(config)
+
 		body = bytes.TrimSpace(parts[2])
 	}
 
 	return config, body, nil
+}
+
+// normalizeDatesToUTC converts all time.Time values in a struct/map to UTC
+// This ensures dates from TOML (which default to local timezone) are consistent
+func normalizeDatesToUTC(v any) {
+	if v == nil {
+		return
+	}
+
+	// Handle pointers
+	val := reflect.ValueOf(v)
+	if val.Kind() == reflect.Ptr {
+		if val.IsNil() {
+			return
+		}
+		val = val.Elem()
+	}
+
+	switch val.Kind() {
+	case reflect.Struct:
+		// Iterate through struct fields
+		for i := 0; i < val.NumField(); i++ {
+			field := val.Field(i)
+			if !field.CanSet() {
+				continue
+			}
+
+			if field.Type() == reflect.TypeOf(time.Time{}) {
+				// Convert time.Time field to UTC
+				t := field.Interface().(time.Time)
+				if !t.IsZero() {
+					field.Set(reflect.ValueOf(t.UTC()))
+				}
+			} else if field.Kind() == reflect.Map || field.Kind() == reflect.Slice || field.Kind() == reflect.Struct {
+				// Recursively normalize nested structures
+				if field.CanInterface() {
+					normalizeDatesToUTC(field.Addr().Interface())
+				}
+			}
+		}
+
+	case reflect.Map:
+		// Iterate through map keys
+		iter := val.MapRange()
+		for iter.Next() {
+			mapVal := iter.Value()
+			if mapVal.Type() == reflect.TypeOf(time.Time{}) {
+				t := mapVal.Interface().(time.Time)
+				if !t.IsZero() {
+					val.SetMapIndex(iter.Key(), reflect.ValueOf(t.UTC()))
+				}
+			} else if mapVal.Kind() == reflect.Map || mapVal.Kind() == reflect.Slice || mapVal.Kind() == reflect.Struct {
+				// For nested structures, normalize recursively
+				if mapVal.CanInterface() {
+					normalizeDatesToUTC(mapVal.Interface())
+				}
+			}
+		}
+
+	case reflect.Slice:
+		// Iterate through slice elements
+		for i := 0; i < val.Len(); i++ {
+			elem := val.Index(i)
+			if elem.CanInterface() {
+				normalizeDatesToUTC(elem.Interface())
+			}
+		}
+	}
 }

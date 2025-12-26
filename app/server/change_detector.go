@@ -128,9 +128,17 @@ func (cd *ChangeDetector) isSystemFile(filename string) bool {
 
 	// Editor temporary files
 	if strings.HasSuffix(filename, ".swp") ||
+		strings.HasSuffix(filename, ".swo") ||
+		strings.HasSuffix(filename, ".swn") ||
 		strings.HasSuffix(filename, ".tmp") ||
 		strings.HasSuffix(filename, ".bak") ||
 		strings.HasSuffix(filename, ".lock") {
+		return true
+	}
+
+	// Vim/Neovim numbered backup files (e.g., "4913", "1234")
+	// These have no extension and are purely numeric
+	if filepath.Ext(filename) == "" && isNumericFilename(filename) {
 		return true
 	}
 
@@ -140,6 +148,19 @@ func (cd *ChangeDetector) isSystemFile(filename string) bool {
 	}
 
 	return false
+}
+
+// isNumericFilename checks if a filename consists only of digits
+func isNumericFilename(filename string) bool {
+	if len(filename) == 0 {
+		return false
+	}
+	for _, char := range filename {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // shouldIgnoreDir checks if a directory should be ignored
@@ -218,4 +239,58 @@ func (cd *ChangeDetector) DetectChange(path string) (*FileChange, error) {
 		Type:    changeType,
 		RelPath: relPath,
 	}, nil
+}
+
+// InitializeHashes pre-populates file hashes for watched directories
+// This prevents spurious rebuilds on first file touch after server start
+func (cd *ChangeDetector) InitializeHashes() error {
+	paths := []string{
+		cd.contentDir,
+		"templates",
+		"static",
+		cd.configPath,
+	}
+
+	for _, path := range paths {
+		if err := filepath.WalkDir(path, func(p string, d os.DirEntry, err error) error {
+			if err != nil {
+				return nil // Skip paths with errors
+			}
+
+			// Skip directories
+			if d.IsDir() {
+				// Skip ignored directories
+				if cd.shouldIgnoreDir(p) {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+
+			// Skip system/temp files
+			if cd.isSystemFile(filepath.Base(p)) {
+				return nil
+			}
+
+			// Only hash files we actually care about
+			changeType := cd.ClassifyChange(p)
+			if changeType == ChangeTypeIgnored {
+				return nil
+			}
+
+			// Pre-compute and store hash
+			content, err := os.ReadFile(p)
+			if err != nil {
+				return nil // Skip files we can't read
+			}
+			cd.fileHashes[p] = fmt.Sprintf("%x", md5.Sum(content))
+			return nil
+		}); err != nil {
+			// Don't fail if a path doesn't exist
+			if !os.IsNotExist(err) {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

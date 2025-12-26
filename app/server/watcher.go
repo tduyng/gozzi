@@ -82,13 +82,24 @@ func (s *DevServer) watchChanges() {
 				continue
 			}
 
-			// Ignore if not a relevant change
+			// Ignore if not a relevant change (includes unchanged files)
 			if change.Type == ChangeTypeIgnored {
 				continue
 			}
 
+			// Only add to changedFiles if it's actually different
 			changedFilesMutex.Lock()
-			changedFiles = append(changedFiles, change)
+			// Deduplicate: check if this file is already in the pending changes
+			alreadyPending := false
+			for _, existing := range changedFiles {
+				if existing.Path == change.Path {
+					alreadyPending = true
+					break
+				}
+			}
+			if !alreadyPending {
+				changedFiles = append(changedFiles, change)
+			}
 			changedFilesMutex.Unlock()
 
 			// Reset debounce timer

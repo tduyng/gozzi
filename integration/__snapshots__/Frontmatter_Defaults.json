@@ -1,7 +1,7 @@
 {
   "name": "Frontmatter_Defaults",
   "files": {
-    "blog/minimal/index.html": "\u003c!DOCTYPE html\u003e\u003chtml\u003e\u003chead\u003e\u003cmeta charset=\"UTF-8\"\u003e\u003ctitle\u003eMinimal Post\u003c/title\u003e\u003cmeta property=\"og:image\" content=\"/img/default.jpg\"\u003e\u003cmeta name=\"description\" content=\"Test site description\"\u003e\u003c/head\u003e\u003cbody\u003e\u003ch1\u003eMinimal Post\u003c/h1\u003e\u003ctime\u003e2024-01-01 00:00:00 \u0026#43;0100 CET\u003c/time\u003e\u003cp\u003eMinimal content\u003c/p\u003e\n\u003c/body\u003e\u003c/html\u003e\n"
+    "blog/minimal/index.html": "\u003c!DOCTYPE html\u003e\u003chtml\u003e\u003chead\u003e\u003cmeta charset=\"UTF-8\"\u003e\u003ctitle\u003eMinimal Post\u003c/title\u003e\u003cmeta property=\"og:image\" content=\"/img/default.jpg\"\u003e\u003cmeta name=\"description\" content=\"Test site description\"\u003e\u003c/head\u003e\u003cbody\u003e\u003ch1\u003eMinimal Post\u003c/h1\u003e\u003ctime\u003e2023-12-31 23:00:00 \u0026#43;0000 UTC\u003c/time\u003e\u003cp\u003eMinimal content\u003c/p\u003e\n\u003c/body\u003e\u003c/html\u003e\n"
   },
   "metadata": {}
 }

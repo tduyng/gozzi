@@ -77,6 +77,12 @@ func (s *DevServer) Start(port int) {
 }
 
 func (s *DevServer) initialize() error {
+	// Pre-populate file hashes to prevent spurious rebuilds on first touch
+	if err := s.detector.InitializeHashes(); err != nil {
+		log.Printf("Warning: failed to initialize file hashes: %v", err)
+		// Continue anyway - not critical
+	}
+
 	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
 		return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{
 			Operation: "initial_site_generation",

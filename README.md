@@ -86,7 +86,11 @@ cd gozzi
 go build -o gozzi .
 
 # Run tests
-go test ./...
+# Note: Tests must be run with TZ=UTC for consistent snapshots
+TZ=UTC go test ./...
+
+# Update test snapshots
+TZ=UTC UPDATE_SNAPSHOTS=1 go test ./integration
 ```
 
 ## License

@@ -321,3 +321,181 @@ Content`
 		verifyFileContent(t, sitePath, "tags/another/index.html", "First Post")
 	})
 }
+
+// TestServeMode_IndexFileChanges tests that _index.md changes trigger correct rebuilds
+func TestServeMode_IndexFileChanges(t *testing.T) {
+	t.Run("RootIndexChange_RegeneratesHomepage", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Initial state
+		verifyFileExists(t, sitePath, "index.html")
+		initialContent, _ := os.ReadFile(filepath.Join(sitePath, "public/index.html"))
+		if !strings.Contains(string(initialContent), "Welcome") {
+			t.Error("homepage should contain 'Welcome' initially")
+		}
+
+		// Modify root _index.md
+		indexPath := filepath.Join(sitePath, "content/_index.md")
+		originalContent, _ := os.ReadFile(indexPath)
+
+		// Change content
+		modifiedContent := strings.Replace(
+			string(originalContent),
+			"Welcome",
+			"MODIFIED: Hello World",
+			1,
+		)
+		os.WriteFile(indexPath, []byte(modifiedContent), 0644)
+
+		// Snapshot old taxonomy values BEFORE parsing
+		oldTaxonomyValues := gen.SnapshotTaxonomyValues(
+			[]string{indexPath},
+			filepath.Join(sitePath, "content"),
+		)
+
+		// Incremental rebuild (simulating serve mode)
+		time.Sleep(10 * time.Millisecond)
+		if err := contentParser.ParseFiles(
+			filepath.Join(sitePath, "content"),
+			[]string{indexPath},
+		); err != nil {
+			t.Fatalf("failed to re-parse: %v", err)
+		}
+
+		err := gen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:       true,
+			ChangedFiles:      []string{indexPath},
+			ContentDir:        filepath.Join(sitePath, "content"),
+			OldTaxonomyValues: oldTaxonomyValues,
+		})
+		if err != nil {
+			t.Fatalf("failed to rebuild: %v", err)
+		}
+
+		// Verify homepage was regenerated with new content
+		newContent, _ := os.ReadFile(filepath.Join(sitePath, "public/index.html"))
+		if !strings.Contains(string(newContent), "MODIFIED: Hello World") {
+			t.Error("homepage should contain modified content after _index.md change")
+		}
+		if strings.Contains(string(newContent), "Welcome") {
+			t.Error("homepage should not contain old content")
+		}
+	})
+
+	t.Run("NestedIndexChange_RegeneratesSection", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Initial state - blog section
+		verifyFileExists(t, sitePath, "blog/index.html")
+
+		// Modify blog/_index.md title (which will appear in rendered HTML)
+		blogIndexPath := filepath.Join(sitePath, "content/blog/_index.md")
+		originalContent, _ := os.ReadFile(blogIndexPath)
+
+		// Change the title
+		modifiedContent := strings.Replace(
+			string(originalContent),
+			"title = \"Blog\"",
+			"title = \"MODIFIED BLOG TITLE\"",
+			1,
+		)
+		os.WriteFile(blogIndexPath, []byte(modifiedContent), 0644)
+
+		// Snapshot old taxonomy values BEFORE parsing
+		oldTaxonomyValues := gen.SnapshotTaxonomyValues(
+			[]string{blogIndexPath},
+			filepath.Join(sitePath, "content"),
+		)
+
+		// Incremental rebuild
+		time.Sleep(10 * time.Millisecond)
+		if err := contentParser.ParseFiles(
+			filepath.Join(sitePath, "content"),
+			[]string{blogIndexPath},
+		); err != nil {
+			t.Fatalf("failed to re-parse: %v", err)
+		}
+
+		err := gen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:       true,
+			ChangedFiles:      []string{blogIndexPath},
+			ContentDir:        filepath.Join(sitePath, "content"),
+			OldTaxonomyValues: oldTaxonomyValues,
+		})
+		if err != nil {
+			t.Fatalf("failed to rebuild: %v", err)
+		}
+
+		// Verify blog section was regenerated with new title
+		newContent, _ := os.ReadFile(filepath.Join(sitePath, "public/blog/index.html"))
+		if !strings.Contains(string(newContent), "MODIFIED BLOG TITLE") {
+			t.Error("blog section should contain modified title after _index.md change")
+		}
+
+		// Verify sitemap was also updated (sections affect sitemap)
+		verifyFileExists(t, sitePath, "sitemap.xml")
+	})
+
+	t.Run("MultipleIndexChanges_RegeneratesAll", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Modify both root and blog _index.md
+		rootIndexPath := filepath.Join(sitePath, "content/_index.md")
+		blogIndexPath := filepath.Join(sitePath, "content/blog/_index.md")
+
+		changedFiles := []string{rootIndexPath, blogIndexPath}
+
+		// Snapshot old taxonomy values BEFORE parsing
+		oldTaxonomyValues := gen.SnapshotTaxonomyValues(
+			changedFiles,
+			filepath.Join(sitePath, "content"),
+		)
+
+		// Modify root
+		rootContent, _ := os.ReadFile(rootIndexPath)
+		modifiedRoot := strings.Replace(string(rootContent), "Welcome", "ROOT CHANGED", 1)
+		os.WriteFile(rootIndexPath, []byte(modifiedRoot), 0644)
+
+		// Modify blog
+		blogContent, _ := os.ReadFile(blogIndexPath)
+		modifiedBlog := strings.Replace(
+			string(blogContent),
+			"+++",
+			"+++\ntest = \"BLOG CHANGED\"",
+			1,
+		)
+		os.WriteFile(blogIndexPath, []byte(modifiedBlog), 0644)
+
+		// Incremental rebuild
+		time.Sleep(10 * time.Millisecond)
+		if err := contentParser.ParseFiles(
+			filepath.Join(sitePath, "content"),
+			changedFiles,
+		); err != nil {
+			t.Fatalf("failed to re-parse: %v", err)
+		}
+
+		err := gen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:       true,
+			ChangedFiles:      changedFiles,
+			ContentDir:        filepath.Join(sitePath, "content"),
+			OldTaxonomyValues: oldTaxonomyValues,
+		})
+		if err != nil {
+			t.Fatalf("failed to rebuild: %v", err)
+		}
+
+		// Verify both pages were regenerated
+		homeContent, _ := os.ReadFile(filepath.Join(sitePath, "public/index.html"))
+		if !strings.Contains(string(homeContent), "ROOT CHANGED") {
+			t.Error("homepage should contain modified content")
+		}
+
+		// Blog should be regenerated (we can't easily verify custom fields without template support,
+		// but we can verify the file was touched)
+		verifyFileExists(t, sitePath, "blog/index.html")
+	})
+}

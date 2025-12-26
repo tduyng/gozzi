@@ -1,5 +1,4 @@
-// ABOUTME: This file implements the file change detection and classification system.
-// ABOUTME: It provides a clean, extensible way to detect and categorize file changes.
+// This file implements the file change detection and classification system.
 package server
 
 import (

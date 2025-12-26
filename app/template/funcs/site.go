@@ -224,9 +224,7 @@ func (sf *SiteFuncs) LangURL(langCode string, pageOrPath any) string {
 	} else if path, ok := pageOrPath.(string); ok {
 		pathWithoutLang = path
 		// Try to detect language from path
-		if strings.HasPrefix(path, "/") {
-			path = strings.TrimPrefix(path, "/")
-		}
+		path = strings.TrimPrefix(path, "/")
 		parts := strings.Split(path, "/")
 		if len(parts) > 0 && sf.ctx.I18n.GetLanguage(parts[0]) != nil {
 			currentLang = parts[0]

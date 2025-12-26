@@ -195,6 +195,17 @@ func (b *Builder) generateSitemap() error {
 		}
 	}
 
+	// Sort URLs for deterministic output
+	slices.SortFunc(urls, func(a, b SitemapURL) int {
+		if a.Loc < b.Loc {
+			return -1
+		}
+		if a.Loc > b.Loc {
+			return 1
+		}
+		return 0
+	})
+
 	return b.writeXMLFile("sitemap.xml", sitemapXSL, Sitemap{URLs: urls})
 }
 

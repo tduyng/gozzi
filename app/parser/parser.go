@@ -8,6 +8,7 @@ import (
 	"math"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -106,6 +107,9 @@ func (p *ContentParser) Parse(rootDir string) error {
 		return nil
 	})
 
+	// Sort files for deterministic parsing order
+	slices.Sort(files)
+
 	return p.parseFiles(rootDir, files)
 }
 
@@ -121,6 +125,9 @@ func (p *ContentParser) ParseFiles(rootDir string, files []string) error {
 	if len(mdFiles) == 0 {
 		return nil
 	}
+
+	// Sort files for deterministic parsing order
+	slices.Sort(mdFiles)
 
 	return p.parseFiles(rootDir, mdFiles)
 }
@@ -145,6 +152,10 @@ func (p *ContentParser) parseFiles(rootDir string, files []string) error {
 
 	paginator := paginate.New(p.ContentMap)
 	paginator.BuildLinks()
+
+	// Sort children for deterministic output
+	p.sortChildren()
+
 	return nil
 }
 
@@ -218,4 +229,37 @@ func (p *ContentParser) ResetStats() {
 // GetHashCache returns the hash cache for external access
 func (p *ContentParser) GetHashCache() *cache.HashCache {
 	return p.hashCache
+}
+
+// sortChildren recursively sorts all Children slices for deterministic output
+func (p *ContentParser) sortChildren() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for _, node := range p.ContentMap {
+		p.sortNodeChildren(node)
+	}
+}
+
+// sortNodeChildren recursively sorts a node's children by path
+func (p *ContentParser) sortNodeChildren(node *content.Node) {
+	if node == nil || len(node.Children) == 0 {
+		return
+	}
+
+	// Sort children by path for deterministic order
+	slices.SortFunc(node.Children, func(a, b *content.Node) int {
+		if a.Path < b.Path {
+			return -1
+		}
+		if a.Path > b.Path {
+			return 1
+		}
+		return 0
+	})
+
+	// Recursively sort grandchildren
+	for _, child := range node.Children {
+		p.sortNodeChildren(child)
+	}
 }

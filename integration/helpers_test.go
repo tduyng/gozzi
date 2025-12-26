@@ -10,6 +10,7 @@ import (
 
 	"github.com/tduyng/gozzi/app/builder"
 	"github.com/tduyng/gozzi/app/config"
+	_ "github.com/tduyng/gozzi/app/data" // Register data loader
 	"github.com/tduyng/gozzi/app/parser"
 )
 
@@ -59,6 +60,11 @@ func buildSite(t *testing.T, sitePath string) (*builder.Builder, *parser.Content
 	site, err := config.LoadSite(configPath)
 	if err != nil {
 		t.Fatalf("failed to load config: %v", err)
+	}
+
+	// Load data files from data/ directory
+	if err := site.LoadDataFiles(sitePath); err != nil {
+		t.Fatalf("failed to load data files: %v", err)
 	}
 
 	// Set default output directory if not specified

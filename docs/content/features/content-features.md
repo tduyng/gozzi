@@ -8,10 +8,11 @@ Gozzi includes essential features for static sites:
 
 ## 📝 Content Features
 
-**Tags & Organization:**
-- Automatic tag pages (`/tags/golang/`)
-- Tag cloud generation
-- Categorization and filtering
+**[Taxonomies](/features/taxonomies):**
+- Tags, series, categories, and custom taxonomies
+- Automatic index and term pages
+- Series with "Part X of Y" navigation
+- Incremental build support
 
 **Table of Contents:**
 - Auto-generated from headings
@@ -90,6 +91,7 @@ All features work out of the box:
 ---
 
 **Learn More:**
+- [Taxonomies](/features/taxonomies)
 - [Syntax Highlighting](/features/syntax-highlighting)
 - [Math Expressions](/features/math)
 - [Mermaid Diagrams](/features/diagrams)

@@ -55,6 +55,7 @@ items = [
   { text = "Mermaid Diagrams", link = "/features/diagrams" },
   { text = "Syntax Highlighting", link = "/features/syntax-highlighting" },
   { text = "Content Features", link = "/features/content-features" },
+  { text = "Taxonomies", link = "/features/taxonomies" },
   { text = "SEO Automation", link = "/features/seo" },
 ]
 

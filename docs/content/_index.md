@@ -10,9 +10,8 @@ A simple static site generator written in Go. Built for learning, designed for c
 
 Gozzi converts Markdown files into a static website. I built it to understand how static site generators work, and now I use it for [tduyng.com](https://tduyng.com) with 100+ posts building in ~100ms.
 
-**Gozzi is not trying to replace Hugo or Zola** - those are excellent tools. Use them if they fit!
-
 Gozzi might be right for you if you:
+
 - Want to learn Go by using a real tool
 - Prefer simplicity over feature-rich complexity
 - Like understanding how your tools work
@@ -49,7 +48,7 @@ gozzi serve  # Visit http://localhost:1313
 
 - **Fast** - Sub-second builds, instant live reload
 - **Simple** - Markdown + TOML config + Go templates
-- **Complete** - Tags, pagination, RSS, sitemap, math, diagrams built-in
+- **Complete** - Taxonomies, series, pagination, RSS, sitemap, math, diagrams built-in
 - **Portable** - Single binary, deploy anywhere
 
 ## Next Steps

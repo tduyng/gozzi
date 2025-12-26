@@ -218,16 +218,11 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		contentDir = "content"
 	}
 
-	tracker := NewChangeTracker(b.parser.ContentMap, b.parser)
+	analyzer := NewRebuildAnalyzer(b.parser.ContentMap, b.parser, contentDir)
 
-	// Use pre-snapshotted taxonomy values if provided
-	if opts.OldTaxonomyValues != nil {
-		tracker.SetOldTaxonomyValues(opts.OldTaxonomyValues)
-	}
+	scope := analyzer.AnalyzeChanges(opts.ChangedFiles, opts.OldTaxonomyValues)
 
-	tracker.AnalyzeChanges(opts.ChangedFiles, contentDir)
-
-	changedNodes := tracker.GetChangedNodesAfterParse(b.parser.ContentMap)
+	changedNodes := scope.GetNodes()
 
 	sem := make(chan struct{}, runtime.NumCPU()*2)
 	var wg sync.WaitGroup
@@ -256,7 +251,7 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		fmt.Printf("Processing error: %v\n", err)
 	}
 
-	if tracker.ShouldRegenerate404() {
+	if scope.NeedsGlobal("404") {
 		if err := b.generate404Page(); err != nil {
 			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
 				Operation: "generate_404_page",
@@ -265,7 +260,7 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
-	if tracker.ShouldRegenerateHome() {
+	if scope.NeedsGlobal("home") {
 		if homeNode, exists := b.parser.ContentMap["."]; exists {
 			if err := b.processNode(homeNode); err != nil {
 				return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
@@ -276,7 +271,7 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
-	if tracker.ShouldRegenerateBlogListing() {
+	if scope.NeedsGlobal("blog-listing") {
 		if blogNode, exists := b.parser.ContentMap["blog"]; exists {
 			if err := b.processNode(blogNode); err != nil {
 				return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
@@ -288,30 +283,17 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 	}
 
 	// Regenerate affected taxonomy pages
-	if tracker.GetAffectedTaxonomyCount() > 0 {
-		affectedTaxonomies := tracker.GetAffectedTaxonomies()
-		for taxonomyName, termSlugs := range affectedTaxonomies {
-			if err := b.generateSelectiveTaxonomies(taxonomyName, termSlugs); err != nil {
-				return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
-					Operation: fmt.Sprintf("generate_selective_%s", taxonomyName),
-					Component: "builder",
-				})
-			}
-		}
-	}
-
-	// Backwards compatibility: also handle old tag-based incremental builds
-	// Only use if new taxonomy system is not enabled for tags
-	if tracker.GetAffectedTagsCount() > 0 && !b.parser.Site.Taxonomies.IsEnabled("tags") {
-		if err := b.generateSelectiveTags(tracker.GetAffectedTags()); err != nil {
+	affectedTaxonomies := scope.GetAffectedTaxonomies()
+	for taxonomyName, termSlugs := range affectedTaxonomies {
+		if err := b.generateSelectiveTaxonomies(taxonomyName, termSlugs); err != nil {
 			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
-				Operation: "generate_selective_tags",
+				Operation: fmt.Sprintf("generate_selective_%s", taxonomyName),
 				Component: "builder",
 			})
 		}
 	}
 
-	if tracker.ShouldRegenerateRobots() {
+	if scope.NeedsGlobal("robots") {
 		if err := b.generateRobotsTxt(); err != nil {
 			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
 				Operation: "generate_robots_txt",
@@ -320,7 +302,7 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
-	if tracker.ShouldRegenerateFeed() {
+	if scope.NeedsGlobal("feed") {
 		if err := b.generateAtomFeed(); err != nil {
 			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
 				Operation: "generate_atom_feed",
@@ -329,7 +311,7 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
-	if tracker.ShouldRegenerateSitemap() {
+	if scope.NeedsGlobal("sitemap") {
 		if err := b.generateSitemap(); err != nil {
 			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
 				Operation: "generate_sitemap",
@@ -344,23 +326,8 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 // SnapshotTaxonomyValues captures current taxonomy values for changed files.
 // This should be called BEFORE ParseFiles() to preserve old values for comparison.
 func (b *Builder) SnapshotTaxonomyValues(changedFiles []string, contentDir string) map[string]map[string]any {
-	tracker := NewChangeTracker(b.parser.ContentMap, b.parser)
-
-	// Create a temporary snapshot using the tracker's logic
-	tempSnapshot := make(map[string]map[string]any)
-	for _, file := range changedFiles {
-		relPath := tracker.normalizeFilePath(file, contentDir)
-		if relPath == "" {
-			continue
-		}
-
-		node := tracker.findNodeByPath(relPath)
-		if node != nil {
-			tempSnapshot[relPath] = tracker.extractTaxonomyValues(node)
-		}
-	}
-
-	return tempSnapshot
+	analyzer := NewRebuildAnalyzer(b.parser.ContentMap, b.parser, contentDir)
+	return analyzer.SnapshotTaxonomyValues(changedFiles)
 }
 
 // GetCacheStats returns the current render cache statistics.

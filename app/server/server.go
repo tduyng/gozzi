@@ -22,11 +22,10 @@ type DevServer struct {
 	gen            *builder.Builder
 	parser         *parser.ContentParser
 	watcher        *fsnotify.Watcher
+	detector       *ChangeDetector // Clean change detection system
 	clients        map[chan string]struct{}
 	mu             sync.Mutex
 	lastConfigHash string
-	fileHashes     map[string]string
-	fileHashesMu   sync.RWMutex
 }
 
 // NewDevServer creates a new development server with file watching enabled.
@@ -44,6 +43,8 @@ func NewDevServer(
 		})
 	}
 
+	detector := NewChangeDetector(contentDir, site.OutputDir, configPath)
+
 	return &DevServer{
 		configPath: configPath,
 		contentDir: contentDir,
@@ -51,8 +52,8 @@ func NewDevServer(
 		gen:        gen,
 		parser:     parser,
 		watcher:    watcher,
+		detector:   detector,
 		clients:    make(map[chan string]struct{}),
-		fileHashes: make(map[string]string),
 	}, nil
 }
 

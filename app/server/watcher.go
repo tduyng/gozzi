@@ -1,4 +1,5 @@
-// Package server provides file watching and automatic rebuild for development.
+// ABOUTME: This file provides file watching and automatic rebuild for development.
+// ABOUTME: It uses a clean change detection system for flexible and maintainable file watching.
 package server
 
 import (
@@ -8,7 +9,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -19,18 +19,21 @@ import (
 	"github.com/tduyng/gozzi/app/utils"
 )
 
+// watchChanges monitors file system changes and triggers rebuilds
 func (s *DevServer) watchChanges() {
 	defer func() {
 		_ = s.watcher.Close()
 	}()
+
 	debounceDuration := 500 * time.Millisecond
 	var (
 		debounceTimer     *time.Timer
 		lastRebuildTime   time.Time
-		changedFiles      []string
+		changedFiles      []*FileChange
 		changedFilesMutex sync.Mutex
 	)
 
+	// Watch all necessary directories
 	paths := []string{
 		filepath.Dir(s.configPath),
 		s.contentDir,
@@ -40,64 +43,71 @@ func (s *DevServer) watchChanges() {
 
 	for _, path := range paths {
 		err := filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
-			if err != nil || !d.IsDir() || s.shouldIgnore(p) {
+			if err != nil {
 				return nil
 			}
-			return s.watcher.Add(p)
+			// Only watch directories, fsnotify will detect file changes in them
+			if d.IsDir() && !s.detector.shouldIgnoreDir(p) {
+				return s.watcher.Add(p)
+			}
+			return nil
 		})
 		if err != nil {
 			log.Printf("Error watching %s: %v", path, err)
 		}
 	}
 
-	debounce := time.NewTimer(0)
-	debounce.Stop()
-
 	for {
 		select {
-
 		case event, ok := <-s.watcher.Events:
 			if !ok {
 				continue
 			}
 
+			// Handle new directory creation
 			if event.Op&fsnotify.Create == fsnotify.Create {
-				if info, err := os.Stat(event.Name); err == nil && info.IsDir() && !s.shouldIgnore(event.Name) {
-					if err := s.watcher.Add(event.Name); err != nil {
-						log.Printf("Error watching new directory %s: %v", event.Name, err)
-					} else {
-						log.Printf("Now watching new directory: %s", event.Name)
+				if info, err := os.Stat(event.Name); err == nil && info.IsDir() {
+					if !s.detector.shouldIgnoreDir(event.Name) {
+						if err := s.watcher.Add(event.Name); err != nil {
+							log.Printf("Error watching new directory %s: %v", event.Name, err)
+						}
 					}
 				}
 			}
 
-			if !s.isRelevantChange(event) {
+			// Detect and classify the change
+			change, err := s.detector.DetectChange(event.Name)
+			if err != nil {
+				log.Printf("Error detecting change for %s: %v", event.Name, err)
 				continue
 			}
 
-			if !s.hasFileChanged(event.Name) {
+			// Ignore if not a relevant change
+			if change.Type == ChangeTypeIgnored {
 				continue
 			}
 
 			changedFilesMutex.Lock()
-			changedFiles = append(changedFiles, event.Name)
+			changedFiles = append(changedFiles, change)
 			changedFilesMutex.Unlock()
 
+			// Reset debounce timer
 			if debounceTimer != nil {
 				debounceTimer.Stop()
 			}
 			debounceTimer = time.AfterFunc(debounceDuration, func() {
 				if time.Since(lastRebuildTime) > debounceDuration {
 					changedFilesMutex.Lock()
-					files := make([]string, len(changedFiles))
-					copy(files, changedFiles)
+					changes := make([]*FileChange, len(changedFiles))
+					copy(changes, changedFiles)
 					changedFiles = changedFiles[:0]
 					changedFilesMutex.Unlock()
 
-					s.triggerRebuild(files)
+					s.triggerRebuild(changes)
 					lastRebuildTime = time.Now()
 				}
 			})
+
 		case err, ok := <-s.watcher.Errors:
 			if !ok {
 				return
@@ -107,193 +117,114 @@ func (s *DevServer) watchChanges() {
 	}
 }
 
-func (s *DevServer) shouldIgnore(path string) bool {
-	absOutput, _ := filepath.Abs(s.site.OutputDir)
-	absPath, _ := filepath.Abs(path)
-
-	return strings.HasPrefix(absPath, absOutput) ||
-		strings.Contains(path, "/.") ||
-		strings.Contains(path, "\\.")
-}
-
-func (s *DevServer) isRelevantChange(event fsnotify.Event) bool {
-	// Ignore temporary files, build artifacts, and system files
-	base := filepath.Base(event.Name)
-	ext := filepath.Ext(event.Name)
-
-	// Temporary and system files to ignore
-	if strings.HasPrefix(base, ".") ||
-		strings.HasPrefix(base, "~") ||
-		strings.HasSuffix(base, "~") ||
-		strings.HasSuffix(base, ".swp") ||
-		strings.HasSuffix(base, ".tmp") ||
-		strings.HasSuffix(base, ".bak") ||
-		strings.HasSuffix(base, ".lock") ||
-		ext == ".log" {
-		return false
-	}
-
-	// Accept all other files - let the builder decide what to do with them
-	return true
-}
-
-// findParentMarkdownFile finds the markdown file that owns an asset.
-func (s *DevServer) findParentMarkdownFile(assetPath string) string {
-	dir := filepath.Dir(assetPath)
-
-	for dir != s.contentDir && dir != "." && dir != "/" {
-		parentDir := filepath.Dir(dir)
-
-		indexPath := filepath.Join(parentDir, "index.md")
-		if _, err := os.Stat(indexPath); err == nil {
-			return indexPath
-		}
-
-		dir = parentDir
-	}
-
-	return ""
-}
-
-func (s *DevServer) triggerRebuild(changedFiles []string) {
+// triggerRebuild processes detected changes and rebuilds the site
+func (s *DevServer) triggerRebuild(changes []*FileChange) {
 	start := time.Now()
 
-	if len(changedFiles) == 0 {
+	if len(changes) == 0 {
 		return
 	}
 
-	hasConfigChange := false
-	contentFiles := []string{}
-	templateFiles := []string{}
-	assetFiles := []string{}
+	// Group changes by type
+	var (
+		hasConfigChange bool
+		contentFiles    []string
+		templateFiles   []string
+	)
 
-	for _, file := range changedFiles {
-		switch {
-		case strings.Contains(file, "templates") && filepath.Ext(file) == ".html":
-			if relPath, err := filepath.Rel("templates", file); err == nil {
-				templateFiles = append(templateFiles, filepath.ToSlash(relPath))
-			}
-		case filepath.Base(file) == "config.toml":
+	for _, change := range changes {
+		log.Printf("Processing %s change: %s", change.Type, change.RelPath)
+
+		switch change.Type {
+		case ChangeTypeConfig:
 			hasConfigChange = true
-		case strings.HasPrefix(file, "static/") || strings.Contains(file, "/static/"):
-			assetFiles = append(assetFiles, file)
-		case strings.Contains(file, s.contentDir) && (filepath.Ext(file) == ".md" || filepath.Base(file) == "_index.md"):
-			contentFiles = append(contentFiles, file)
-		case strings.Contains(file, s.contentDir):
-			parentMd := s.findParentMarkdownFile(file)
-			if parentMd != "" {
-				contentFiles = append(contentFiles, parentMd)
-			} else {
-				assetFiles = append(assetFiles, file)
-			}
+		case ChangeTypeContent:
+			contentFiles = append(contentFiles, change.Path)
+		case ChangeTypeTemplate:
+			templateFiles = append(templateFiles, change.RelPath)
+		case ChangeTypeStatic:
+			// Static files are copied during Generate
 		}
 	}
 
-	log.Printf("Rebuild triggered - config: %v, content: %d, templates: %d, assets: %d",
-		hasConfigChange, len(contentFiles), len(templateFiles), len(assetFiles))
-
+	// Handle config changes (requires full rebuild)
 	if hasConfigChange {
+		log.Println("Config changed - performing full rebuild")
 		if err := s.reloadConfig(); err != nil {
 			log.Printf("Config reload error: %v", err)
+			return
 		}
+		if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
+			log.Printf("Generate error: %v", err)
+			return
+		}
+		s.notifyClients()
+		log.Printf("Full rebuild completed in %dms", time.Since(start).Milliseconds())
+		return
 	}
 
+	// Handle template changes
 	if len(templateFiles) > 0 {
+		log.Printf("Templates changed: %v", templateFiles)
 		if err := s.gen.ReloadTemplates(); err != nil {
 			log.Printf("Template reload error: %v", err)
 		} else {
 			count := s.gen.InvalidateTemplateCache(templateFiles)
-			if count > 0 {
-				log.Printf("Invalidated %d cached render(s) for templates: %v", count, templateFiles)
-			}
+			log.Printf("Invalidated %d cached renders", count)
 		}
 	}
 
-	s.parser.ResetStats()
-
-	s.gen.ResetCacheStats()
-
-	parseStart := time.Now()
-	var oldTaxonomyValues map[string]map[string]any
-
+	// Handle content changes
 	if len(contentFiles) > 0 {
-		// Snapshot taxonomy values BEFORE ParseFiles updates the contentMap
-		oldTaxonomyValues = s.gen.SnapshotTaxonomyValues(contentFiles, s.contentDir)
+		log.Printf("Content changed: %d files", len(contentFiles))
 
+		// Snapshot taxonomy values BEFORE parsing
+		oldTaxonomies := s.gen.SnapshotTaxonomyValues(contentFiles, s.contentDir)
+
+		// Parse changed files
+		parseStart := time.Now()
 		if err := s.parser.ParseFiles(s.contentDir, contentFiles); err != nil {
-			log.Printf("Content parse error: %v", err)
+			log.Printf("Parse error: %v", err)
+			return
 		}
-		log.Printf("ParseFiles took %dms", time.Since(parseStart).Milliseconds())
-	} else if hasConfigChange {
-		s.parser.GetHashCache().Clear()
-		if err := s.parser.Parse(s.contentDir); err != nil {
-			log.Printf("Content parse error: %v", err)
+		log.Printf("Parse took %dms", time.Since(parseStart).Milliseconds())
+
+		// Generate - use incremental build when possible
+		genStart := time.Now()
+		var err error
+
+		if len(templateFiles) == 0 {
+			// Pure content change - use incremental build
+			err = s.gen.GenerateWithOptions(s.parser.ContentMap["."], builder.GenerateOptions{
+				Incremental:       true,
+				ChangedFiles:      contentFiles,
+				ContentDir:        s.contentDir,
+				OldTaxonomyValues: oldTaxonomies,
+			})
+		} else {
+			// Template changed - do full rebuild
+			err = s.gen.Generate(s.parser.ContentMap["."])
 		}
-		log.Printf("Full parse took %dms", time.Since(parseStart).Milliseconds())
-	}
 
-	genStart := time.Now()
-	var err error
-
-	if len(contentFiles) > 0 && !hasConfigChange && len(templateFiles) == 0 {
-		err = s.gen.GenerateWithOptions(s.parser.ContentMap["."], builder.GenerateOptions{
-			Incremental:       true,
-			ChangedFiles:      contentFiles,
-			ContentDir:        s.contentDir,
-			OldTaxonomyValues: oldTaxonomyValues,
-		})
 		if err != nil {
-			log.Printf("Incremental build error: %v", err)
+			log.Printf("Generate error: %v", err)
+			return
 		}
-	} else {
-		err = s.gen.Generate(s.parser.ContentMap["."])
-		if err != nil {
-			log.Printf("Full build error: %v", err)
-		}
-	}
-	genDuration := time.Since(genStart).Milliseconds()
 
-	cacheStats := s.gen.GetCacheStats()
-	buildType := "full"
-	if len(contentFiles) > 0 && !hasConfigChange && len(templateFiles) == 0 {
-		buildType = "incremental"
+		cacheStats := s.gen.GetCacheStats()
+		log.Printf("Generate took %dms (cache: %d hits, %d misses, %.1f%% hit rate)",
+			time.Since(genStart).Milliseconds(),
+			cacheStats.Hits,
+			cacheStats.Misses,
+			cacheStats.HitRate)
 	}
-	log.Printf("Generate (%s) took %dms (cache: %d hits, %d misses, %.1f%% hit rate)",
-		buildType,
-		genDuration,
-		cacheStats.Hits,
-		cacheStats.Misses,
-		cacheStats.HitRate)
 
+	// Notify live reload clients
 	s.notifyClients()
-
-	log.Printf("Change detected, build done in %dms", time.Since(start).Milliseconds())
+	log.Printf("Rebuild completed in %dms", time.Since(start).Milliseconds())
 }
 
-// hasFileChanged checks if a file's content has actually changed.
-func (s *DevServer) hasFileChanged(filePath string) bool {
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		s.fileHashesMu.Lock()
-		delete(s.fileHashes, filePath)
-		s.fileHashesMu.Unlock()
-		return true
-	}
-
-	newHash := fmt.Sprintf("%x", md5.Sum(content))
-
-	s.fileHashesMu.Lock()
-	defer s.fileHashesMu.Unlock()
-
-	oldHash, exists := s.fileHashes[filePath]
-	if !exists || oldHash != newHash {
-		s.fileHashes[filePath] = newHash
-		return true
-	}
-
-	return false
-}
-
+// reloadConfig reloads the site configuration and performs a full rebuild
 func (s *DevServer) reloadConfig() error {
 	content, err := os.ReadFile(s.configPath)
 	if err != nil {

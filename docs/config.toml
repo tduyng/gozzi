@@ -51,6 +51,7 @@ items = [
 title = "Built-in Features"
 items = [
   { text = "Shortcodes", link = "/features/shortcodes" },
+  { text = "Internationalization", link = "/features/i18n" },
   { text = "Math Expressions", link = "/features/math" },
   { text = "Mermaid Diagrams", link = "/features/diagrams" },
   { text = "Syntax Highlighting", link = "/features/syntax-highlighting" },

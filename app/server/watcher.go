@@ -144,18 +144,26 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 	)
 
 	for _, change := range changes {
-		log.Printf("Processing %s change: %s", change.Type, change.RelPath)
-
 		switch change.Type {
 		case ChangeTypeConfig:
 			hasConfigChange = true
+			log.Printf("Processing config change: %s", change.RelPath)
 		case ChangeTypeContent:
 			contentFiles = append(contentFiles, change.Path)
+			log.Printf("Processing content change: %s", change.RelPath)
 		case ChangeTypeTemplate:
 			templateFiles = append(templateFiles, change.RelPath)
+			log.Printf("Processing template change: %s", change.RelPath)
 		case ChangeTypeStatic:
 			// Static files are copied during Generate
+			// No logging to avoid spam on editor saves
 		}
+	}
+
+	// If only static files changed, return early without logging
+	// Static assets are automatically copied during the next full/incremental build
+	if !hasConfigChange && len(contentFiles) == 0 && len(templateFiles) == 0 {
+		return
 	}
 
 	// Handle config changes (requires full rebuild)

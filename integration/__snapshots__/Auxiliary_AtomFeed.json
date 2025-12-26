@@ -1,0 +1,7 @@
+{
+  "name": "Auxiliary_AtomFeed",
+  "files": {
+    "atom.xml": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003c?xml-stylesheet type=\"text/xsl\" href=\"/atom.xsl\"?\u003e\n\u003cfeed xmlns=\"http://www.w3.org/2005/Atom\"\u003e\n  \u003ctitle\u003eTest Site\u003c/title\u003e\n  \u003cid\u003ehttps://test.example.com\u003c/id\u003e\n  \u003cupdated\u003e2024-01-01T00:00:00Z\u003c/updated\u003e\n  \u003cauthor\u003e\n    \u003cname\u003eTest Author\u003c/name\u003e\n    \u003cemail\u003etest@example.com\u003c/email\u003e\n  \u003c/author\u003e\n  \u003clink rel=\"self\" href=\"https://test.example.com/atom.xml\"\u003e\u003c/link\u003e\n  \u003clink href=\"https://test.example.com\"\u003e\u003c/link\u003e\n\u003c/feed\u003e\n"
+  },
+  "metadata": {}
+}

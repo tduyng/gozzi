@@ -97,7 +97,7 @@ func (b *Builder) generateAtomFeed() error {
 	feed := AtomFeed{
 		Title:   b.site.Title,
 		ID:      b.site.BaseURL,
-		Updated: time.Now().UTC().Format(time.RFC3339),
+		Updated: b.site.BuildTime.UTC().Format(time.RFC3339),
 		Links: []AtomLink{
 			{Rel: "self", Href: b.site.BaseURL + "/atom.xml"},
 			{Href: b.site.BaseURL},
@@ -155,7 +155,7 @@ func (b *Builder) generateSitemap() error {
 			return
 		}
 
-		lastMod := getLastMod(n)
+		lastMod := b.getLastMod(n)
 
 		url := SitemapURL{
 			Loc:     n.URL,
@@ -178,7 +178,14 @@ func (b *Builder) generateSitemap() error {
 	})
 
 	if b.hasTemplate("tags.html") {
+		// Sort tags for deterministic output
+		tags := make([]string, 0, len(b.parser.Tags))
 		for tag := range b.parser.Tags {
+			tags = append(tags, tag)
+		}
+		slices.Sort(tags)
+
+		for _, tag := range tags {
 			loc := b.buildTagURL(b.buildTagPermalink(tag))
 			urls = append(urls, SitemapURL{
 				Loc:        loc,
@@ -229,7 +236,7 @@ func (b *Builder) writeXMLFile(name string, xslHeader string, data any) error {
 	return nil
 }
 
-func getLastMod(n *content.Node) string {
+func (b *Builder) getLastMod(n *content.Node) string {
 	var lastMod time.Time
 
 	if updated, ok := n.Config["updated"].(time.Time); ok && !updated.IsZero() {
@@ -237,7 +244,7 @@ func getLastMod(n *content.Node) string {
 	} else if date, ok := n.Config["date"].(time.Time); ok && !date.IsZero() {
 		lastMod = date
 	} else {
-		lastMod = time.Now()
+		lastMod = b.site.BuildTime
 	}
 
 	return lastMod.UTC().Format("2006-01-02")

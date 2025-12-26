@@ -1,0 +1,7 @@
+{
+  "name": "MarkdownRendering_CodeBlocks",
+  "files": {
+    "blog/code/index.html": "\u003c!DOCTYPE html\u003e\u003chtml\u003e\u003chead\u003e\u003cmeta charset=\"UTF-8\"\u003e\u003ctitle\u003eCode Test\u003c/title\u003e\u003cmeta property=\"og:image\" content=\"/img/default.jpg\"\u003e\u003cmeta name=\"description\" content=\"Test site description\"\u003e\u003c/head\u003e\u003cbody\u003e\u003ch1\u003eCode Test\u003c/h1\u003e\u003ctime\u003e2024-01-01 00:00:00 \u0026#43;0100 CET\u003c/time\u003e\u003cpre style=\"color:#f8f8f2;background-color:#282a36;\"\u003e\u003ccode\u003e\u003cspan style=\"display:flex;\"\u003e\u003cspan\u003e\u003cspan style=\"color:#8be9fd;font-style:italic\"\u003efunc\u003c/span\u003e \u003cspan style=\"color:#50fa7b\"\u003emain\u003c/span\u003e() {}\n\u003c/span\u003e\u003c/span\u003e\u003c/code\u003e\u003c/pre\u003e\u003c/body\u003e\u003c/html\u003e\n"
+  },
+  "metadata": {}
+}

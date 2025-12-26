@@ -66,7 +66,10 @@ func buildSite(t *testing.T, sitePath string) (*builder.Builder, *parser.Content
 		site.OutputDir = "public"
 	}
 
-	site.BuildTime = time.Now()
+	// Use fixed build time for deterministic tests (2024-01-01 00:00:00 UTC)
+	// This ensures snapshots don't change due to timestamps
+	fixedTime := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	site.BuildTime = fixedTime
 
 	contentParser := parser.NewParser(site)
 

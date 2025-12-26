@@ -211,12 +211,7 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 			return
 		}
 
-		cacheStats := s.gen.GetCacheStats()
-		log.Printf("Generate took %dms (cache: %d hits, %d misses, %.1f%% hit rate)",
-			time.Since(genStart).Milliseconds(),
-			cacheStats.Hits,
-			cacheStats.Misses,
-			cacheStats.HitRate)
+		log.Printf("Generate took %dms", time.Since(genStart).Milliseconds())
 	}
 
 	// Notify live reload clients

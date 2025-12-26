@@ -86,13 +86,7 @@ func handleBuildCommand(args []string) {
 		log.Fatal(err)
 	}
 
-	// Log cache statistics to help understand build performance
-	cacheStats := gen.GetCacheStats()
-	log.Printf("Build done in %dms (cache: %d hits, %d misses, %.1f%% hit rate)",
-		time.Since(startTime).Milliseconds(),
-		cacheStats.Hits,
-		cacheStats.Misses,
-		cacheStats.HitRate)
+	log.Printf("Build done in %dms", time.Since(startTime).Milliseconds())
 }
 
 func handleServeCommand(args []string) {

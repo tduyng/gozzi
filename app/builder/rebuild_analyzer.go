@@ -210,6 +210,12 @@ func (ra *RebuildAnalyzer) findNode(relPath string) *content.Node {
 	}
 
 	if filepath.Base(relPath) == "_index.md" {
+		// ContentMap uses "." for root, but dir is "" after normalization
+		if dir == "" {
+			if node := ra.contentMap["."]; node != nil {
+				return node
+			}
+		}
 		return ra.contentMap[dir]
 	}
 

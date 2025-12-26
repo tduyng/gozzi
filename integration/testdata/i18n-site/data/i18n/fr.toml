@@ -1,0 +1,9 @@
+tagline = "Bienvenue sur notre site"
+
+[section]
+contact = "Contact"
+about = "À Propos"
+
+[greeting]
+hello = "Bonjour"
+welcome = "Bienvenue"

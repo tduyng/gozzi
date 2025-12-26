@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="{{ .Page.Config.lang }}">
+<head>
+    <title>{{ .Page.Config.title }}</title>
+</head>
+<body>
+    <h1>{{ i18n "section.about" .Page.Config }}</h1>
+    
+    {{ if .Site.Config.i18n_enabled }}
+    <nav class="language-switcher">
+        {{ range .Site.Config.languages }}
+        <a href="{{ langURL .code $.Page }}">{{ .name }}</a>
+        {{ end }}
+    </nav>
+    {{ end }}
+    
+    <main>
+        {{ .Page.Content }}
+    </main>
+    
+    <footer>
+        <p>{{ i18n "greeting.hello" .Page.Config }} | Lang: {{ .Page.Config.lang }}</p>
+    </footer>
+</body>
+</html>

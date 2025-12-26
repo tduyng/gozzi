@@ -82,6 +82,10 @@ func (r *FuncRegistry) BuildFuncMap(ctx *funcs.SiteContext) template.FuncMap {
 				funcMap[name] = siteFuncs.RenderMarkdown
 			case "i18n":
 				funcMap[name] = siteFuncs.Translate
+			case "langURL":
+				funcMap[name] = siteFuncs.LangURL
+			case "currentLang":
+				funcMap[name] = siteFuncs.CurrentLang
 			}
 		} else if !def.RequiresCtx {
 			funcMap[name] = def.Fn
@@ -144,6 +148,8 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("get_section", FuncDef{Fn: nil, RequiresCtx: true, Description: "Get section by path"})
 	r.MustRegister("markdown", FuncDef{Fn: nil, RequiresCtx: true, Description: "Render markdown to HTML"})
 	r.MustRegister("i18n", FuncDef{Fn: nil, RequiresCtx: true, Description: "Translate key to current language"})
+	r.MustRegister("langURL", FuncDef{Fn: nil, RequiresCtx: true, Description: "Generate language-specific URL"})
+	r.MustRegister("currentLang", FuncDef{Fn: nil, RequiresCtx: true, Description: "Get current language code"})
 
 	return r
 }

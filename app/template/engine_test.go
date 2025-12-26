@@ -191,6 +191,8 @@ func TestCreateDefaultRegistry(t *testing.T) {
 		"dict", "safe", "load", "load_attribute",
 		// Site-specific
 		"asset", "get_section", "markdown", "i18n",
+		// I18n URL generation
+		"langURL", "currentLang",
 	}
 
 	registeredFuncs := r.List()

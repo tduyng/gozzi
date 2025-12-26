@@ -165,6 +165,121 @@ func SafeHTML(s string) template.HTML {
 	return template.HTML(s)
 }
 
+// LangURL generates a URL for a specific language version of a page.
+// Usage in templates:
+//
+//	{{ langURL "fr" .Page }}           - Get current page in French
+//	{{ langURL "en" .Page.Permalink }} - Get specific path in English
+func (sf *SiteFuncs) LangURL(langCode string, pageOrPath any) string {
+	if sf.ctx.I18n == nil || !sf.ctx.I18n.IsEnabled() {
+		// If i18n not enabled, return the original URL
+		if node, ok := pageOrPath.(*content.Node); ok {
+			return node.Permalink
+		}
+		if path, ok := pageOrPath.(string); ok {
+			return path
+		}
+		return "/"
+	}
+
+	// Validate language code
+	if sf.ctx.I18n.GetLanguage(langCode) == nil {
+		// Invalid language code, return original
+		if node, ok := pageOrPath.(*content.Node); ok {
+			return node.Permalink
+		}
+		if path, ok := pageOrPath.(string); ok {
+			return path
+		}
+		return "/"
+	}
+
+	var currentLang string
+	var pathWithoutLang string
+
+	// Extract current language and path
+	if node, ok := pageOrPath.(*content.Node); ok {
+		if lang, exists := node.Config["lang"]; exists {
+			if langStr, ok := lang.(string); ok {
+				currentLang = langStr
+			}
+		}
+		pathWithoutLang = node.Permalink
+	} else if pageMap, ok := pageOrPath.(map[string]any); ok {
+		// Handle Page as a map (template data format)
+		if config, exists := pageMap["Config"]; exists {
+			if configMap, ok := config.(map[string]any); ok {
+				if lang, exists := configMap["lang"]; exists {
+					if langStr, ok := lang.(string); ok {
+						currentLang = langStr
+					}
+				}
+			}
+		}
+		if permalink, exists := pageMap["Permalink"]; exists {
+			if permalinkStr, ok := permalink.(string); ok {
+				pathWithoutLang = permalinkStr
+			}
+		}
+	} else if path, ok := pageOrPath.(string); ok {
+		pathWithoutLang = path
+		// Try to detect language from path
+		if strings.HasPrefix(path, "/") {
+			path = strings.TrimPrefix(path, "/")
+		}
+		parts := strings.Split(path, "/")
+		if len(parts) > 0 && sf.ctx.I18n.GetLanguage(parts[0]) != nil {
+			currentLang = parts[0]
+		}
+	} else {
+		return "/"
+	}
+
+	// Remove current language prefix from path
+	if currentLang != "" && strings.HasPrefix(pathWithoutLang, "/"+currentLang+"/") {
+		pathWithoutLang = strings.TrimPrefix(pathWithoutLang, "/"+currentLang)
+	} else if currentLang != "" && pathWithoutLang == "/"+currentLang {
+		pathWithoutLang = "/"
+	}
+
+	// Add new language prefix
+	if pathWithoutLang == "/" || pathWithoutLang == "" {
+		return "/" + langCode + "/"
+	}
+
+	// Ensure path starts with /
+	if !strings.HasPrefix(pathWithoutLang, "/") {
+		pathWithoutLang = "/" + pathWithoutLang
+	}
+
+	return "/" + langCode + pathWithoutLang
+}
+
+// CurrentLang returns the current language code from context.
+// Usage in templates: {{ currentLang .Page }}
+func (sf *SiteFuncs) CurrentLang(context any) string {
+	if node, ok := context.(*content.Node); ok {
+		if lang, exists := node.Config["lang"]; exists {
+			if langStr, ok := lang.(string); ok {
+				return langStr
+			}
+		}
+	} else if configMap, ok := context.(map[string]any); ok {
+		if lang, exists := configMap["lang"]; exists {
+			if langStr, ok := lang.(string); ok {
+				return langStr
+			}
+		}
+	}
+
+	// Fallback to default language
+	if sf.ctx.I18n != nil {
+		return sf.ctx.I18n.GetDefaultLanguage().Code
+	}
+
+	return "en"
+}
+
 // MacroRenderer holds methods for rendering template macros.
 type MacroRenderer struct {
 	templates *template.Template

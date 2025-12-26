@@ -1,0 +1,15 @@
+base_url = "https://example.com"
+title = "Multilingual Test Site"
+language = "en"
+output_dir = "public"
+
+[languages]
+default = "en"
+
+[languages.en]
+name = "English"
+weight = 1
+
+[languages.fr]
+name = "Français"
+weight = 2

@@ -60,18 +60,18 @@ install-dev: build-dev
 clean:
     @rm -rf dist/ {{ bin_name }} coverage/
 
-# Run all Go tests
+# Run all Go tests (requires TZ=UTC for consistent snapshots)
 [group('development')]
 test:
     @echo -e "{{ GREEN }}Running tests...{{ NORMAL }}"
-    @go test ./...
+    @TZ=UTC go test ./...
 
 # Generate HTML coverage report
 [group('development')]
 coverage:
     @echo -e "{{ YELLOW }}Generating coverage report...{{ NORMAL }}"
     @mkdir -p coverage
-    @go test -coverprofile=coverage/coverage.out ./...
+    @TZ=UTC go test -coverprofile=coverage/coverage.out ./...
     @go tool cover -html=coverage/coverage.out -o coverage/index.html
     @echo -e "{{ GREEN }}Coverage report generated at coverage/index.html{{ NORMAL }}"
 

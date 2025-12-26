@@ -74,9 +74,10 @@ template = "post.html"
 		createPost(t, sitePath, "blog/headings.md", post)
 		fullRebuild(t, gen, contentParser, sitePath)
 
-		verifyFileContent(t, sitePath, "blog/headings/index.html", `<h1 id="heading-1">Heading 1</h1>`)
-		verifyFileContent(t, sitePath, "blog/headings/index.html", `<h2 id="heading-2">Heading 2</h2>`)
-		verifyFileContent(t, sitePath, "blog/headings/index.html", `<h3 id="heading-3">Heading 3</h3>`)
+		// Snapshot testing - captures entire HTML output
+		SnapshotFiles(t, "MarkdownRendering_Headings", sitePath, []string{
+			"blog/headings/index.html",
+		})
 	})
 
 	t.Run("Links_Rendered", func(t *testing.T) {

@@ -183,77 +183,27 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 				node.Slug == "" || node.Slug == "/"
 
 			if isHomepage {
-				if blogSection, exists := b.parser.ContentMap["blog"]; exists && len(blogSection.Children) > 0 {
-					blogChildKeys := make([]string, len(blogSection.Children))
-					for i, post := range blogSection.Children {
-						parts := []string{post.Path}
-
-						if title, ok := post.Config["title"].(string); ok {
-							parts = append(parts, title)
+				// Homepage can reference ANY section's data, so include all sections in cache key
+				// This ensures homepage cache invalidates when any child page changes
+				allSections := make(map[string][]string)
+				for sectionPath, sectionNode := range b.parser.ContentMap {
+					if sectionNode.Type == content.NodeTypeSection && sectionPath != "." && len(sectionNode.Children) > 0 {
+						childKeys := make([]string, len(sectionNode.Children))
+						for i, child := range sectionNode.Children {
+							parts := b.buildChildCacheKeyParts(child)
+							childKeys[i] = strings.Join(parts, "|")
 						}
-						if date, ok := post.Config["date"].(time.Time); ok {
-							parts = append(parts, date.Format("2006-01-02"))
-						}
-						if desc, ok := post.Config["description"].(string); ok {
-							parts = append(parts, desc)
-						}
-
-						if extra, ok := post.Config["extra"]; ok {
-							if extraMap, ok := extra.(map[string]any); ok {
-								keys := make([]string, 0, len(extraMap))
-								for k := range extraMap {
-									keys = append(keys, k)
-								}
-								sort.Strings(keys)
-								extraParts := make([]string, 0, len(keys))
-								for _, k := range keys {
-									extraParts = append(extraParts, fmt.Sprintf("%s=%v", k, extraMap[k]))
-								}
-								parts = append(parts, strings.Join(extraParts, ","))
-							}
-						}
-
-						blogChildKeys[i] = strings.Join(parts, "|")
+						allSections[sectionPath] = childKeys
 					}
-					key["BlogPosts"] = blogChildKeys
+				}
+				if len(allSections) > 0 {
+					key["AllSections"] = allSections
 				}
 			} else if len(node.Children) > 0 {
+				// Regular sections only need their own children in cache key
 				childKeys := make([]string, len(node.Children))
 				for i, child := range node.Children {
-					parts := []string{child.Path}
-
-					if title, ok := child.Config["title"].(string); ok {
-						parts = append(parts, title)
-					}
-					if date, ok := child.Config["date"].(time.Time); ok {
-						parts = append(parts, date.Format("2006-01-02"))
-					}
-
-					if desc, ok := child.Config["description"].(string); ok {
-						parts = append(parts, desc)
-					}
-
-					if node.Slug == "notes" {
-						parts = append(parts, string(child.Content))
-					}
-
-					if extra, ok := child.Config["extra"]; ok {
-						if extraMap, ok := extra.(map[string]any); ok {
-							keys := make([]string, 0, len(extraMap))
-							for k := range extraMap {
-								keys = append(keys, k)
-							}
-							sort.Strings(keys)
-							extraParts := make([]string, 0, len(keys))
-							for _, k := range keys {
-								extraParts = append(extraParts, fmt.Sprintf("%s=%v", k, extraMap[k]))
-							}
-							parts = append(parts, strings.Join(extraParts, ","))
-						} else {
-							parts = append(parts, fmt.Sprintf("%v", extra))
-						}
-					}
-
+					parts := b.buildChildCacheKeyParts(child)
 					childKeys[i] = strings.Join(parts, "|")
 				}
 				key["Children"] = childKeys
@@ -586,4 +536,40 @@ func urlizeHelper(s string) string {
 	}
 
 	return strings.Trim(slug, "-")
+}
+
+// buildChildCacheKeyParts extracts cache-relevant data from a child node.
+// This ensures consistent cache key generation for child pages across different contexts.
+func (b *Builder) buildChildCacheKeyParts(child *content.Node) []string {
+	parts := []string{child.Path}
+
+	if title, ok := child.Config["title"].(string); ok {
+		parts = append(parts, title)
+	}
+	if date, ok := child.Config["date"].(time.Time); ok {
+		parts = append(parts, date.Format("2006-01-02"))
+	}
+	if desc, ok := child.Config["description"].(string); ok {
+		parts = append(parts, desc)
+	}
+
+	// Include extra config (affects template rendering)
+	if extra, ok := child.Config["extra"]; ok {
+		if extraMap, ok := extra.(map[string]any); ok {
+			keys := make([]string, 0, len(extraMap))
+			for k := range extraMap {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			extraParts := make([]string, 0, len(keys))
+			for _, k := range keys {
+				extraParts = append(extraParts, fmt.Sprintf("%s=%v", k, extraMap[k]))
+			}
+			parts = append(parts, strings.Join(extraParts, ","))
+		} else {
+			parts = append(parts, fmt.Sprintf("%v", extra))
+		}
+	}
+
+	return parts
 }

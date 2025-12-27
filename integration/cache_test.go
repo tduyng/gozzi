@@ -524,4 +524,42 @@ func TestCache_CacheKeyInclusion(t *testing.T) {
 			t.Error("expected cache misses when date changes")
 		}
 	})
+
+	t.Run("DescriptionChange_InvalidatesCacheDueToKey", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Add description to post1
+		post1Path := filepath.Join(sitePath, "content/blog/post1/index.md")
+		insertAfterLine(t, post1Path, "title =", `description = "A new description for testing cache invalidation"`)
+
+		// Incremental rebuild
+		gen.ResetCacheStats()
+		incrementalRebuild(t, gen, contentParser, sitePath, []string{post1Path})
+
+		// Post should be regenerated with new description
+		verifyFileContent(t, sitePath, "blog/post1/index.html", "A new description for testing cache invalidation")
+
+		// Should have cache misses (description in cache key)
+		stats := gen.GetCacheStats()
+		if stats.Misses == 0 {
+			t.Error("expected cache misses when description changes")
+		}
+
+		// Now modify the description
+		modifyFile(t, post1Path, "A new description for testing cache invalidation", "Updated description text")
+
+		// Incremental rebuild again
+		gen.ResetCacheStats()
+		incrementalRebuild(t, gen, contentParser, sitePath, []string{post1Path})
+
+		// Should have new description
+		verifyFileContent(t, sitePath, "blog/post1/index.html", "Updated description text")
+
+		// Should have cache misses again
+		stats = gen.GetCacheStats()
+		if stats.Misses == 0 {
+			t.Error("expected cache misses when description is modified")
+		}
+	})
 }

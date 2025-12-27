@@ -681,3 +681,166 @@ Privacy content v1`
 		}
 	})
 }
+
+// TestServeMode_NestedIndexWithDatePrefix tests incremental rebuild for index.md files
+// in directories with date prefixes (e.g., blog/2025-11-22-my-post/index.md)
+func TestServeMode_NestedIndexWithDatePrefix(t *testing.T) {
+	t.Run("NestedIndexInDatePrefixDir_DescriptionChange", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		_, contentParser := buildSite(t, sitePath)
+
+		// Create a post with date prefix in directory name
+		datePrefixDir := filepath.Join(sitePath, "content/blog/2024-12-27-test-date-prefix")
+		if err := os.MkdirAll(datePrefixDir, 0755); err != nil {
+			t.Fatalf("failed to create date-prefix directory: %v", err)
+		}
+
+		indexPath := filepath.Join(datePrefixDir, "index.md")
+		indexContent := `+++
+title = "Test Date Prefix Post"
+description = "Original description"
+date = 2024-12-27
+template = "post.html"
+tags = ["test"]
++++
+
+This is a test post in a date-prefixed directory.
+`
+		if err := os.WriteFile(indexPath, []byte(indexContent), 0644); err != nil {
+			t.Fatalf("failed to write index.md: %v", err)
+		}
+
+		// Full rebuild to include the new post
+		if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("failed to parse after adding post: %v", err)
+		}
+		newGen, err := builder.NewBuilder(contentParser.Site, contentParser)
+		if err != nil {
+			t.Fatalf("failed to create new builder: %v", err)
+		}
+		if err := newGen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("failed to rebuild after adding post: %v", err)
+		}
+
+		// Verify post was created
+		verifyFileContent(t, sitePath, "blog/test-date-prefix/index.html", "Test Date Prefix Post")
+		verifyFileContent(t, sitePath, "blog/test-date-prefix/index.html", "test post in a date-prefixed directory")
+
+		// Now modify the description via incremental rebuild
+		modifyFile(t, indexPath, "Original description", "Updated description via incremental")
+
+		// Snapshot old taxonomy values
+		oldTaxonomyValues := newGen.SnapshotTaxonomyValues(
+			[]string{indexPath},
+			filepath.Join(sitePath, "content"),
+		)
+
+		// Re-parse the changed file
+		if err := contentParser.ParseFiles(
+			filepath.Join(sitePath, "content"),
+			[]string{indexPath},
+		); err != nil {
+			t.Fatalf("failed to re-parse index.md: %v", err)
+		}
+
+		// Reset cache stats to track this rebuild
+		newGen.ResetCacheStats()
+
+		// Incremental rebuild
+		err = newGen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:       true,
+			ChangedFiles:      []string{indexPath},
+			ContentDir:        filepath.Join(sitePath, "content"),
+			OldTaxonomyValues: oldTaxonomyValues,
+		})
+		if err != nil {
+			t.Fatalf("incremental rebuild failed: %v", err)
+		}
+
+		// Verify cache was invalidated (description is in cache key)
+		stats := newGen.GetCacheStats()
+		if stats.Misses == 0 {
+			t.Error("expected cache misses when description changes in nested index.md with date prefix")
+		}
+
+		// Verify the file still exists and has the right title
+		verifyFileContent(t, sitePath, "blog/test-date-prefix/index.html", "Test Date Prefix Post")
+	})
+
+	t.Run("NestedIndexInDatePrefixDir_ContentChange", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		_, contentParser := buildSite(t, sitePath)
+
+		// Create a post with date prefix
+		datePrefixDir := filepath.Join(sitePath, "content/blog/2024-12-27-content-change-test")
+		if err := os.MkdirAll(datePrefixDir, 0755); err != nil {
+			t.Fatalf("failed to create directory: %v", err)
+		}
+
+		indexPath := filepath.Join(datePrefixDir, "index.md")
+		indexContent := `+++
+title = "Content Change Test"
+date = 2024-12-27
+template = "post.html"
++++
+
+Original content paragraph.
+`
+		if err := os.WriteFile(indexPath, []byte(indexContent), 0644); err != nil {
+			t.Fatalf("failed to write index.md: %v", err)
+		}
+
+		// Full rebuild
+		if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("failed to parse: %v", err)
+		}
+		newGen, err := builder.NewBuilder(contentParser.Site, contentParser)
+		if err != nil {
+			t.Fatalf("failed to create builder: %v", err)
+		}
+		if err := newGen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("failed to build: %v", err)
+		}
+
+		verifyFileContent(t, sitePath, "blog/content-change-test/index.html", "Original content paragraph")
+
+		// Modify content
+		modifyFile(t, indexPath, "Original content paragraph.", "Updated content paragraph with new text.")
+
+		oldTaxonomyValues := newGen.SnapshotTaxonomyValues(
+			[]string{indexPath},
+			filepath.Join(sitePath, "content"),
+		)
+
+		if err := contentParser.ParseFiles(
+			filepath.Join(sitePath, "content"),
+			[]string{indexPath},
+		); err != nil {
+			t.Fatalf("failed to re-parse: %v", err)
+		}
+
+		err = newGen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:       true,
+			ChangedFiles:      []string{indexPath},
+			ContentDir:        filepath.Join(sitePath, "content"),
+			OldTaxonomyValues: oldTaxonomyValues,
+		})
+		if err != nil {
+			t.Fatalf("incremental rebuild failed: %v", err)
+		}
+
+		// Verify content updated
+		verifyFileContent(t, sitePath, "blog/content-change-test/index.html", "Updated content paragraph with new text")
+
+		// Verify old content is gone
+		outputPath := filepath.Join(sitePath, "public/blog/content-change-test/index.html")
+		outputContent, err := os.ReadFile(outputPath)
+		if err != nil {
+			t.Fatalf("failed to read output: %v", err)
+		}
+
+		if strings.Contains(string(outputContent), "Original content paragraph") {
+			t.Error("should not contain old content after incremental rebuild")
+		}
+	})
+}

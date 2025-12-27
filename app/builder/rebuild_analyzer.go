@@ -244,7 +244,9 @@ func (ra *RebuildAnalyzer) findNode(relPath string) *content.Node {
 
 		slug := filepath.Base(dir)
 		for _, child := range parentNode.Children {
-			if child.Slug == slug || child.Slug == dir {
+			// child.Slug may have date prefix stripped (e.g., "blog/my-post")
+			// but child.Path contains the full directory name (e.g., "blog/2024-01-01-my-post")
+			if child.Slug == slug || child.Slug == dir || child.Path == dir {
 				return child
 			}
 		}

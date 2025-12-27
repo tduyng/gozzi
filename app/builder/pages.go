@@ -152,6 +152,9 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		if date, ok := node.Config["date"].(time.Time); ok {
 			key["Date"] = date.Format("2006-01-02")
 		}
+		if desc, ok := node.Config["description"].(string); ok {
+			key["Description"] = desc
+		}
 		if template, ok := node.Config["template"].(string); ok {
 			key["Template"] = template
 		}
@@ -268,7 +271,11 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 
 	dataHash, err := cache.ComputeDataHash(cacheKey)
 	if err != nil {
-		return b.renderTemplateDirect(tpl, outputPath, data)
+		return utils.WrapWithContext(utils.ErrTemplate, err, utils.ErrorContext{
+			Operation: "compute_cache_hash",
+			Component: "builder",
+			Path:      outputPath,
+		})
 	}
 
 	content, cached, err := b.renderCache.GetOrCompute(tplName, dataHash, func() ([]byte, error) {

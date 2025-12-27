@@ -141,26 +141,42 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	}
 
 	found := false
-	for i, child := range parent.Children {
+	var targetNode *content.Node
+	for _, child := range parent.Children {
 		if child.Path == pageNode.Path {
-			// This is an incremental update - remove the old page from all taxonomies
-			// before updating it with new taxonomy values
+			// This ensures any pointers to this node (from RebuildAnalyzer, Builder, etc.)
+			// see the updated data
 			p.RemovePageFromAllTaxonomies(child)
-			parent.Children[i] = pageNode
+
+			// Update all fields of the existing node
+			child.Slug = pageNode.Slug
+			child.Permalink = pageNode.Permalink
+			child.URL = pageNode.URL
+			child.Config = pageNode.Config
+			child.Content = pageNode.Content
+			child.Summary = pageNode.Summary
+			child.WordCount = pageNode.WordCount
+			child.ReadTime = pageNode.ReadTime
+			child.Toc = pageNode.Toc
+			child.Aliases = pageNode.Aliases
+			// Note: Path, Type, and Parent should not change
+
+			targetNode = child
 			found = true
 			break
 		}
 	}
 	if !found {
 		parent.Children = append(parent.Children, pageNode)
+		targetNode = pageNode
 	}
 
 	// Parse all taxonomies (tags, categories, series, custom)
-	p.ParseTaxonomies(pageConfig, pageNode)
+	p.ParseTaxonomies(pageConfig, targetNode)
 
 	// Maintain backwards compatibility with Tags field
 	if len(pageConfig.Tags) > 0 {
-		p.parseTags(pageConfig, pageNode)
+		p.parseTags(pageConfig, targetNode)
 	}
 
 	return nil

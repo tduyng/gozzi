@@ -110,6 +110,12 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
 	mergedConfig["img_url"] = p.resolveImgURL(pageConfig, slug)
 
+	// Extract aliases from frontmatter
+	aliases := pageConfig.Aliases
+	if aliases == nil {
+		aliases = []string{}
+	}
+
 	pageNode := &content.Node{
 		Path:      pagePath,
 		Slug:      slug,
@@ -122,6 +128,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		WordCount: wordCount,
 		ReadTime:  readTime,
 		Toc:       toc,
+		Aliases:   aliases,
 	}
 
 	found := false

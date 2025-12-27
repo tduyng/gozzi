@@ -31,7 +31,14 @@ func (b *Builder) generateSection(node *content.Node) error {
 		"Page":    nodeMap,
 		"Section": nodeMap,
 	}
-	return b.renderTemplate(node, outputPath, data)
+
+	// Generate the main section page
+	if err := b.renderTemplate(node, outputPath, data); err != nil {
+		return err
+	}
+
+	// Generate alias redirects
+	return b.generateAliasRedirects(node)
 }
 
 func (b *Builder) generatePage(node *content.Node) error {
@@ -65,7 +72,13 @@ func (b *Builder) generatePage(node *content.Node) error {
 		"Page":   nodeMap, "Section": parentMap,
 	}
 
-	return b.renderTemplate(node, outputPath, data)
+	// Generate the main page
+	if err := b.renderTemplate(node, outputPath, data); err != nil {
+		return err
+	}
+
+	// Generate alias redirects
+	return b.generateAliasRedirects(node)
 }
 
 func (b *Builder) generate404Page() error {

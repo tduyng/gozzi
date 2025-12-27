@@ -76,17 +76,23 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	lang := p.detectLanguage(path, dir, frontMatter)
 	mergedConfig["lang"] = lang
 
-	slug := content.GenerateSlug(path, nil)
-	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
-	mergedConfig["img_url"] = p.resolveImgURL(frontMatter, slug)
-
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	existingNode := p.GetOrCreateSection(dir)
 
+	// Use the existing node's slug (which is correctly calculated from the directory)
+	slug := existingNode.Slug
+	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
+	mergedConfig["img_url"] = p.resolveImgURL(frontMatter, slug)
+
 	wordCount, readTime := calculateReadStats(string(contentPart))
-	slug = content.GenerateSlug(path, nil)
+
+	// Extract aliases from frontmatter
+	aliases := frontMatter.Aliases
+	if aliases == nil {
+		aliases = []string{}
+	}
 
 	newNode := &content.Node{
 		Type:      content.NodeTypeSection,
@@ -103,6 +109,7 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		Children:  existingNode.Children,
 		Higher:    existingNode.Higher,
 		Lower:     existingNode.Lower,
+		Aliases:   aliases,
 	}
 
 	p.ContentMap[dir] = newNode

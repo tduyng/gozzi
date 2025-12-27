@@ -1,3 +1,5 @@
+// This file handles copying static assets from static/ to the output directory,
+// with support for minification and SCSS compilation.
 package builder
 
 import (
@@ -9,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/tduyng/gozzi/app/minify"
+	"github.com/tduyng/gozzi/app/scss"
 	"github.com/tduyng/gozzi/app/utils"
 )
 
@@ -28,6 +31,11 @@ func (b *Builder) copyStaticAssets() error {
 		}
 
 		destPath := filepath.Join(b.site.OutputDir, relPath)
+
+		// Handle SCSS compilation first (before CSS minification)
+		if b.site.CompileSCSS && strings.HasSuffix(srcPath, ".scss") {
+			return b.copySCSSWithCompile(srcPath, destPath)
+		}
 
 		if b.site.MinifyCSS && strings.HasSuffix(srcPath, ".css") {
 			return b.copyCSSWithMinify(srcPath, destPath)
@@ -80,6 +88,66 @@ func (b *Builder) copyCSSWithMinify(src, dst string) error {
 	if err := os.WriteFile(dst, minified, 0644); err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 			Operation: "write_minified_css",
+			Component: "builder",
+			Path:      dst,
+		})
+	}
+
+	return nil
+}
+
+func (b *Builder) copySCSSWithCompile(src, dst string) error {
+	// Read SCSS file
+	content, err := os.ReadFile(src)
+	if err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "read_scss_file",
+			Component: "builder",
+			Path:      src,
+		})
+	}
+
+	// Create SCSS compiler with site configuration
+	compiler := scss.New()
+	if b.site.SCSSOutputStyle != "" {
+		compiler.OutputStyle = b.site.SCSSOutputStyle
+	}
+	compiler.SourceMap = b.site.SCSSSourceMap
+
+	// Compile SCSS to CSS
+	compiled, err := compiler.Compile(content, src)
+	if err != nil {
+		return err // Already wrapped by scss package
+	}
+
+	// Change extension from .scss to .css
+	dst = strings.TrimSuffix(dst, ".scss") + ".css"
+
+	// Apply CSS minification if enabled
+	output := compiled
+	if b.site.MinifyCSS {
+		m := minify.New()
+		minified, err := m.MinifyCSS(compiled)
+		if err != nil {
+			// If minification fails, use compiled output
+			output = compiled
+		} else {
+			output = minified
+		}
+	}
+
+	// Write output file
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "create_directory",
+			Component: "builder",
+			Path:      filepath.Dir(dst),
+		})
+	}
+
+	if err := os.WriteFile(dst, output, 0644); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "write_compiled_scss",
 			Component: "builder",
 			Path:      dst,
 		})
@@ -290,6 +358,11 @@ func (b *Builder) CopyStaticFile(srcPath string) error {
 	}
 
 	destPath := filepath.Join(b.site.OutputDir, relPath)
+
+	// Handle SCSS compilation first
+	if b.site.CompileSCSS && strings.HasSuffix(srcPath, ".scss") {
+		return b.copySCSSWithCompile(srcPath, destPath)
+	}
 
 	// Handle minification based on file type
 	if b.site.MinifyCSS && strings.HasSuffix(srcPath, ".css") {

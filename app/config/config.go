@@ -33,6 +33,9 @@ type Site struct {
 	MinifyJSON      bool             `toml:"minify_json"`
 	MinifySVG       bool             `toml:"minify_svg"`
 	MinifyXML       bool             `toml:"minify_xml"`
+	CompileSCSS     bool             `toml:"compile_scss"`
+	SCSSOutputStyle string           `toml:"scss_output_style"`
+	SCSSSourceMap   bool             `toml:"scss_source_map"`
 	Taxonomies      TaxonomiesConfig `toml:"taxonomies"`
 	BuildTime       time.Time
 	BuildDrafts     bool

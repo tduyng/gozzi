@@ -13,6 +13,7 @@ I built Gozzi to [learn how static site generators work](https://tduyng.com/blog
 - Server-side KaTeX math & syntax highlighting
 - Mermaid diagrams
 - Built-in CSS and HTML minification (36-53% size reduction)
+- SCSS/SASS compilation support
 
 ## Quick Start
 
@@ -34,6 +35,8 @@ minify_js = true
 minify_json = true
 minify_svg = true
 minify_xml = true
+compile_scss = true
+scss_output_style = "compressed"
 EOF
 
 # Create first post

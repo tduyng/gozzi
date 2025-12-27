@@ -80,6 +80,7 @@ func TestIncrementalBuildMatchesFullBuild(t *testing.T) {
 	// Root index
 	rootIndex := `+++
 title = "Home"
+template = "home.html"
 +++
 Welcome to my site`
 	require.NoError(t, os.WriteFile(filepath.Join(contentDir, "_index.md"), []byte(rootIndex), 0644))
@@ -211,6 +212,7 @@ func TestIncrementalBuildRootLevelFiles(t *testing.T) {
 	// Root index
 	rootIndex := `+++
 title = "Home"
+template = "home.html"
 +++
 Welcome home`
 	require.NoError(t, os.WriteFile(filepath.Join(contentDir, "_index.md"), []byte(rootIndex), 0644))

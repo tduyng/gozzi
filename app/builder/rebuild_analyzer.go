@@ -143,6 +143,11 @@ func (ra *RebuildAnalyzer) analyzeFile(file string, oldTaxonomies map[string]map
 		}
 
 		ra.analyzeTaxonomyChanges(node, relPath, oldTaxonomies, scope)
+
+		// Mark homepage for rebuild if this page's section is in homepage_cache_sections
+		if ra.shouldRebuildHomepage(node) {
+			scope.MarkGlobal("home")
+		}
 	}
 
 	if relPath == "_index.md" || node.Path == "." {
@@ -327,6 +332,32 @@ func (ra *RebuildAnalyzer) shouldIncludeInFeed(node *content.Node) bool {
 	if generateFeed, ok := node.Config["generate_feed"].(bool); ok {
 		return generateFeed
 	}
+	return false
+}
+
+// shouldRebuildHomepage determines if homepage should be rebuilt when this page changes.
+// This depends on the homepage_cache_sections config setting.
+func (ra *RebuildAnalyzer) shouldRebuildHomepage(node *content.Node) bool {
+	if node.Parent == nil {
+		return false
+	}
+
+	// Get homepage_cache_sections config
+	homepageSections := ra.parser.Site.HomepageCacheSections
+
+	// If not configured, rebuild homepage for ALL section changes (safe default)
+	if len(homepageSections) == 0 {
+		return true
+	}
+
+	// Check if this page's section is in the configured list
+	parentSlug := node.Parent.Slug
+	for _, sectionSlug := range homepageSections {
+		if parentSlug == sectionSlug {
+			return true
+		}
+	}
+
 	return false
 }
 

@@ -499,3 +499,185 @@ func TestServeMode_IndexFileChanges(t *testing.T) {
 		verifyFileExists(t, sitePath, "blog/index.html")
 	})
 }
+
+// TestServeMode_RootLevelContentFiles is a regression test for a critical bug
+// where root-level content files (e.g., content/about.md, content/scss.md) were
+// not being found during incremental builds in serve mode. The bug was in
+// rebuild_analyzer.go:findNode() which looked up contentMap[""] for root files,
+// but the map uses "." as the key for the root directory.
+//
+// This bug caused the dev server to serve stale content even though the watcher
+// detected changes and triggered rebuilds. The fix ensures root-level files are
+// properly found by using "." as the lookup key when dir normalizes to "".
+func TestServeMode_RootLevelContentFiles(t *testing.T) {
+	t.Run("RootLevelPage_RegeneratesOnChange", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+
+		// Create a root-level content file (like scss.md, about.md, etc.)
+		rootPage := `+++
+title = "SCSS Guide"
+date = 2024-12-27
+template = "page.html"
++++
+
+Original SCSS documentation content.
+
+This is the initial version.`
+
+		rootPagePath := filepath.Join(sitePath, "content/scss.md")
+		os.WriteFile(rootPagePath, []byte(rootPage), 0644)
+
+		// Initial build
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Verify the root-level page was generated
+		verifyFileExists(t, sitePath, "scss/index.html")
+		initialContent, _ := os.ReadFile(filepath.Join(sitePath, "public/scss/index.html"))
+		if !strings.Contains(string(initialContent), "Original SCSS documentation content") {
+			t.Error("initial build should contain original content")
+		}
+		if !strings.Contains(string(initialContent), "initial version") {
+			t.Error("initial build should contain initial version marker")
+		}
+
+		// Modify the root-level page (simulating user editing in dev mode)
+		modifiedPage := `+++
+title = "SCSS Guide"
+date = 2024-12-27
+template = "page.html"
++++
+
+UPDATED SCSS documentation content - incremental build test!
+
+This content was changed during development.`
+
+		os.WriteFile(rootPagePath, []byte(modifiedPage), 0644)
+
+		// Snapshot old taxonomy values BEFORE parsing
+		oldTaxonomyValues := gen.SnapshotTaxonomyValues(
+			[]string{rootPagePath},
+			filepath.Join(sitePath, "content"),
+		)
+
+		// Incremental rebuild (simulating serve mode behavior)
+		time.Sleep(10 * time.Millisecond)
+		if err := contentParser.ParseFiles(
+			filepath.Join(sitePath, "content"),
+			[]string{rootPagePath},
+		); err != nil {
+			t.Fatalf("failed to re-parse root-level file: %v", err)
+		}
+
+		// CRITICAL TEST: This is where the bug occurred
+		// The rebuild analyzer couldn't find scss.md because it looked up
+		// contentMap[""] instead of contentMap["."]
+		err := gen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:       true,
+			ChangedFiles:      []string{rootPagePath},
+			ContentDir:        filepath.Join(sitePath, "content"),
+			OldTaxonomyValues: oldTaxonomyValues,
+		})
+		if err != nil {
+			t.Fatalf("incremental rebuild failed for root-level file: %v", err)
+		}
+
+		// Verify the page was regenerated with updated content
+		updatedContent, _ := os.ReadFile(filepath.Join(sitePath, "public/scss/index.html"))
+
+		if !strings.Contains(string(updatedContent), "UPDATED SCSS documentation content") {
+			t.Error("incremental build MUST update root-level file content (BUG: stale cache served)")
+		}
+
+		if !strings.Contains(string(updatedContent), "changed during development") {
+			t.Error("incremental build should contain new content markers")
+		}
+
+		if strings.Contains(string(updatedContent), "Original SCSS documentation content") {
+			t.Error("incremental build should NOT contain old content (cache not invalidated)")
+		}
+
+		if strings.Contains(string(updatedContent), "initial version") {
+			t.Error("incremental build should NOT contain old version markers")
+		}
+
+		// Verify sitemap was also updated
+		verifyFileExists(t, sitePath, "sitemap.xml")
+	})
+
+	t.Run("MultipleRootLevelPages_AllRegenerate", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+
+		// Create multiple root-level pages (avoiding conflicts with existing sections)
+		faqPage := `+++
+title = "FAQ"
+template = "page.html"
++++
+FAQ content v1`
+
+		privacyPage := `+++
+title = "Privacy Policy"
+template = "page.html"
++++
+Privacy content v1`
+
+		faqPath := filepath.Join(sitePath, "content/faq.md")
+		privacyPath := filepath.Join(sitePath, "content/privacy-policy.md")
+
+		os.WriteFile(faqPath, []byte(faqPage), 0644)
+		os.WriteFile(privacyPath, []byte(privacyPage), 0644)
+
+		// Initial build
+		gen, contentParser := buildSite(t, sitePath)
+
+		verifyFileExists(t, sitePath, "faq/index.html")
+		verifyFileExists(t, sitePath, "privacy-policy/index.html")
+
+		// Modify both root-level pages
+		changedFiles := []string{faqPath, privacyPath}
+
+		oldTaxonomyValues := gen.SnapshotTaxonomyValues(
+			changedFiles,
+			filepath.Join(sitePath, "content"),
+		)
+
+		modifiedFaq := strings.Replace(faqPage, "v1", "v2 UPDATED", 1)
+		modifiedPrivacy := strings.Replace(privacyPage, "v1", "v2 UPDATED", 1)
+
+		os.WriteFile(faqPath, []byte(modifiedFaq), 0644)
+		os.WriteFile(privacyPath, []byte(modifiedPrivacy), 0644)
+
+		// Incremental rebuild with multiple root-level files
+		time.Sleep(10 * time.Millisecond)
+		if err := contentParser.ParseFiles(
+			filepath.Join(sitePath, "content"),
+			changedFiles,
+		); err != nil {
+			t.Fatalf("failed to re-parse multiple root-level files: %v", err)
+		}
+
+		err := gen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:       true,
+			ChangedFiles:      changedFiles,
+			ContentDir:        filepath.Join(sitePath, "content"),
+			OldTaxonomyValues: oldTaxonomyValues,
+		})
+		if err != nil {
+			t.Fatalf("incremental rebuild failed for multiple root-level files: %v", err)
+		}
+
+		// Verify both pages were regenerated
+		verifyFileContent(t, sitePath, "faq/index.html", "v2 UPDATED")
+		verifyFileContent(t, sitePath, "privacy-policy/index.html", "v2 UPDATED")
+
+		faqContent, _ := os.ReadFile(filepath.Join(sitePath, "public/faq/index.html"))
+		privacyContent, _ := os.ReadFile(filepath.Join(sitePath, "public/privacy-policy/index.html"))
+
+		if strings.Contains(string(faqContent), "v1") && !strings.Contains(string(faqContent), "v2") {
+			t.Error("faq page should not contain old content")
+		}
+
+		if strings.Contains(string(privacyContent), "v1") && !strings.Contains(string(privacyContent), "v2") {
+			t.Error("privacy-policy page should not contain old content")
+		}
+	})
+}

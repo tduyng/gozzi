@@ -183,3 +183,109 @@ This is the UPDATED second post content with new information.`
 
 	t.Log("✅ Integration test passed: Incremental build works correctly")
 }
+
+// TestIncrementalBuildRootLevelFiles is a regression test for a critical bug
+// where files in the root content directory (like scss.md) were not being found
+// during incremental builds. The bug was in rebuild_analyzer.go:findNode() which
+// looked up contentMap[""] for root files, but the map uses "." for root.
+func TestIncrementalBuildRootLevelFiles(t *testing.T) {
+	// Setup test environment
+	tempDir := t.TempDir()
+	oldWd, _ := os.Getwd()
+	t.Cleanup(func() { os.Chdir(oldWd) })
+	require.NoError(t, os.Chdir(tempDir))
+
+	// Create templates
+	templateDir := filepath.Join(tempDir, "templates")
+	require.NoError(t, os.MkdirAll(templateDir, 0755))
+
+	templateContent := `<html><body><h1>{{.Page.Config.title}}</h1>{{.Page.Content}}</body></html>`
+	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "page.html"), []byte(templateContent), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "404.html"), []byte(`<html><body><h1>404</h1></body></html>`), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "home.html"), []byte(`<html><body><h1>Home</h1></body></html>`), 0644))
+
+	// Create content directory with root-level page (this triggered the bug!)
+	contentDir := filepath.Join(tempDir, "content")
+	require.NoError(t, os.MkdirAll(contentDir, 0755))
+
+	// Root index
+	rootIndex := `+++
+title = "Home"
++++
+Welcome home`
+	require.NoError(t, os.WriteFile(filepath.Join(contentDir, "_index.md"), []byte(rootIndex), 0644))
+
+	// Root-level page file (like scss.md) - THIS IS THE BUG CASE
+	rootPage := `+++
+title = "SCSS Guide"
+date = 2024-12-27
+template = "page.html"
++++
+Original SCSS content.`
+	rootPagePath := filepath.Join(contentDir, "scss.md")
+	require.NoError(t, os.WriteFile(rootPagePath, []byte(rootPage), 0644))
+
+	// Create site config
+	site := &config.Site{
+		Title:     "Test Site",
+		BaseURL:   "https://example.com",
+		OutputDir: filepath.Join(tempDir, "public"),
+	}
+
+	// STEP 1: Full build
+	t.Log("Performing full build with root-level page...")
+	p1 := parser.NewParser(site)
+	require.NoError(t, p1.Parse(contentDir))
+
+	b1, err := NewBuilder(site, p1)
+	require.NoError(t, err)
+
+	require.NoError(t, b1.Generate(p1.ContentMap["."]))
+
+	// Verify the root page was generated
+	rootPageOutputPath := filepath.Join(site.OutputDir, "scss", "index.html")
+	initialContent, err := os.ReadFile(rootPageOutputPath)
+	require.NoError(t, err)
+	assert.Contains(t, string(initialContent), "Original SCSS content",
+		"Initial build should contain original content")
+
+	// STEP 2: Incremental build (edit root-level file)
+	t.Log("Performing incremental build after editing root-level scss.md...")
+
+	// Edit the root-level page
+	rootPageModified := `+++
+title = "SCSS Guide"
+date = 2024-12-27
+template = "page.html"
++++
+UPDATED SCSS content - incremental build test!`
+	require.NoError(t, os.WriteFile(rootPagePath, []byte(rootPageModified), 0644))
+
+	// Re-parse and rebuild incrementally
+	p2 := parser.NewParser(site)
+	require.NoError(t, p2.Parse(contentDir))
+
+	b2, err := NewBuilder(site, p2)
+	require.NoError(t, err)
+
+	// CRITICAL TEST: Use incremental mode for a root-level file
+	// This is where the bug occurred - findNode() couldn't find the scss.md node
+	err = b2.GenerateWithOptions(p2.ContentMap["."], GenerateOptions{
+		Incremental:  true,
+		ChangedFiles: []string{rootPagePath},
+		ContentDir:   contentDir,
+	})
+	require.NoError(t, err, "Incremental build should succeed for root-level files")
+
+	// Verify the root page was regenerated with updated content
+	updatedContent, err := os.ReadFile(rootPageOutputPath)
+	require.NoError(t, err)
+
+	assert.Contains(t, string(updatedContent), "UPDATED SCSS content",
+		"Incremental build MUST update root-level file content (this was the bug!)")
+
+	assert.NotContains(t, string(updatedContent), "Original SCSS content",
+		"Old content should be replaced in incremental build")
+
+	t.Log("✅ Regression test passed: Root-level files work in incremental builds")
+}

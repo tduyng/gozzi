@@ -251,7 +251,14 @@ func (ra *RebuildAnalyzer) findNode(relPath string) *content.Node {
 		return nil
 	}
 
-	parentNode := ra.contentMap[dir]
+	// For regular files, look up the parent node
+	// CRITICAL: ContentMap uses "." for root, not ""
+	lookupKey := dir
+	if dir == "" {
+		lookupKey = "."
+	}
+
+	parentNode := ra.contentMap[lookupKey]
 	if parentNode == nil {
 		return nil
 	}

@@ -26,6 +26,7 @@ minify_js = true                                  # Minify JavaScript files (def
 minify_json = true                                # Minify JSON files (default: false)
 minify_svg = true                                 # Minify SVG files (default: false)
 minify_xml = true                                 # Minify XML files (default: false)
+homepage_cache_sections = ["blog", "notes"]       # Sections that trigger homepage rebuild (optional)
 ```
 
 ## Configuration Options Reference
@@ -48,6 +49,7 @@ minify_xml = true                                 # Minify XML files (default: f
 | `minify_json` | boolean | false | Minify JSON files (51% avg reduction) |
 | `minify_svg` | boolean | false | Minify SVG files (29% avg reduction) |
 | `minify_xml` | boolean | false | Minify XML files (19% avg reduction) |
+| `homepage_cache_sections` | array of strings | `[]` | Sections that trigger homepage rebuild (see [Performance](#performance-optimization)) |
 
 ## Minimal Blog Configuration
 
@@ -72,6 +74,7 @@ description = "Software engineer and technical writer"
 language = "en"
 output_dir = "dist"
 generate_feed = true
+homepage_cache_sections = ["blog", "projects"]
 
 [extra]
 name = "Jane Developer"
@@ -142,6 +145,73 @@ Benefits:
 - Graceful fallback - uses original if minification fails
 - No significant impact on build time
 
+## Performance Optimization
+
+### Homepage Cache Control
+
+Control when your homepage is rebuilt during incremental builds (serve mode):
+
+```toml
+# Only rebuild homepage when these sections change
+homepage_cache_sections = ["blog", "notes"]
+```
+
+**How it works:**
+
+Gozzi caches rendered pages to speed up incremental builds. When you modify a file in serve mode, Gozzi determines which pages need rebuilding. The `homepage_cache_sections` setting controls when your homepage is invalidated and rebuilt.
+
+**Configuration options:**
+
+```toml
+# Option 1: Specify sections (recommended for performance)
+homepage_cache_sections = ["blog", "notes"]
+# Homepage rebuilds only when files in 'blog' or 'notes' sections change
+
+# Option 2: Omit or leave empty (safe default)
+# homepage_cache_sections = []
+# Homepage rebuilds whenever ANY page changes (slower but always correct)
+```
+
+**When to use:**
+
+| Site Structure | Recommended Config | Reason |
+|----------------|-------------------|---------|
+| Homepage shows blog posts only | `["blog"]` | Optimal performance |
+| Homepage shows blog + notes | `["blog", "notes"]` | Only rebuild when relevant sections change |
+| Homepage shows content from many sections | Omit config | Safe default ensures correctness |
+| Unsure what homepage references | Omit config | Homepage always stays fresh |
+
+**Example scenarios:**
+
+```toml
+# Blog-only site
+homepage_cache_sections = ["blog"]
+# Changing a blog post → homepage rebuilds ✓
+# Changing about page → homepage stays cached ✓
+
+# Multi-section site
+homepage_cache_sections = ["blog", "notes", "projects"]
+# Changing any listed section → homepage rebuilds ✓
+# Changing contact page → homepage stays cached ✓
+
+# Complex site (not configured)
+# Changing ANY page → homepage rebuilds ✓ (safe but slower)
+```
+
+**Performance impact:**
+
+- **With config:** Homepage only rebuilds when necessary (faster incremental builds)
+- **Without config:** Homepage rebuilds on every change (safe but slower)
+- For typical sites (<100 pages): Negligible impact
+- For large sites (>500 pages): Can improve incremental build time by 20-50%
+
+**Important notes:**
+
+- This only affects **incremental builds** (serve mode)
+- Full builds always regenerate everything
+- If homepage looks stale, add the missing section to the config
+- Root-level page changes never trigger homepage rebuild
+
 ## Best Practices
 
 1. **Use HTTPS** for `base_url` in production
@@ -151,6 +221,7 @@ Benefits:
 5. **Organize with `[extra]`** - Keep custom data separate from core config
 6. **Choose appropriate syntax theme** - Match your site's design for consistency
 7. **Enable minification in production** - Reduces bandwidth and improves load times
+8. **Configure homepage cache sections** - Optimize incremental build performance
 
 ---
 

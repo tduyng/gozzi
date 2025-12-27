@@ -308,46 +308,6 @@ func (b *Builder) executeTemplate(tpl *template.Template, data any) ([]byte, err
 	return content, nil
 }
 
-// renderTemplateDirect renders template without caching.
-func (b *Builder) renderTemplateDirect(tpl *template.Template, outputPath string, data any) error {
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
-			Operation: "create_output_directory",
-			Component: "builder",
-			Path:      filepath.Dir(outputPath),
-		})
-	}
-
-	var buf bytes.Buffer
-	if err := tpl.Execute(&buf, data); err != nil {
-		return utils.WrapWithContext(err, utils.ErrTemplate, utils.ErrorContext{
-			Operation: "execute_template",
-			Component: "builder",
-			Path:      outputPath,
-		})
-	}
-
-	content := buf.Bytes()
-
-	if b.site.MinifyHTML {
-		m := minify.New()
-		minified, err := m.MinifyHTML(content)
-		if err == nil {
-			content = minified
-		}
-	}
-
-	if err := os.WriteFile(outputPath, content, 0644); err != nil {
-		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
-			Operation: "write_html_output",
-			Component: "builder",
-			Path:      outputPath,
-		})
-	}
-
-	return nil
-}
-
 // createStableCacheKey creates a deterministic cache key for auxiliary pages.
 func (b *Builder) createStableCacheKey(templateName string, data any) map[string]any {
 	key := map[string]any{

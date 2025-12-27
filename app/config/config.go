@@ -15,33 +15,34 @@ import (
 
 // Site represents the site-wide configuration loaded from config.toml.
 type Site struct {
-	BaseURL         string           `toml:"base_url"`
-	FeedURL         string           `toml:"feed_url"`
-	Description     string           `toml:"Description"`
-	Extra           map[string]any   `toml:"extra"`
-	GenerateFeed    bool             `toml:"generate_feed"`
-	Theme           string           `toml:"theme"`
-	Img             string           `toml:"img"`
-	Lang            string           `toml:"language"`
-	OutputDir       string           `toml:"output_dir"`
-	Title           string           `toml:"title"`
-	StrictTemplates bool             `toml:"strict_templates"`
-	SyntaxTheme     string           `toml:"syntax_theme"`
-	MinifyCSS       bool             `toml:"minify_css"`
-	MinifyHTML      bool             `toml:"minify_html"`
-	MinifyJS        bool             `toml:"minify_js"`
-	MinifyJSON      bool             `toml:"minify_json"`
-	MinifySVG       bool             `toml:"minify_svg"`
-	MinifyXML       bool             `toml:"minify_xml"`
-	CompileSCSS     bool             `toml:"compile_scss"`
-	SCSSOutputStyle string           `toml:"scss_output_style"`
-	SCSSSourceMap   bool             `toml:"scss_source_map"`
-	SummaryLength   int              `toml:"summary_length"`
-	Taxonomies      TaxonomiesConfig `toml:"taxonomies"`
-	BuildTime       time.Time
-	BuildDrafts     bool
-	Data            map[string]any `toml:"-"` // Loaded from data/ directory, not from TOML
-	I18n            *i18n.I18n     `toml:"-"` // Loaded from config languages section and data/ directory
+	BaseURL               string           `toml:"base_url"`
+	FeedURL               string           `toml:"feed_url"`
+	Description           string           `toml:"Description"`
+	Extra                 map[string]any   `toml:"extra"`
+	GenerateFeed          bool             `toml:"generate_feed"`
+	Theme                 string           `toml:"theme"`
+	Img                   string           `toml:"img"`
+	Lang                  string           `toml:"language"`
+	OutputDir             string           `toml:"output_dir"`
+	Title                 string           `toml:"title"`
+	StrictTemplates       bool             `toml:"strict_templates"`
+	SyntaxTheme           string           `toml:"syntax_theme"`
+	MinifyCSS             bool             `toml:"minify_css"`
+	MinifyHTML            bool             `toml:"minify_html"`
+	MinifyJS              bool             `toml:"minify_js"`
+	MinifyJSON            bool             `toml:"minify_json"`
+	MinifySVG             bool             `toml:"minify_svg"`
+	MinifyXML             bool             `toml:"minify_xml"`
+	CompileSCSS           bool             `toml:"compile_scss"`
+	SCSSOutputStyle       string           `toml:"scss_output_style"`
+	SCSSSourceMap         bool             `toml:"scss_source_map"`
+	SummaryLength         int              `toml:"summary_length"`
+	Taxonomies            TaxonomiesConfig `toml:"taxonomies"`
+	HomepageCacheSections []string         `toml:"homepage_cache_sections"` // Sections to include in homepage cache key
+	BuildTime             time.Time
+	BuildDrafts           bool
+	Data                  map[string]any `toml:"-"` // Loaded from data/ directory, not from TOML
+	I18n                  *i18n.I18n     `toml:"-"` // Loaded from config languages section and data/ directory
 }
 
 // FrontMatter represents the TOML front matter in markdown content files.

@@ -183,19 +183,40 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 				node.Slug == "" || node.Slug == "/"
 
 			if isHomepage {
-				// Homepage can reference ANY section's data, so include all sections in cache key
+				// Homepage can reference ANY section's data, so include relevant sections in cache key
 				// This ensures homepage cache invalidates when any child page changes
-				allSections := make(map[string][]string)
-				for sectionPath, sectionNode := range b.parser.ContentMap {
-					if sectionNode.Type == content.NodeTypeSection && sectionPath != "." && len(sectionNode.Children) > 0 {
-						childKeys := make([]string, len(sectionNode.Children))
-						for i, child := range sectionNode.Children {
-							parts := b.buildChildCacheKeyParts(child)
-							childKeys[i] = strings.Join(parts, "|")
+
+				// Determine which sections to include based on config
+				var sectionsToInclude []string
+				if len(b.site.HomepageCacheSections) > 0 {
+					// Use user-configured sections
+					sectionsToInclude = b.site.HomepageCacheSections
+				} else {
+					// Default: include all sections (fallback for sites without config)
+					sectionsToInclude = make([]string, 0)
+					for sectionPath, sectionNode := range b.parser.ContentMap {
+						if sectionNode.Type == content.NodeTypeSection && sectionPath != "." {
+							sectionsToInclude = append(sectionsToInclude, sectionPath)
 						}
-						allSections[sectionPath] = childKeys
 					}
 				}
+
+				// Build cache key for specified sections
+				allSections := make(map[string][]string)
+				for _, sectionPath := range sectionsToInclude {
+					sectionNode, exists := b.parser.ContentMap[sectionPath]
+					if !exists || sectionNode.Type != content.NodeTypeSection || len(sectionNode.Children) == 0 {
+						continue
+					}
+
+					childKeys := make([]string, len(sectionNode.Children))
+					for i, child := range sectionNode.Children {
+						parts := b.buildChildCacheKeyParts(child)
+						childKeys[i] = strings.Join(parts, "|")
+					}
+					allSections[sectionPath] = childKeys
+				}
+
 				if len(allSections) > 0 {
 					key["AllSections"] = allSections
 				}

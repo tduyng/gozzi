@@ -170,9 +170,9 @@ draft = true
 	assert.Contains(t, sitemapStr, `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`)
 
 	// Check that non-draft content is included
-	assert.Contains(t, sitemapStr, `<loc>https://example.com/index</loc>`) // Home page (uses index instead of /)
+	assert.Contains(t, sitemapStr, `<loc>https://example.com/</loc>`)      // Home page
 	assert.Contains(t, sitemapStr, `<loc>https://example.com/about</loc>`) // About page (no trailing slash)
-	// Note: Blog section might not be included if there's no blog _index.md
+	assert.Contains(t, sitemapStr, `<loc>https://example.com/blog</loc>`)  // Blog section
 
 	// Check that draft content is excluded
 	assert.NotContains(t, sitemapStr, "draft")

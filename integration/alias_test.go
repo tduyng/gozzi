@@ -1,0 +1,233 @@
+// Tests for alias/redirect functionality
+package integration
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+// TestAliases_PageRedirects tests that aliases generate proper redirect files for pages
+func TestAliases_PageRedirects(t *testing.T) {
+	t.Run("SingleAlias_Created", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		post := `+++
+title = "New Post"
+date = 2024-01-01
+template = "post.html"
+aliases = ["/old-post"]
++++
+
+This post has moved.
+`
+		createPost(t, sitePath, "blog/new-post.md", post)
+		fullRebuild(t, gen, contentParser, sitePath)
+
+		// Check that the redirect file exists
+		redirectPath := filepath.Join(sitePath, "public", "old-post", "index.html")
+		if _, err := os.Stat(redirectPath); os.IsNotExist(err) {
+			t.Fatalf("Redirect file not created at %s", redirectPath)
+		}
+
+		// Verify redirect content
+		content, err := os.ReadFile(redirectPath)
+		if err != nil {
+			t.Fatalf("Failed to read redirect file: %v", err)
+		}
+
+		contentStr := string(content)
+		t.Logf("Redirect content:\n%s", contentStr)
+
+		if !strings.Contains(contentStr, `<meta http-equiv="refresh"`) {
+			t.Error("Redirect missing meta refresh tag")
+		}
+
+		if !strings.Contains(contentStr, "/blog/new-post/") {
+			t.Errorf("Redirect doesn't point to correct URL. Content: %s", contentStr)
+		}
+
+		if !strings.Contains(contentStr, `<link rel="canonical"`) {
+			t.Error("Redirect missing canonical link")
+		}
+	})
+
+	t.Run("MultipleAliases_AllCreated", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		post := `+++
+title = "Renamed Post"
+date = 2024-01-01
+template = "post.html"
+aliases = ["/old-url", "/legacy/post", "/archive/old-post"]
++++
+
+This post has been renamed multiple times.
+`
+		createPost(t, sitePath, "blog/renamed.md", post)
+		fullRebuild(t, gen, contentParser, sitePath)
+
+		// Check all redirect files
+		redirectPaths := []string{
+			filepath.Join(sitePath, "public", "old-url", "index.html"),
+			filepath.Join(sitePath, "public", "legacy", "post", "index.html"),
+			filepath.Join(sitePath, "public", "archive", "old-post", "index.html"),
+		}
+
+		for _, path := range redirectPaths {
+			if _, err := os.Stat(path); os.IsNotExist(err) {
+				t.Errorf("Redirect file not created at %s", path)
+			}
+
+			// Verify all redirects point to the correct page
+			content, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("Failed to read redirect file %s: %v", path, err)
+			}
+
+			if !strings.Contains(string(content), "/blog/renamed/") {
+				t.Errorf("Redirect at %s doesn't point to /blog/renamed/", path)
+			}
+		}
+	})
+
+	t.Run("NoAliases_NoRedirects", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		buildSite(t, sitePath)
+
+		// Verify that blog posts without aliases don't create extra redirect files
+		// post1.md has no aliases defined in testdata
+		redirectPath := filepath.Join(sitePath, "public", "old-post1", "index.html")
+		if _, err := os.Stat(redirectPath); !os.IsNotExist(err) {
+			t.Error("Unexpected redirect file created for post without aliases")
+		}
+	})
+}
+
+// TestAliases_SectionRedirects tests that aliases work for section pages
+func TestAliases_SectionRedirects(t *testing.T) {
+	t.Run("SectionAlias_Created", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Create a section with aliases
+		section := `+++
+title = "Articles"
+template = "blog.html"
+aliases = ["/posts", "/writings"]
++++
+
+This is the articles section.
+`
+		sectionPath := filepath.Join(sitePath, "content", "articles", "_index.md")
+		os.MkdirAll(filepath.Dir(sectionPath), 0755)
+		os.WriteFile(sectionPath, []byte(section), 0644)
+
+		fullRebuild(t, gen, contentParser, sitePath)
+
+		// Check redirect files
+		redirectPaths := []string{
+			filepath.Join(sitePath, "public", "posts", "index.html"),
+			filepath.Join(sitePath, "public", "writings", "index.html"),
+		}
+
+		for _, path := range redirectPaths {
+			if _, err := os.Stat(path); os.IsNotExist(err) {
+				t.Errorf("Section redirect file not created at %s", path)
+			}
+
+			content, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("Failed to read redirect file %s: %v", path, err)
+			}
+
+			contentStr := string(content)
+			t.Logf("Section redirect content at %s:\n%s", path, contentStr)
+
+			if !strings.Contains(contentStr, "/articles/") {
+				t.Errorf("Section redirect at %s doesn't point to /articles/. Content: %s", path, contentStr)
+			}
+		}
+	})
+}
+
+// TestAliases_SnapshotRedirects snapshot test for redirect HTML format
+func TestAliases_SnapshotRedirects(t *testing.T) {
+	t.Run("RedirectHTML_Format", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		post := `+++
+title = "Snapshot Test"
+date = 2024-01-01
+template = "post.html"
+aliases = ["/old-snapshot"]
++++
+
+Testing redirect HTML format.
+`
+		createPost(t, sitePath, "blog/snapshot-test.md", post)
+		fullRebuild(t, gen, contentParser, sitePath)
+
+		SnapshotFiles(t, "Aliases_RedirectHTML", sitePath, []string{
+			"old-snapshot/index.html",
+		})
+	})
+}
+
+// TestAliases_IncrementalBuild tests that aliases work correctly in incremental builds
+func TestAliases_IncrementalBuild(t *testing.T) {
+	t.Run("AddAlias_IncrementalBuild", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Initially create post without alias
+		postPath := filepath.Join(sitePath, "content", "blog", "evolving.md")
+		post := `+++
+title = "Evolving Post"
+date = 2024-01-01
+template = "post.html"
++++
+
+Initial content.
+`
+		os.WriteFile(postPath, []byte(post), 0644)
+		fullRebuild(t, gen, contentParser, sitePath)
+
+		// Verify no redirect exists yet
+		redirectPath := filepath.Join(sitePath, "public", "old-evolving", "index.html")
+		if _, err := os.Stat(redirectPath); !os.IsNotExist(err) {
+			t.Error("Redirect shouldn't exist yet")
+		}
+
+		// Update post to add alias
+		postWithAlias := `+++
+title = "Evolving Post"
+date = 2024-01-01
+template = "post.html"
+aliases = ["/old-evolving"]
++++
+
+Updated content with alias.
+`
+		os.WriteFile(postPath, []byte(postWithAlias), 0644)
+		fullRebuild(t, gen, contentParser, sitePath)
+
+		// Verify redirect was created
+		if _, err := os.Stat(redirectPath); os.IsNotExist(err) {
+			t.Error("Redirect file should have been created after adding alias")
+		}
+
+		content, err := os.ReadFile(redirectPath)
+		if err != nil {
+			t.Fatalf("Failed to read redirect file: %v", err)
+		}
+
+		if !strings.Contains(string(content), "/blog/evolving/") {
+			t.Error("Redirect doesn't point to correct URL")
+		}
+	})
+}

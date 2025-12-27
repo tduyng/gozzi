@@ -11,6 +11,7 @@ import (
 
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
+	"github.com/tduyng/gozzi/app/summary"
 	"github.com/tduyng/gozzi/app/utils"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
@@ -110,6 +111,13 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
 	mergedConfig["img_url"] = p.resolveImgURL(pageConfig, slug)
 
+	// Generate summary
+	summaryGen := summary.New()
+	if p.Site.SummaryLength > 0 {
+		summaryGen.SentenceCount = p.Site.SummaryLength
+	}
+	summaryText := summaryGen.Generate(pageConfig.Description, template.HTML(htmlBuf.String()))
+
 	// Extract aliases from frontmatter
 	aliases := pageConfig.Aliases
 	if aliases == nil {
@@ -125,6 +133,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		Parent:    parent,
 		Config:    mergedConfig,
 		Content:   template.HTML(htmlBuf.String()),
+		Summary:   template.HTML(summaryText),
 		WordCount: wordCount,
 		ReadTime:  readTime,
 		Toc:       toc,

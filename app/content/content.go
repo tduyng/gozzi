@@ -27,6 +27,7 @@ type Node struct {
 	URL       string
 	Config    map[string]any
 	Content   template.HTML
+	Summary   template.HTML
 	Parent    *Node
 	Children  []*Node
 	Lower     *Node
@@ -64,6 +65,7 @@ func (node *Node) ToMap() map[string]any {
 		"URL":       node.URL,
 		"Config":    node.Config,
 		"Content":   node.Content,
+		"Summary":   node.Summary,
 		"Parent":    node.Parent,
 		"Children":  node.Children,
 		"Higher":    node.Higher,
@@ -85,6 +87,7 @@ func (node *Node) ToMapMinimal() map[string]any {
 			Permalink: child.Permalink,
 			URL:       child.URL,
 			Config:    child.Config,
+			Summary:   child.Summary,
 			WordCount: child.WordCount,
 			ReadTime:  child.ReadTime,
 		}

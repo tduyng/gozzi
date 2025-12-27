@@ -59,6 +59,7 @@ items = [
   { text = "Taxonomies", link = "/features/taxonomies" },
   { text = "SEO Automation", link = "/features/seo" },
   { text = "SCSS Compilation", link = "/scss" },
+  { text = "Auto Summaries", link = "/summaries" },
 ]
 
 [[extra.sidebar]]

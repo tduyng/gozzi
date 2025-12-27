@@ -36,6 +36,7 @@ type Site struct {
 	CompileSCSS     bool             `toml:"compile_scss"`
 	SCSSOutputStyle string           `toml:"scss_output_style"`
 	SCSSSourceMap   bool             `toml:"scss_source_map"`
+	SummaryLength   int              `toml:"summary_length"`
 	Taxonomies      TaxonomiesConfig `toml:"taxonomies"`
 	BuildTime       time.Time
 	BuildDrafts     bool

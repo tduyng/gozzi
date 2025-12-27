@@ -14,6 +14,7 @@ I built Gozzi to [learn how static site generators work](https://tduyng.com/blog
 - Mermaid diagrams
 - Built-in CSS and HTML minification (36-53% size reduction)
 - SCSS/SASS compilation support
+- Auto-generated content summaries (no manual work needed)
 
 ## Quick Start
 

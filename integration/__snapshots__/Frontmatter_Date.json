@@ -1,7 +1,7 @@
 {
   "name": "Frontmatter_Date",
   "files": {
-    "blog/post1/index.html": "\u003c!DOCTYPE html\u003e\u003chtml\u003e\u003chead\u003e\u003cmeta charset=\"UTF-8\"\u003e\u003ctitle\u003eFirst Post\u003c/title\u003e\u003cmeta property=\"og:image\" content=\"/img/post1.jpg\"\u003e\u003cmeta name=\"description\" content=\"First test post with custom image\"\u003e\u003c/head\u003e\u003cbody\u003e\u003ch1\u003eFirst Post\u003c/h1\u003e\u003ctime\u003e2024-01-15 00:00:00 \u0026#43;0000 UTC\u003c/time\u003e\u003cp\u003eThis is the first blog post with a custom image.\u003c/p\u003e\n\u003c/body\u003e\u003c/html\u003e\n"
+    "blog/post1/index.html": "\u003c!DOCTYPE html\u003e\u003chtml\u003e\u003chead\u003e\u003cmeta charset=\"UTF-8\"\u003e\u003ctitle\u003eFirst Post\u003c/title\u003e\u003cmeta property=\"og:image\" content=\"/img/post1.jpg\"\u003e\u003cmeta name=\"description\" content=\"\"\u003e\u003c/head\u003e\u003cbody\u003e\u003ch1\u003eFirst Post\u003c/h1\u003e\u003ctime\u003e2024-01-14 23:00:00 \u0026#43;0000 UTC\u003c/time\u003e\u003cp\u003eThis is the first blog post with a custom image.\u003c/p\u003e\n\u003c/body\u003e\u003c/html\u003e\n"
   },
   "metadata": {}
 }

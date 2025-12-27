@@ -310,6 +310,7 @@ func TestFrontMatterToConfig(t *testing.T) {
 				"series_order":  0,
 				"date":          parseTime(t, "2024-01-15T10:30:00Z"),
 				"updated":       parseTime(t, "2024-01-16T12:00:00Z"),
+				"aliases":       []string(nil),
 				"extra": map[string]any{
 					"author":   "Test Author",
 					"category": "technical",
@@ -335,6 +336,7 @@ func TestFrontMatterToConfig(t *testing.T) {
 				"series_order":  0,
 				"date":          time.Time{},
 				"updated":       time.Time{},
+				"aliases":       []string(nil),
 				"extra":         map[string]any{},
 			},
 		},
@@ -359,6 +361,7 @@ func TestFrontMatterToConfig(t *testing.T) {
 				"series_order":  0,
 				"date":          time.Time{},
 				"updated":       time.Time{},
+				"aliases":       []string(nil),
 				"extra":         map[string]any{},
 			},
 		},
@@ -389,6 +392,7 @@ func TestFrontMatterToConfig(t *testing.T) {
 				"series_order":  0,
 				"date":          time.Time{},
 				"updated":       time.Time{},
+				"aliases":       []string(nil),
 				"extra": map[string]any{
 					"reading_time": 5,
 					"series":       "Go Testing",

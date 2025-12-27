@@ -34,6 +34,7 @@ type Node struct {
 	WordCount int
 	ReadTime  int
 	Toc       []map[string]any
+	Aliases   []string
 }
 
 var (

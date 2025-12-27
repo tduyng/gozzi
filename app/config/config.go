@@ -57,6 +57,7 @@ type FrontMatter struct {
 	Title        string         `toml:"title"`
 	Featured     bool           `toml:"featured"`
 	Updated      time.Time      `toml:"updated"`
+	Aliases      []string       `toml:"aliases"`
 }
 
 // LoadSite loads site configuration from a TOML file.
@@ -287,6 +288,7 @@ func (frontMatter *FrontMatter) ToConfig() map[string]any {
 	config["series_order"] = frontMatter.SeriesOrder
 	config["date"] = frontMatter.Date
 	config["updated"] = frontMatter.Updated
+	config["aliases"] = frontMatter.Aliases
 	config["extra"] = MergeExtra(make(map[string]any), frontMatter.Extra)
 	return config
 }

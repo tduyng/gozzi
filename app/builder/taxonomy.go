@@ -1,5 +1,5 @@
-// ABOUTME: Generic taxonomy page generation for tags, categories, series, and custom taxonomies.
-// ABOUTME: Builds index pages and term pages with support for series ordering and navigation.
+// Generic taxonomy page generation for tags, categories, series, and custom taxonomies.
+// Builds index pages and term pages with support for series ordering and navigation.
 package builder
 
 import (

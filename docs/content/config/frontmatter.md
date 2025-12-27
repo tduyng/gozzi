@@ -31,6 +31,7 @@ Your content here...
 | `img` | string | "" | Cover image path |
 | `generate_feed` | boolean | true | Include in RSS feed |
 | `language` | string | site | Override language |
+| `aliases` | array | [] | Old URLs that redirect to this page |
 
 **Section-only fields** (for `_index.md`):
 
@@ -74,6 +75,16 @@ title = "Work in Progress"
 draft = true  # Hidden in production
 +++
 ```
+
+**Aliases/Redirects:**
+```toml
++++
+title = "New Post Title"
+date = 2025-01-15
+aliases = ["/old-url", "/another-old-url"]
++++
+```
+This creates redirect pages at `/old-url` and `/another-old-url` that automatically redirect to the new location. Useful for preserving old URLs when content moves.
 
 ## Custom Data
 

@@ -1,5 +1,5 @@
-// ABOUTME: Package data handles loading external data files (JSON/YAML/TOML) for templates.
-// ABOUTME: Supports data/ directory structure for organizing structured content.
+// Package data handles loading external data files (JSON/YAML/TOML) for templates.
+// Supports data/ directory structure for organizing structured content.
 package data
 
 import (

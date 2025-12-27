@@ -1,5 +1,5 @@
-// ABOUTME: This file provides file watching and automatic rebuild for development.
-// ABOUTME: It uses a clean change detection system for flexible and maintainable file watching.
+// This file provides file watching and automatic rebuild for development.
+// It uses a clean change detection system for flexible and maintainable file watching.
 package server
 
 import (

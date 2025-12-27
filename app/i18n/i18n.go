@@ -1,5 +1,5 @@
-// ABOUTME: Core i18n package for multilingual site support
-// ABOUTME: Handles language configs, translation loading, and locale management
+// Core i18n package for multilingual site support
+// Handles language configs, translation loading, and locale management
 package i18n
 
 import (

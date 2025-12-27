@@ -1,5 +1,5 @@
-// ABOUTME: Generic taxonomy system for tags, categories, series, and custom taxonomies.
-// ABOUTME: Provides unified parsing, tracking, and organization of content classifications.
+// Generic taxonomy system for tags, categories, series, and custom taxonomies.
+// Provides unified parsing, tracking, and organization of content classifications.
 package parser
 
 import (

@@ -1,5 +1,5 @@
-// ABOUTME: Unit tests for alias redirect generation functionality.
-// ABOUTME: Tests redirect HTML creation and file generation for URL aliases.
+// Unit tests for alias redirect generation functionality.
+// Tests redirect HTML creation and file generation for URL aliases.
 package builder
 
 import (

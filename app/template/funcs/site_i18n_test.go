@@ -1,5 +1,5 @@
-// ABOUTME: Tests for i18n-related template functions
-// ABOUTME: Validates language-aware URL generation and language detection
+// Tests for i18n-related template functions
+// Validates language-aware URL generation and language detection
 package funcs
 
 import (

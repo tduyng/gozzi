@@ -1,5 +1,5 @@
-// ABOUTME: This file handles generating redirect HTML pages for URL aliases.
-// ABOUTME: Aliases allow old URLs to redirect to new canonical page locations.
+// This file handles generating redirect HTML pages for URL aliases.
+// Aliases allow old URLs to redirect to new canonical page locations.
 package builder
 
 import (

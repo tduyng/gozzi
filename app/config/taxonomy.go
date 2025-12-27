@@ -1,5 +1,5 @@
-// ABOUTME: Taxonomy configuration structures for site-wide and frontmatter taxonomy settings.
-// ABOUTME: Supports tags, categories, series, and custom taxonomies with flexible configuration.
+// Taxonomy configuration structures for site-wide and frontmatter taxonomy settings.
+// Supports tags, categories, series, and custom taxonomies with flexible configuration.
 package config
 
 // TaxonomyConfig represents configuration for a single taxonomy type.

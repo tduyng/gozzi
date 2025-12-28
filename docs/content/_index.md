@@ -48,7 +48,7 @@ gozzi serve  # Visit http://localhost:1313
 
 - **Fast** - Sub-second builds, instant live reload
 - **Simple** - Markdown + TOML config + Go templates
-- **Complete** - Taxonomies, series, pagination, RSS, sitemap, math, diagrams built-in
+- **Complete** - Taxonomies, series, pagination, RSS, sitemap, math, diagrams, i18n, data files built-in
 - **Portable** - Single binary, deploy anywhere
 
 ## Next Steps

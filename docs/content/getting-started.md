@@ -29,18 +29,10 @@ go version
 go install github.com/tduyng/gozzi@latest
 ```
 
-**Alternative methods:**
+**Alternative method:**
 
 <details>
-<summary>Homebrew (coming soon)</summary>
-
-```bash
-brew install gozzi
-```
-</details>
-
-<details>
-<summary>From Release</summary>
+<summary>From Release Binary</summary>
 
 ```bash
 # Download from GitHub Releases
@@ -211,7 +203,7 @@ Starting server on http://localhost:1313
 Watching for changes...
 ```
 
-Open your browser to [http://localhost:1313/blog/hello-world/](http://localhost:3000/blog/hello-world/) 🎉
+Open your browser to [http://localhost:1313/blog/hello-world/](http://localhost:1313/blog/hello-world/) 🎉
 
 ## Step 7: Build for Production
 

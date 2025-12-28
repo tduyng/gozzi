@@ -78,4 +78,4 @@ chmod +x /path/to/gozzi
 ## Next Steps
 
 - [Getting Started](/getting-started) - Build your first site
-- [CLI Reference](/cli/commands) - Learn the commands
+- [CLI Reference](/cli/build) - Learn the commands

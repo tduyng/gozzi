@@ -73,6 +73,8 @@ func (h *fileHandler) serveHTML(f http.File, w http.ResponseWriter) {
 	content = bytes.Replace(content, []byte("</body>"), script, 1)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Expires", "0")
 	_, _ = w.Write(content)
 }
 

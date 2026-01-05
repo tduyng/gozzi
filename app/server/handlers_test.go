@@ -136,6 +136,9 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			if tt.checkLiveReload {
 				assert.Contains(t, rec.Body.String(), "EventSource('/livereload')")
 				assert.Contains(t, rec.Body.String(), "location.reload()")
+				// Verify cache control headers are set for HTML files in dev mode
+				assert.Equal(t, "no-cache, no-store, must-revalidate", rec.Header().Get("Cache-Control"))
+				assert.Equal(t, "0", rec.Header().Get("Expires"))
 			} else if tt.dev && strings.HasSuffix(tt.path, ".html") {
 				// In dev mode, HTML should have live reload unless explicitly checked
 				if !tt.checkLiveReload {
@@ -207,6 +210,8 @@ func TestFileHandler_serveHTML(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, rec.Code)
 			assert.Equal(t, "text/html; charset=utf-8", rec.Header().Get("Content-Type"))
+			assert.Equal(t, "no-cache, no-store, must-revalidate", rec.Header().Get("Cache-Control"))
+			assert.Equal(t, "0", rec.Header().Get("Expires"))
 			assert.Contains(t, rec.Body.String(), tt.expectedBody)
 		})
 	}

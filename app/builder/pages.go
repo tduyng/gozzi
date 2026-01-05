@@ -534,6 +534,9 @@ func (b *Builder) buildChildCacheKeyParts(child *content.Node) []string {
 		parts = append(parts, desc)
 	}
 
+	// Include content to ensure section cache invalidates when child content changes
+	parts = append(parts, string(child.Content))
+
 	// Include extra config (affects template rendering)
 	if extra, ok := child.Config["extra"]; ok {
 		if extraMap, ok := extra.(map[string]any); ok {

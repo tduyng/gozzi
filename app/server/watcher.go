@@ -206,6 +206,9 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 	// Handle content changes
 	if len(contentFiles) > 0 {
 		log.Printf("Content changed: %d files", len(contentFiles))
+		for _, f := range contentFiles {
+			log.Printf("  - Content file: %s", f)
+		}
 
 		// Snapshot taxonomy values BEFORE parsing
 		oldTaxonomies := s.gen.SnapshotTaxonomyValues(contentFiles, s.contentDir)

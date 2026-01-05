@@ -4,6 +4,7 @@ package integration
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -560,6 +561,80 @@ func TestCache_CacheKeyInclusion(t *testing.T) {
 		stats = gen.GetCacheStats()
 		if stats.Misses == 0 {
 			t.Error("expected cache misses when description is modified")
+		}
+	})
+}
+
+// TestCache_SectionListingInvalidation verifies that section listing pages
+// are correctly invalidated when child content changes (regression test for cache bug)
+func TestCache_SectionListingInvalidation(t *testing.T) {
+	t.Run("ChildContentChange_InvalidatesSectionCache", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Modify a child post's content (not frontmatter - this is the regression case!)
+		post1Path := filepath.Join(sitePath, "content/blog/post1/index.md")
+		originalContent, err := os.ReadFile(post1Path)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Change content but keep frontmatter identical
+		modifiedContent := strings.Replace(string(originalContent),
+			"This is the first blog post with a custom image.",
+			"This is the MODIFIED first blog post with completely different content.",
+			1)
+		if err := os.WriteFile(post1Path, []byte(modifiedContent), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// Incremental rebuild with cache stats tracking
+		gen.ResetCacheStats()
+		incrementalRebuild(t, gen, contentParser, sitePath, []string{post1Path})
+
+		stats := gen.GetCacheStats()
+
+		// Before the fix: section listing would have cache hit (bug!)
+		// After the fix: section listing should have cache miss (correct behavior)
+		// Since we changed post1 content, the blog section's cache key should change
+		// Note: We expect at least 2 misses: post1 page + blog section listing
+		if stats.Misses < 2 {
+			t.Errorf("expected at least 2 cache misses (post + section), got %d - section may have incorrectly used cache", stats.Misses)
+		}
+
+		// Verify the child page was updated
+		verifyFileContent(t, sitePath, "blog/post1/index.html", "MODIFIED first blog post")
+	})
+
+	t.Run("ChildHeadingChange_InvalidatesSectionCache", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Modify a post by adding a heading (content change, not frontmatter)
+		post2Path := filepath.Join(sitePath, "content/blog/post2/index.md")
+		originalContent, err := os.ReadFile(post2Path)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Add a heading to the content
+		modifiedContent := strings.Replace(string(originalContent),
+			"This is the second blog post without a custom image. Should use site default.",
+			"# New Heading\n\nThis is the second blog post without a custom image. Should use site default.",
+			1)
+		if err := os.WriteFile(post2Path, []byte(modifiedContent), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// Incremental rebuild
+		gen.ResetCacheStats()
+		incrementalRebuild(t, gen, contentParser, sitePath, []string{post2Path})
+
+		stats := gen.GetCacheStats()
+
+		// Expect cache misses for both the post and its parent section
+		if stats.Misses < 2 {
+			t.Errorf("expected at least 2 cache misses after heading change, got %d", stats.Misses)
 		}
 	})
 }

@@ -231,3 +231,96 @@ Updated content with alias.
 		}
 	})
 }
+
+// TestAliases_SelfReferencingPrevention tests that aliases matching canonical permalinks are skipped
+func TestAliases_SelfReferencingPrevention(t *testing.T) {
+	t.Run("DatePrefixFolder_SelfReferencing", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Simulate the exact bug scenario:
+		// File: content/blog/2025-12-02-neovim-git-tools/index.md
+		// Canonical URL: /blog/neovim-git-tools/ (date prefix removed)
+		// Aliases: ["/blog/neovim-git", "/blog/neovim-git-tools"]
+		// The second alias matches the canonical URL - should be skipped
+		post := `+++
+title = "Neovim git integration"
+date = 2025-12-02
+template = "post.html"
+aliases = ["/blog/neovim-git", "/blog/neovim-git-tools"]
++++
+
+Testing self-referencing alias prevention.
+`
+		// Create with date prefix folder (will be stripped for URL)
+		createPost(t, sitePath, "blog/2025-12-02-neovim-git-tools/index.md", post)
+		fullRebuild(t, gen, contentParser, sitePath)
+
+		// The canonical page should exist at /blog/neovim-git-tools/
+		canonicalPath := filepath.Join(sitePath, "public", "blog", "neovim-git-tools", "index.html")
+		canonicalContent, err := os.ReadFile(canonicalPath)
+		if err != nil {
+			t.Fatalf("Canonical page not created at %s: %v", canonicalPath, err)
+		}
+
+		// Verify it's the actual post content, not a redirect
+		if strings.Contains(string(canonicalContent), `<meta http-equiv="refresh"`) {
+			t.Error("Canonical page should not be a redirect!")
+		}
+
+		if !strings.Contains(string(canonicalContent), "Neovim git integration") {
+			t.Error("Canonical page should contain actual post content")
+		}
+
+		// The valid alias /blog/neovim-git should create a redirect
+		validRedirectPath := filepath.Join(sitePath, "public", "blog", "neovim-git", "index.html")
+		redirectContent, err := os.ReadFile(validRedirectPath)
+		if err != nil {
+			t.Fatalf("Valid redirect not created at %s: %v", validRedirectPath, err)
+		}
+
+		// Verify it's a redirect pointing to the canonical URL
+		if !strings.Contains(string(redirectContent), `<meta http-equiv="refresh"`) {
+			t.Error("Valid alias should create a redirect")
+		}
+
+		if !strings.Contains(string(redirectContent), "/blog/neovim-git-tools/") {
+			t.Error("Redirect should point to canonical URL /blog/neovim-git-tools/")
+		}
+	})
+
+	t.Run("ExactMatch_WithTrailingSlash", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Test when alias has trailing slash matching canonical
+		post := `+++
+title = "Test Post"
+date = 2024-01-01
+template = "post.html"
+aliases = ["/blog/test-post/", "/old-test"]
++++
+
+Testing alias with trailing slash.
+`
+		createPost(t, sitePath, "blog/test-post.md", post)
+		fullRebuild(t, gen, contentParser, sitePath)
+
+		// Canonical should be the real page
+		canonicalPath := filepath.Join(sitePath, "public", "blog", "test-post", "index.html")
+		canonicalContent, err := os.ReadFile(canonicalPath)
+		if err != nil {
+			t.Fatalf("Canonical page not found: %v", err)
+		}
+
+		if strings.Contains(string(canonicalContent), `<meta http-equiv="refresh"`) {
+			t.Error("Canonical page was overwritten by self-referencing redirect")
+		}
+
+		// Valid alias should work
+		validPath := filepath.Join(sitePath, "public", "old-test", "index.html")
+		if _, err := os.Stat(validPath); os.IsNotExist(err) {
+			t.Error("Valid alias redirect was not created")
+		}
+	})
+}

@@ -22,12 +22,36 @@ func (b *Builder) generateAliasRedirects(node *content.Node) error {
 	canonicalURL := b.site.BaseURL + node.Permalink
 
 	for _, alias := range node.Aliases {
+		// Normalize alias to permalink format for comparison
+		aliasPermalink := normalizeAliasToPermalink(alias)
+
+		// Skip if alias would collide with canonical permalink
+		if aliasPermalink == node.Permalink {
+			continue
+		}
+
 		if err := b.generateSingleRedirect(alias, canonicalURL); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// normalizeAliasToPermalink converts an alias path to permalink format for comparison.
+// This ensures we can detect when an alias would collide with a canonical URL.
+func normalizeAliasToPermalink(alias string) string {
+	// Ensure it starts with /
+	if !strings.HasPrefix(alias, "/") {
+		alias = "/" + alias
+	}
+
+	// Ensure it ends with / (like permalinks do)
+	if !strings.HasSuffix(alias, "/") {
+		alias = alias + "/"
+	}
+
+	return alias
 }
 
 // generateSingleRedirect creates a redirect HTML file at the alias path.

@@ -196,3 +196,130 @@ func TestGenerateAliasRedirects_NoAliases(t *testing.T) {
 		t.Errorf("Expected no files to be created, but found %d entries", len(entries))
 	}
 }
+
+func TestGenerateAliasRedirects_SelfReferencingAlias(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	site := &config.Site{
+		BaseURL:   "https://example.com",
+		OutputDir: tmpDir,
+	}
+
+	p := parser.NewParser(site)
+	b := &Builder{
+		site:   site,
+		parser: p,
+	}
+
+	// Create a test node where one alias matches the canonical permalink
+	// This is the bug case: /blog/neovim-git-tools aliases to itself
+	node := &content.Node{
+		Path:      "blog/2025-12-02-neovim-git-tools/index.md",
+		Slug:      "blog/neovim-git-tools",
+		Permalink: "/blog/neovim-git-tools/",
+		URL:       "https://example.com/blog/neovim-git-tools/",
+		// Both with and without trailing slash should be detected
+		Aliases: []string{"/blog/neovim-git", "/blog/neovim-git-tools"},
+	}
+
+	err := b.generateAliasRedirects(node)
+	if err != nil {
+		t.Fatalf("generateAliasRedirects failed: %v", err)
+	}
+
+	// Only the valid alias should create a redirect file
+	validRedirectPath := filepath.Join(tmpDir, "blog", "neovim-git", "index.html")
+	if _, err := os.Stat(validRedirectPath); os.IsNotExist(err) {
+		t.Errorf("Valid redirect file not created at %s", validRedirectPath)
+	}
+
+	// The self-referencing alias should NOT create a redirect
+	selfRefPath := filepath.Join(tmpDir, "blog", "neovim-git-tools", "index.html")
+	if _, err := os.Stat(selfRefPath); !os.IsNotExist(err) {
+		t.Errorf("Self-referencing redirect should not be created at %s", selfRefPath)
+	}
+}
+
+func TestGenerateAliasRedirects_SelfReferencingWithTrailingSlash(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	site := &config.Site{
+		BaseURL:   "https://example.com",
+		OutputDir: tmpDir,
+	}
+
+	p := parser.NewParser(site)
+	b := &Builder{
+		site:   site,
+		parser: p,
+	}
+
+	// Test with trailing slash in alias
+	node := &content.Node{
+		Path:      "blog/post.md",
+		Slug:      "blog/post",
+		Permalink: "/blog/post/",
+		URL:       "https://example.com/blog/post/",
+		Aliases:   []string{"/blog/post/", "/old-post"},
+	}
+
+	err := b.generateAliasRedirects(node)
+	if err != nil {
+		t.Fatalf("generateAliasRedirects failed: %v", err)
+	}
+
+	// Only the valid alias should create a redirect
+	validPath := filepath.Join(tmpDir, "old-post", "index.html")
+	if _, err := os.Stat(validPath); os.IsNotExist(err) {
+		t.Errorf("Valid redirect file not created at %s", validPath)
+	}
+
+	// Self-referencing should not create redirect
+	selfRefPath := filepath.Join(tmpDir, "blog", "post", "index.html")
+	if _, err := os.Stat(selfRefPath); !os.IsNotExist(err) {
+		t.Errorf("Self-referencing redirect should not be created at %s", selfRefPath)
+	}
+}
+
+func TestNormalizeAliasToPermalink(t *testing.T) {
+	tests := []struct {
+		name     string
+		alias    string
+		expected string
+	}{
+		{
+			name:     "with leading and trailing slash",
+			alias:    "/blog/post/",
+			expected: "/blog/post/",
+		},
+		{
+			name:     "with leading slash only",
+			alias:    "/blog/post",
+			expected: "/blog/post/",
+		},
+		{
+			name:     "without slashes",
+			alias:    "blog/post",
+			expected: "/blog/post/",
+		},
+		{
+			name:     "with trailing slash only",
+			alias:    "blog/post/",
+			expected: "/blog/post/",
+		},
+		{
+			name:     "nested path",
+			alias:    "/blog/2024/my-post",
+			expected: "/blog/2024/my-post/",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := normalizeAliasToPermalink(tt.alias)
+			if result != tt.expected {
+				t.Errorf("normalizeAliasToPermalink(%q) = %q, want %q", tt.alias, result, tt.expected)
+			}
+		})
+	}
+}

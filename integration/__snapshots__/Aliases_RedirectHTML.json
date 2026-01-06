@@ -1,7 +1,7 @@
 {
   "name": "Aliases_RedirectHTML",
   "files": {
-    "old-snapshot/index.html": "\u003c!DOCTYPE html\u003e\n\u003chtml lang=\"en\"\u003e\n\u003chead\u003e\n    \u003cmeta charset=\"utf-8\"\u003e\n    \u003cmeta http-equiv=\"refresh\" content=\"0; url=https://test.example.com/blog/snapshot-test/\"\u003e\n    \u003clink rel=\"canonical\" href=\"https://test.example.com/blog/snapshot-test/\"\u003e\n    \u003ctitle\u003eRedirecting...\u003c/title\u003e\n\u003c/head\u003e\n\u003cbody\u003e\n    \u003cp\u003eThis page has moved to \u003ca href=\"https://test.example.com/blog/snapshot-test/\"\u003ehttps://test.example.com/blog/snapshot-test/\u003c/a\u003e.\u003c/p\u003e\n\u003c/body\u003e\n\u003c/html\u003e"
+    "old-snapshot/index.html": "\u003c!DOCTYPE html\u003e\n\u003chtml lang=\"en\"\u003e\n\u003chead\u003e\n    \u003cmeta charset=\"utf-8\"\u003e\n    \u003cmeta http-equiv=\"refresh\" content=\"0; url=/blog/snapshot-test/\"\u003e\n    \u003clink rel=\"canonical\" href=\"https://test.example.com/blog/snapshot-test/\"\u003e\n    \u003ctitle\u003eRedirecting...\u003c/title\u003e\n\u003c/head\u003e\n\u003cbody\u003e\n    \u003cp\u003eThis page has moved to \u003ca href=\"/blog/snapshot-test/\"\u003e/blog/snapshot-test/\u003c/a\u003e.\u003c/p\u003e\n\u003c/body\u003e\n\u003c/html\u003e"
   },
   "metadata": {}
 }

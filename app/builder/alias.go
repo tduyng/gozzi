@@ -18,7 +18,9 @@ func (b *Builder) generateAliasRedirects(node *content.Node) error {
 		return nil
 	}
 
-	// Use full URL with permalink (includes trailing slash)
+	// Use permalink (relative path) for redirects so they work both locally and in production
+	targetPath := node.Permalink
+	// Also provide absolute URL for canonical link (SEO)
 	canonicalURL := b.site.BaseURL + node.Permalink
 
 	for _, alias := range node.Aliases {
@@ -30,7 +32,7 @@ func (b *Builder) generateAliasRedirects(node *content.Node) error {
 			continue
 		}
 
-		if err := b.generateSingleRedirect(alias, canonicalURL); err != nil {
+		if err := b.generateSingleRedirect(alias, targetPath, canonicalURL); err != nil {
 			return err
 		}
 	}
@@ -55,7 +57,7 @@ func normalizeAliasToPermalink(alias string) string {
 }
 
 // generateSingleRedirect creates a redirect HTML file at the alias path.
-func (b *Builder) generateSingleRedirect(aliasPath, targetURL string) error {
+func (b *Builder) generateSingleRedirect(aliasPath, targetPath, canonicalURL string) error {
 	// Normalize alias path - ensure it starts with /
 	if !strings.HasPrefix(aliasPath, "/") {
 		aliasPath = "/" + aliasPath
@@ -67,8 +69,9 @@ func (b *Builder) generateSingleRedirect(aliasPath, targetURL string) error {
 	// Create output path for the redirect HTML
 	outputPath := filepath.Join(b.site.OutputDir, fsPath, "index.html")
 
-	// Create redirect HTML content
-	redirectHTML := b.createRedirectHTML(targetURL)
+	// Create redirect HTML content with relative targetPath for redirect
+	// and absolute canonicalURL for SEO
+	redirectHTML := b.createRedirectHTML(targetPath, canonicalURL)
 
 	// Ensure parent directory exists
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
@@ -92,7 +95,9 @@ func (b *Builder) generateSingleRedirect(aliasPath, targetURL string) error {
 }
 
 // createRedirectHTML generates the HTML content for a redirect page.
-func (b *Builder) createRedirectHTML(targetURL string) string {
+// targetPath is the relative path for meta refresh (works with any base URL)
+// canonicalURL is the absolute URL for SEO purposes
+func (b *Builder) createRedirectHTML(targetPath, canonicalURL string) string {
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -104,5 +109,5 @@ func (b *Builder) createRedirectHTML(targetURL string) string {
 <body>
     <p>This page has moved to <a href="%s">%s</a>.</p>
 </body>
-</html>`, targetURL, targetURL, targetURL, targetURL)
+</html>`, targetPath, canonicalURL, targetPath, targetPath)
 }

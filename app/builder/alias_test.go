@@ -21,27 +21,31 @@ func TestCreateRedirectHTML(t *testing.T) {
 
 	b := &Builder{site: site}
 
-	targetURL := "https://example.com/blog/new-post/"
-	html := b.createRedirectHTML(targetURL)
+	targetPath := "/blog/new-post/"
+	canonicalURL := "https://example.com/blog/new-post/"
+	html := b.createRedirectHTML(targetPath, canonicalURL)
 
 	// Check that the HTML contains the necessary redirect elements
 	if !strings.Contains(html, `<meta http-equiv="refresh"`) {
 		t.Error("Redirect HTML missing meta refresh tag")
 	}
 
-	if !strings.Contains(html, `content="0; url=https://example.com/blog/new-post/"`) {
-		t.Error("Redirect HTML missing correct refresh URL")
+	// Meta refresh should use relative path
+	if !strings.Contains(html, `content="0; url=/blog/new-post/"`) {
+		t.Error("Redirect HTML missing correct refresh URL (should be relative)")
 	}
 
 	if !strings.Contains(html, `<link rel="canonical"`) {
 		t.Error("Redirect HTML missing canonical link")
 	}
 
+	// Canonical should use absolute URL for SEO
 	if !strings.Contains(html, `href="https://example.com/blog/new-post/"`) {
 		t.Error("Redirect HTML missing correct canonical href")
 	}
 
-	if !strings.Contains(html, `<a href="https://example.com/blog/new-post/">`) {
+	// Fallback link should use relative path
+	if !strings.Contains(html, `<a href="/blog/new-post/">`) {
 		t.Error("Redirect HTML missing fallback link")
 	}
 }
@@ -56,10 +60,11 @@ func TestGenerateSingleRedirect(t *testing.T) {
 
 	b := &Builder{site: site}
 
-	targetURL := "https://example.com/blog/new-post/"
+	targetPath := "/blog/new-post/"
+	canonicalURL := "https://example.com/blog/new-post/"
 	aliasPath := "/old-url"
 
-	err := b.generateSingleRedirect(aliasPath, targetURL)
+	err := b.generateSingleRedirect(aliasPath, targetPath, canonicalURL)
 	if err != nil {
 		t.Fatalf("generateSingleRedirect failed: %v", err)
 	}
@@ -76,8 +81,14 @@ func TestGenerateSingleRedirect(t *testing.T) {
 		t.Fatalf("Failed to read redirect file: %v", err)
 	}
 
-	if !strings.Contains(string(content), targetURL) {
-		t.Error("Redirect file doesn't contain target URL")
+	// Should contain relative path for redirect
+	if !strings.Contains(string(content), `url=/blog/new-post/`) {
+		t.Error("Redirect file doesn't contain relative target path in meta refresh")
+	}
+
+	// Should contain absolute URL for canonical
+	if !strings.Contains(string(content), canonicalURL) {
+		t.Error("Redirect file doesn't contain canonical URL")
 	}
 }
 
@@ -91,10 +102,11 @@ func TestGenerateSingleRedirect_WithoutLeadingSlash(t *testing.T) {
 
 	b := &Builder{site: site}
 
-	targetURL := "https://example.com/blog/new-post/"
+	targetPath := "/blog/new-post/"
+	canonicalURL := "https://example.com/blog/new-post/"
 	aliasPath := "old-url" // No leading slash
 
-	err := b.generateSingleRedirect(aliasPath, targetURL)
+	err := b.generateSingleRedirect(aliasPath, targetPath, canonicalURL)
 	if err != nil {
 		t.Fatalf("generateSingleRedirect failed: %v", err)
 	}

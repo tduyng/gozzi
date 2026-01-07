@@ -232,6 +232,9 @@ func RelatedPosts(pageData any, allPosts []*content.Node) []*content.Node {
 	// Return 6 candidates for client randomization (will show 3)
 	config.ResultLimit = 6
 	config.MaxCandidates = 10
+	// Disable recency penalty for tag-based related posts
+	// Content relevance (tags) is more important than publication date
+	config.RecencyDecayDays = 0
 
 	finder := content.NewRelatedPostsFinder(allPosts, config)
 	return finder.FindRelated(page)

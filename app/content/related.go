@@ -169,6 +169,11 @@ func (rf *RelatedPostsFinder) countMatchingTags(tags1, tags2 []string) int {
 }
 
 func (rf *RelatedPostsFinder) calculateRecencyPenalty(currentPage, candidate *Node) float64 {
+	// If RecencyDecayDays is 0 or negative, disable recency penalty
+	if rf.config.RecencyDecayDays <= 0 {
+		return 0
+	}
+
 	currentDate := rf.extractDate(currentPage)
 	candidateDate := rf.extractDate(candidate)
 

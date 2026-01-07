@@ -611,3 +611,81 @@ func TestCond(t *testing.T) {
 		})
 	}
 }
+
+func TestUniq(t *testing.T) {
+	tests := []struct {
+		name  string
+		items []any
+		want  []any
+	}{
+		{"no duplicates", []any{1, 2, 3}, []any{1, 2, 3}},
+		{"with duplicates", []any{1, 2, 2, 3, 1}, []any{1, 2, 3}},
+		{"all duplicates", []any{"a", "a", "a"}, []any{"a"}},
+		{"empty slice", []any{}, []any{}},
+		{"mixed types: int 1 and string \"1\" are treated as same", []any{1, "1", 1, "1"}, []any{1}},
+		{"strings", []any{"apple", "banana", "apple", "cherry", "banana"}, []any{"apple", "banana", "cherry"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Uniq(tt.items)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Uniq() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIntersect(t *testing.T) {
+	tests := []struct {
+		name string
+		a    []any
+		b    []any
+		want []any
+	}{
+		{"common elements", []any{1, 2, 3}, []any{2, 3, 4}, []any{2, 3}},
+		{"no common elements", []any{1, 2}, []any{3, 4}, []any{}},
+		{"all common", []any{1, 2, 3}, []any{1, 2, 3}, []any{1, 2, 3}},
+		{"empty first slice", []any{}, []any{1, 2}, []any{}},
+		{"empty second slice", []any{1, 2}, []any{}, []any{}},
+		{"both empty", []any{}, []any{}, []any{}},
+		{"strings", []any{"go", "rust", "java"}, []any{"python", "go", "java"}, []any{"go", "java"}},
+		{"duplicates in input", []any{1, 2, 2, 3}, []any{2, 3, 3, 4}, []any{2, 3}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Intersect(tt.a, tt.b)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Intersect() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestUnion(t *testing.T) {
+	tests := []struct {
+		name string
+		a    []any
+		b    []any
+		want []any
+	}{
+		{"distinct slices", []any{1, 2}, []any{3, 4}, []any{1, 2, 3, 4}},
+		{"overlapping slices", []any{1, 2, 3}, []any{2, 3, 4}, []any{1, 2, 3, 4}},
+		{"identical slices", []any{1, 2, 3}, []any{1, 2, 3}, []any{1, 2, 3}},
+		{"empty first slice", []any{}, []any{1, 2}, []any{1, 2}},
+		{"empty second slice", []any{1, 2}, []any{}, []any{1, 2}},
+		{"both empty", []any{}, []any{}, []any{}},
+		{"strings", []any{"go", "rust"}, []any{"java", "go"}, []any{"go", "rust", "java"}},
+		{"duplicates in input", []any{1, 1, 2}, []any{2, 3, 3}, []any{1, 2, 3}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Union(tt.a, tt.b)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Union() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

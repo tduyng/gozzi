@@ -320,3 +320,69 @@ func Cond(condition bool, trueVal, falseVal any) any {
 	}
 	return falseVal
 }
+
+// Uniq removes duplicate elements from a slice, preserving order
+func Uniq(items []any) []any {
+	seen := make(map[any]bool)
+	result := make([]any, 0, len(items))
+
+	for _, item := range items {
+		// Use fmt.Sprint as key for complex types
+		key := fmt.Sprint(item)
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, item)
+		}
+	}
+
+	return result
+}
+
+// Intersect returns elements that exist in both slices
+func Intersect(a, b []any) []any {
+	// Build a set from slice b for O(n) lookup
+	bSet := make(map[string]bool)
+	for _, item := range b {
+		bSet[fmt.Sprint(item)] = true
+	}
+
+	// Find items in a that also exist in b
+	seen := make(map[string]bool)
+	result := make([]any, 0)
+
+	for _, item := range a {
+		key := fmt.Sprint(item)
+		if bSet[key] && !seen[key] {
+			seen[key] = true
+			result = append(result, item)
+		}
+	}
+
+	return result
+}
+
+// Union returns all unique elements from both slices
+func Union(a, b []any) []any {
+	seen := make(map[string]bool)
+	result := make([]any, 0, len(a)+len(b))
+
+	// Add all items from a
+	for _, item := range a {
+		key := fmt.Sprint(item)
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, item)
+		}
+	}
+
+	// Add items from b that aren't already in result
+	for _, item := range b {
+		key := fmt.Sprint(item)
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, item)
+		}
+	}
+
+	return result
+}

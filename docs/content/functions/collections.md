@@ -77,6 +77,62 @@ Reverses array order.
 {{ end }}
 ```
 
+## Set Operations
+
+### `uniq`
+
+Removes duplicate elements from a slice, preserving order of first occurrence.
+
+```go
+{{ $tags := slice "go" "rust" "go" "python" "rust" }}
+{{ $uniqueTags := uniq $tags }}
+<!-- Result: ["go", "rust", "python"] -->
+
+<!-- Remove duplicate categories -->
+{{ $allCategories := slice }}
+{{ range .Posts }}
+  {{ $allCategories = concat $allCategories .Categories }}
+{{ end }}
+{{ $uniqueCategories := uniq $allCategories }}
+```
+
+### `intersect`
+
+Returns elements that exist in both slices (common elements).
+
+```go
+{{ $tags1 := slice "go" "rust" "python" }}
+{{ $tags2 := slice "python" "java" "go" }}
+{{ $common := intersect $tags1 $tags2 }}
+<!-- Result: ["go", "python"] -->
+
+<!-- Find posts with overlapping tags -->
+{{ $myTags := .Page.Config.tags }}
+{{ $relatedTags := .RelatedPost.Config.tags }}
+{{ $sharedTags := intersect $myTags $relatedTags }}
+{{ if gt (len $sharedTags) 0 }}
+  <p>Shared topics: {{ join $sharedTags ", " }}</p>
+{{ end }}
+```
+
+### `union`
+
+Returns all unique elements from both slices (set union).
+
+```go
+{{ $tags1 := slice "go" "rust" }}
+{{ $tags2 := slice "python" "go" }}
+{{ $allTags := union $tags1 $tags2 }}
+<!-- Result: ["go", "rust", "python"] -->
+
+<!-- Combine tags from multiple sources -->
+{{ $contentTags := .Page.Config.tags }}
+{{ $metaTags := .Page.Config.keywords }}
+{{ $allTopics := union $contentTags $metaTags }}
+```
+
+**Note:** All set operations use string comparison (via `fmt.Sprint`), so `1` (int) and `"1"` (string) are treated as equal.
+
 ## Filtering
 
 ### `where`

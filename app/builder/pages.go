@@ -486,6 +486,17 @@ func (b *Builder) getSeriesNavigation(node *content.Node, seriesName string) map
 		}
 	}
 
+	// Build all posts list for series navigation
+	allPosts := make([]map[string]any, len(seriesPages))
+	for i, sp := range seriesPages {
+		allPosts[i] = map[string]any{
+			"Title":     sp.Node.Config["title"],
+			"Permalink": sp.Node.Permalink,
+			"Position":  sp.Position,
+			"Date":      sp.Node.Config["date"],
+		}
+	}
+
 	// Build series navigation data
 	return map[string]any{
 		"Name":         entry.Term,
@@ -495,6 +506,7 @@ func (b *Builder) getSeriesNavigation(node *content.Node, seriesName string) map
 		"CurrentPart":  currentPosition,
 		"PreviousPost": prevPage,
 		"NextPost":     nextPage,
+		"AllPosts":     allPosts,
 	}
 }
 

@@ -137,12 +137,38 @@ Tests if the first argument is less than or equal to the second (a <= b).
 
 ### `default`
 
-Returns the second argument if non-empty, otherwise the first.
+Returns the value if non-empty, otherwise returns the default. Now supports any type for both default and value (improved from string-only).
+
+**Empty values by type:**
+- `nil` → returns default
+- Empty string `""` → returns default
+- Zero int/float `0` → returns default
+- `false` bool → returns default
+- Empty slice/array/map → returns default
 
 ```go
+<!-- String defaults -->
 {{ default "N/A" .Value }}
 {{ default "Untitled" .Title }}
+
+<!-- Numeric defaults -->
+{{ default 0 .Count }}
+{{ default 100 .Score }}
+
+<!-- Collection defaults -->
+{{ $items := default (slice "fallback") .Page.Items }}
+{{ $config := default (dict "theme" "light") .Options }}
+
+<!-- Mixed type defaults -->
+{{ $val := default "No data" .NumericValue }}  // default is string, value could be int
+{{ $num := default 999 .StringValue }}        // default is int, value could be string
+
+<!-- Common use cases -->
+<p>{{ default "No description available" .Page.Config.description }}</p>
+<span>Score: {{ default 0 .UserScore }}</span>
 ```
+
+**Note:** Argument order is `default` first, then `value` (Hugo-compatible).
 
 ## Examples
 

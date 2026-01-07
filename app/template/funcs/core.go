@@ -215,21 +215,49 @@ func In(needle, haystack any) (bool, error) {
 	return Contains(haystack, needle)
 }
 
-func Default(val any, def string) string {
+// Default returns the value if it's non-empty, otherwise returns the default.
+// Now supports any type for both val and def (improved from string-only).
+func Default(def, val any) any {
 	if val == nil {
 		return def
 	}
-	if s, ok := val.(string); ok {
-		if s == "" {
+
+	// Handle different types
+	switch v := val.(type) {
+	case string:
+		if v == "" {
 			return def
 		}
-		return s
+		return v
+	case int, int8, int16, int32, int64:
+		if fmt.Sprint(v) == "0" {
+			return def
+		}
+		return v
+	case float32, float64:
+		if fmt.Sprint(v) == "0" {
+			return def
+		}
+		return v
+	case bool:
+		if !v {
+			return def
+		}
+		return v
+	default:
+		// For slices, arrays, maps - check if empty using reflection
+		rv := reflect.ValueOf(val)
+		switch rv.Kind() {
+		case reflect.Slice, reflect.Array, reflect.Map:
+			if rv.Len() == 0 {
+				return def
+			}
+			return v
+		default:
+			// For other types, return the value as-is
+			return v
+		}
 	}
-	s := fmt.Sprint(val)
-	if s == "" || s == "<nil>" {
-		return def
-	}
-	return s
 }
 
 func Priority(vals ...any) string {

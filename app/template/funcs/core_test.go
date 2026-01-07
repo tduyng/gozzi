@@ -310,23 +310,37 @@ func TestIn(t *testing.T) {
 func TestDefault(t *testing.T) {
 	tests := []struct {
 		name string
+		def  any
 		val  any
-		def  string
-		want string
+		want any
 	}{
-		{"non-empty string", "hello", "default", "hello"},
-		{"empty string", "", "default", "default"},
-		{"nil value", nil, "default", "default"},
-		{"zero int", 0, "default", "0"},
-		{"non-zero int", 42, "default", "42"},
-		{"true bool", true, "default", "true"},
-		{"false bool", false, "default", "false"},
+		// String tests
+		{"non-empty string", "default", "hello", "hello"},
+		{"empty string", "default", "", "default"},
+		{"nil value", "default", nil, "default"},
+
+		// Integer tests
+		{"zero int returns default", 10, 0, 10},
+		{"non-zero int", 10, 42, 42},
+
+		// Boolean tests
+		{"true bool", "default", true, true},
+		{"false bool returns default", "default", false, "default"},
+
+		// Any type defaults
+		{"int default with string val", 999, "hello", "hello"},
+		{"string default with int val", "N/A", 42, 42},
+		{"slice default with non-empty", []string{"a"}, []string{"x", "y"}, []string{"x", "y"}},
+		{"slice default with empty", []string{"a"}, []string{}, []string{"a"}},
+		{"map default with empty", map[string]int{"x": 1}, map[string]int{}, map[string]int{"x": 1}},
+		{"map default with non-empty", map[string]int{"x": 1}, map[string]int{"y": 2}, map[string]int{"y": 2}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Default(tt.val, tt.def); got != tt.want {
-				t.Errorf("Default() = %v, want %v", got, tt.want)
+			got := Default(tt.def, tt.val)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Default() = %v (%T), want %v (%T)", got, got, tt.want, tt.want)
 			}
 		})
 	}

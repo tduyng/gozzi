@@ -235,6 +235,30 @@ Creates dictionary/map.
 {{ $data.name }}
 ```
 
+### `merge`
+
+Merges multiple dictionaries into one. Later dictionaries override earlier ones for conflicting keys.
+
+```go
+<!-- Merge configuration with defaults -->
+{{ $defaults := dict "theme" "light" "lang" "en" "debug" false }}
+{{ $custom := dict "theme" "dark" "debug" true }}
+{{ $config := merge $defaults $custom }}
+<!-- Result: {"theme": "dark", "lang": "en", "debug": true} -->
+
+<!-- Merge multiple sources -->
+{{ $base := dict "a" 1 "b" 2 }}
+{{ $override1 := dict "b" 20 "c" 3 }}
+{{ $override2 := dict "c" 30 "d" 4 }}
+{{ $result := merge $base $override1 $override2 }}
+<!-- Result: {"a": 1, "b": 20, "c": 30, "d": 4} -->
+
+<!-- Common use case: configuration with user overrides -->
+{{ $pageOpts := merge (dict "layout" "default" "toc" true) .Page.Config.options }}
+```
+
+**Note:** Later dictionaries take precedence over earlier ones, allowing for a defaults-to-overrides pattern.
+
 ## Examples
 
 ### Recent Posts

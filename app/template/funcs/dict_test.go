@@ -77,3 +77,82 @@ func TestDict(t *testing.T) {
 		})
 	}
 }
+
+func TestMerge(t *testing.T) {
+	tests := []struct {
+		name  string
+		dicts []map[string]any
+		want  map[string]any
+	}{
+		{
+			"merge two dicts",
+			[]map[string]any{
+				{"a": 1, "b": 2},
+				{"c": 3, "d": 4},
+			},
+			map[string]any{"a": 1, "b": 2, "c": 3, "d": 4},
+		},
+		{
+			"later dict overrides earlier",
+			[]map[string]any{
+				{"a": 1, "b": 2},
+				{"b": 20, "c": 3},
+			},
+			map[string]any{"a": 1, "b": 20, "c": 3},
+		},
+		{
+			"merge three dicts",
+			[]map[string]any{
+				{"a": 1},
+				{"b": 2},
+				{"c": 3},
+			},
+			map[string]any{"a": 1, "b": 2, "c": 3},
+		},
+		{
+			"empty dicts",
+			[]map[string]any{
+				{},
+				{},
+			},
+			map[string]any{},
+		},
+		{
+			"single dict",
+			[]map[string]any{
+				{"a": 1, "b": 2},
+			},
+			map[string]any{"a": 1, "b": 2},
+		},
+		{
+			"no dicts",
+			[]map[string]any{},
+			map[string]any{},
+		},
+		{
+			"mixed value types",
+			[]map[string]any{
+				{"name": "Alice", "age": 30},
+				{"age": 31, "active": true},
+			},
+			map[string]any{"name": "Alice", "age": 31, "active": true},
+		},
+		{
+			"override with nil",
+			[]map[string]any{
+				{"key": "value"},
+				{"key": nil},
+			},
+			map[string]any{"key": nil},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Merge(tt.dicts...)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Merge() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -148,6 +148,7 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("now", FuncDef{Fn: funcs.Now, Description: "Current time"})
 
 	r.MustRegister("dict", FuncDef{Fn: funcs.Dict, Description: "Create map from key-value pairs"})
+	r.MustRegister("merge", FuncDef{Fn: funcs.Merge, Description: "Merge multiple dictionaries into one"})
 	r.MustRegister("safe", FuncDef{Fn: funcs.SafeHTML, Description: "Mark HTML as safe"})
 	r.MustRegister("load", FuncDef{Fn: funcs.LoadData, Description: "Load file as HTML"})
 	r.MustRegister("load_attribute", FuncDef{Fn: funcs.LoadAttribute, Description: "Load file as escaped attribute"})

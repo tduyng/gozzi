@@ -21,3 +21,14 @@ func Dict(values ...any) (map[string]any, error) {
 	}
 	return dict, nil
 }
+
+// Merge merges multiple dictionaries into one. Later dictionaries override earlier ones.
+func Merge(dicts ...map[string]any) map[string]any {
+	result := make(map[string]any)
+	for _, dict := range dicts {
+		for k, v := range dict {
+			result[k] = v
+		}
+	}
+	return result
+}

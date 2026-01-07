@@ -116,7 +116,9 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("len", FuncDef{Fn: funcs.Len, Description: "Get length of slice, array, map, or string"})
 	r.MustRegister("slice", FuncDef{Fn: funcs.Slice, Description: "Create a slice from arguments"})
 	r.MustRegister("contains", FuncDef{Fn: funcs.Contains, Description: "Check if collection contains value"})
-	r.MustRegister("in", FuncDef{Fn: funcs.In, Description: "Check if value is in collection (alias for contains with reversed args)"})
+	r.MustRegister("in", FuncDef{
+		Fn:          funcs.In,
+		Description: "Check if value is in collection (alias for contains with reversed args)"})
 	r.MustRegister("uniq", FuncDef{Fn: funcs.Uniq, Description: "Remove duplicate elements from slice"})
 	r.MustRegister("intersect", FuncDef{Fn: funcs.Intersect, Description: "Get elements common to both slices"})
 	r.MustRegister("union", FuncDef{Fn: funcs.Union, Description: "Get all unique elements from both slices"})

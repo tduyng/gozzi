@@ -100,13 +100,15 @@ func (cd *ChangeDetector) ClassifyChange(path string) ChangeType {
 		return ChangeTypeIgnored
 	}
 
-	// Check if it's a template
-	if strings.Contains(path, "templates") && ext == ".html" {
+	// Check if it's a template (must be under templates/ directory)
+	templatesPath, _ := filepath.Abs("templates")
+	if strings.HasPrefix(absPath, templatesPath) && ext == ".html" {
 		return ChangeTypeTemplate
 	}
 
-	// Check if it's static assets
-	if strings.Contains(path, "static") {
+	// Check if it's static assets (must be under static/ directory)
+	staticPath, _ := filepath.Abs("static")
+	if strings.HasPrefix(absPath, staticPath) {
 		return ChangeTypeStatic
 	}
 

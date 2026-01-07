@@ -109,6 +109,7 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("le", FuncDef{Fn: funcs.Le, Description: "Test less or equal (a <= b)"})
 	r.MustRegister("and", FuncDef{Fn: funcs.And, Description: "Logical AND"})
 	r.MustRegister("or", FuncDef{Fn: funcs.Or, Description: "Logical OR"})
+	r.MustRegister("cond", FuncDef{Fn: funcs.Cond, Description: "Ternary conditional (if-then-else)"})
 
 	r.MustRegister("first", FuncDef{Fn: funcs.First, Description: "Get first element"})
 	r.MustRegister("last", FuncDef{Fn: funcs.Last, Description: "Get last element"})

@@ -50,6 +50,22 @@ Logical OR of two booleans.
 {{ end }}
 ```
 
+### `cond`
+
+Ternary conditional operator: returns the second argument if condition is true, otherwise the third argument. This is a concise alternative to verbose if/else blocks.
+
+```go
+{{ cond (gt .Count 5) "many" "few" }}  // Output: "many" if Count > 5, else "few"
+{{ $status := cond .IsPublished "published" "draft" }}
+{{ $class := cond (eq .Type "featured") "highlight" "normal" }}
+
+<!-- Inline conditional rendering -->
+<span class="{{ cond .IsActive \"active\" \"inactive\" }}">Status</span>
+
+<!-- Nested conditions -->
+{{ $level := cond (gt .Score 90) "excellent" (cond (gt .Score 70) "good" "needs-improvement") }}
+```
+
 ### `eq`
 
 Checks equality.

@@ -3,6 +3,7 @@
 package funcs
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -524,6 +525,36 @@ func TestSlice(t *testing.T) {
 				if got[i] != tt.want[i] {
 					t.Errorf("Slice()[%d] = %v, want %v", i, got[i], tt.want[i])
 				}
+			}
+		})
+	}
+}
+
+func TestCond(t *testing.T) {
+	tests := []struct {
+		name      string
+		condition bool
+		trueVal   any
+		falseVal  any
+		want      any
+	}{
+		{"true condition: int", true, 10, 20, 10},
+		{"false condition: int", false, 10, 20, 20},
+		{"true condition: string", true, "yes", "no", "yes"},
+		{"false condition: string", false, "yes", "no", "no"},
+		{"true condition: mixed types", true, "hello", 42, "hello"},
+		{"false condition: mixed types", false, "hello", 42, 42},
+		{"true condition: nil values", true, nil, "default", nil},
+		{"false condition: nil values", false, "value", nil, nil},
+		{"true condition: slice", true, []int{1, 2}, []int{3, 4}, []int{1, 2}},
+		{"false condition: slice", false, []int{1, 2}, []int{3, 4}, []int{3, 4}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Cond(tt.condition, tt.trueVal, tt.falseVal)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Cond() = %v, want %v", got, tt.want)
 			}
 		})
 	}

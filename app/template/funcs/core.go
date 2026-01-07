@@ -277,3 +277,11 @@ func Len(v any) (int, error) {
 func Slice(items ...any) []any {
 	return items
 }
+
+// Cond is a ternary conditional operator: returns trueVal if condition is true, otherwise falseVal
+func Cond(condition bool, trueVal, falseVal any) any {
+	if condition {
+		return trueVal
+	}
+	return falseVal
+}

@@ -498,3 +498,33 @@ func TestLen(t *testing.T) {
 		})
 	}
 }
+
+func TestSlice(t *testing.T) {
+	tests := []struct {
+		name  string
+		items []any
+		want  []any
+	}{
+		{"empty", []any{}, []any{}},
+		{"single string", []any{"hello"}, []any{"hello"}},
+		{"multiple strings", []any{"a", "b", "c"}, []any{"a", "b", "c"}},
+		{"mixed types", []any{"str", 42, true, 3.14}, []any{"str", 42, true, 3.14}},
+		{"integers", []any{1, 2, 3, 4, 5}, []any{1, 2, 3, 4, 5}},
+		{"nil values", []any{nil, "test", nil}, []any{nil, "test", nil}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Slice(tt.items...)
+			if len(got) != len(tt.want) {
+				t.Errorf("Slice() length = %v, want %v", len(got), len(tt.want))
+				return
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("Slice()[%d] = %v, want %v", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}

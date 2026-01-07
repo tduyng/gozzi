@@ -272,3 +272,8 @@ func Len(v any) (int, error) {
 		return 0, fmt.Errorf("len: argument must be slice, array, map, or string, got %T", v)
 	}
 }
+
+// Slice creates a slice from the given arguments
+func Slice(items ...any) []any {
+	return items
+}

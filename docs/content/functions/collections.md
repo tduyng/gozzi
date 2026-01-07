@@ -6,6 +6,22 @@ template = "page.html"
 
 Functions for filtering, sorting, and manipulating arrays.
 
+## Array Creation
+
+### `slice`
+
+Creates a slice from the given arguments. Useful for building dynamic lists in templates.
+
+```go
+{{ $colors := slice "red" "green" "blue" }}
+{{ $mixed := slice 1 "two" 3.0 true }}
+{{ $items := slice .Post1 .Post2 .Post3 }}
+
+{{ range slice "Home" "About" "Contact" }}
+  <a href="/{{ lower . }}">{{ . }}</a>
+{{ end }}
+```
+
 ## Array Access
 
 ### `len`

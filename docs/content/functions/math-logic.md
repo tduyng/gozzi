@@ -72,6 +72,53 @@ Checks inequality.
 {{ end }}
 ```
 
+### `gt`
+
+Tests if the first argument is greater than the second (a > b).
+
+```go
+{{ gt 5 3 }}  // Output: true
+{{ if gt .Count 0 }}
+  <span>{{ .Count }} items</span>
+{{ end }}
+{{ if gt (len .Items) 10 }}
+  <span>Many items</span>
+{{ end }}
+```
+
+### `ge`
+
+Tests if the first argument is greater than or equal to the second (a >= b).
+
+```go
+{{ ge 5 5 }}  // Output: true
+{{ if ge .Score 100 }}
+  <span>Perfect!</span>
+{{ end }}
+```
+
+### `lt`
+
+Tests if the first argument is less than the second (a < b).
+
+```go
+{{ lt 3 5 }}  // Output: true
+{{ if lt .Index 10 }}
+  <span>Top 10</span>
+{{ end }}
+```
+
+### `le`
+
+Tests if the first argument is less than or equal to the second (a <= b).
+
+```go
+{{ le 5 5 }}  // Output: true
+{{ if le .Progress 100 }}
+  <progress value="{{ .Progress }}" max="100"></progress>
+{{ end }}
+```
+
 ### `default`
 
 Returns the second argument if non-empty, otherwise the first.
@@ -96,5 +143,27 @@ Returns the second argument if non-empty, otherwise the first.
 ```go
 {{ if and (eq .Type "post") (ne .Status "draft") }}
   <article>{{ .Content }}</article>
+{{ end }}
+```
+
+### Range Checking
+
+```go
+{{ if and (ge .Score 80) (le .Score 100) }}
+  <span class="grade-a">A Grade</span>
+{{ else if and (ge .Score 60) (lt .Score 80) }}
+  <span class="grade-b">B Grade</span>
+{{ end }}
+```
+
+### Limiting Content
+
+```go
+{{ $maxItems := 10 }}
+{{ if gt (len .Items) $maxItems }}
+  <p>Showing first {{ $maxItems }} of {{ len .Items }} items</p>
+{{ end }}
+{{ range limit $maxItems .Items }}
+  <li>{{ .Title }}</li>
 {{ end }}
 ```

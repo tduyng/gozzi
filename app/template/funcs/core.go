@@ -208,6 +208,13 @@ func Contains(haystack, needle any) (bool, error) {
 	}
 }
 
+// In is an alias for Contains with reversed argument order for more readable syntax.
+// Usage: {{ if in "golang" .Tags }}...{{ end }}
+// This is equivalent to: {{ if contains .Tags "golang" }}...{{ end }}
+func In(needle, haystack any) (bool, error) {
+	return Contains(haystack, needle)
+}
+
 func Default(val any, def string) string {
 	if val == nil {
 		return def

@@ -267,6 +267,44 @@ func TestContains(t *testing.T) {
 	}
 }
 
+func TestIn(t *testing.T) {
+	tests := []struct {
+		name     string
+		needle   any
+		haystack any
+		want     bool
+		wantErr  bool
+	}{
+		// Same test cases as Contains but with reversed arguments
+		{"string contains", "world", "hello world", true, false},
+		{"string not contains", "test", "hello world", false, false},
+		{"any slice contains", 2, []any{1, 2, 3}, true, false},
+		{"any slice not contains", 5, []any{1, 2, 3}, false, false},
+		{"int slice contains", 20, []int{10, 20, 30}, true, false},
+		{"int slice not contains", 15, []int{10, 20, 30}, false, false},
+		{"nil haystack", "test", nil, false, true},
+		{"invalid haystack type", "test", 123, false, true},
+		{"empty string", "test", "", false, false},
+		{"empty slice", "test", []any{}, false, false},
+		// Additional tests for common use cases
+		{"tag in tags slice", "golang", []any{"go", "golang", "programming"}, true, false},
+		{"tag not in tags", "rust", []any{"go", "golang", "programming"}, false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := In(tt.needle, tt.haystack)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("In() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("In() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 // String operations
 
 func TestDefault(t *testing.T) {

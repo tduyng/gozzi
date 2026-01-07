@@ -90,6 +90,35 @@ Filters by field value.
 {{ end }}
 ```
 
+### `in`
+
+Checks if a value exists in a collection. This is an alias for `contains` with reversed argument order for more readable syntax (Hugo-compatible).
+
+```go
+<!-- Check if tag is in tags array -->
+{{ if in "golang" .Page.Config.tags }}
+  <span class="tag">golang</span>
+{{ end }}
+
+<!-- Check if string contains substring -->
+{{ if in "world" "hello world" }}
+  Found!
+{{ end }}
+
+<!-- Common use case: conditional rendering based on tags -->
+{{ range .Posts }}
+  {{ if in "featured" .Config.tags }}
+    <div class="featured-post">{{ .Title }}</div>
+  {{ end }}
+{{ end }}
+```
+
+**Comparison with `contains`:**
+- `{{ in "needle" .haystack }}` - More readable, natural order
+- `{{ contains .haystack "needle" }}` - Original function
+
+Both work identically, use whichever feels more natural.
+
 ## Sorting
 
 ### `sort_by`

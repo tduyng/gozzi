@@ -116,6 +116,7 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("len", FuncDef{Fn: funcs.Len, Description: "Get length of slice, array, map, or string"})
 	r.MustRegister("slice", FuncDef{Fn: funcs.Slice, Description: "Create a slice from arguments"})
 	r.MustRegister("contains", FuncDef{Fn: funcs.Contains, Description: "Check if collection contains value"})
+	r.MustRegister("in", FuncDef{Fn: funcs.In, Description: "Check if value is in collection (alias for contains with reversed args)"})
 	r.MustRegister("reverse", FuncDef{Fn: funcs.Reverse, Description: "Reverse a slice of nodes"})
 	r.MustRegister("concat", FuncDef{Fn: funcs.Concat, Description: "Merge multiple slices into one"})
 	r.MustRegister("sort_by", FuncDef{Fn: funcs.SortBy, Description: "Sort nodes by field"})

@@ -178,17 +178,23 @@ func TestCreateDefaultRegistry(t *testing.T) {
 
 	// Check that all expected functions are registered
 	expectedFuncs := []string{
-		// Core
+		// Core arithmetic & logic
 		"add", "sub", "eq", "ne", "and", "or",
+		// Comparison operators (new)
+		"gt", "ge", "lt", "le",
+		// Conditional (new)
+		"cond",
 		// Collections
-		"first", "last", "contains", "reverse", "concat", "sort_by", "limit", "where", "group_by", "related_posts",
+		"first", "last", "len", "slice", "contains", "in", "reverse", "concat", "sort_by", "limit", "where", "group_by", "related_posts",
+		// Set operations (new)
+		"uniq", "intersect", "union",
 		// Strings
 		"lower", "upper", "trim", "replace", "split", "join",
 		"has_prefix", "has_suffix", "starts_with", "ends_with", "urlize", "default", "priority", "pluralize",
 		// Date
 		"date", "to_date", "now",
 		// Data
-		"dict", "safe", "load", "load_attribute",
+		"dict", "merge", "safe", "load", "load_attribute",
 		// Site-specific
 		"asset", "get_section", "markdown", "i18n",
 		// I18n URL generation

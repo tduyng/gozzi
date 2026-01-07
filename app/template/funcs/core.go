@@ -257,3 +257,18 @@ func Pluralize(singular string, count any) (string, error) {
 	}
 	return singular + "s", nil
 }
+
+// Len returns the length of a slice, array, map, or string
+func Len(v any) (int, error) {
+	if v == nil {
+		return 0, fmt.Errorf("len: cannot get length of nil")
+	}
+
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Slice, reflect.Array, reflect.Map, reflect.String:
+		return rv.Len(), nil
+	default:
+		return 0, fmt.Errorf("len: argument must be slice, array, map, or string, got %T", v)
+	}
+}

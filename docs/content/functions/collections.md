@@ -8,6 +8,18 @@ Functions for filtering, sorting, and manipulating arrays.
 
 ## Array Access
 
+### `len`
+
+Returns the length of a slice, array, map, or string.
+
+```go
+{{ len .Items }}  // Output: number of items
+{{ if gt (len .Posts) 0 }}
+  <p>{{ len .Posts }} posts available</p>
+{{ end }}
+{{ len "hello" }}  // Output: 5
+```
+
 ### `first`
 
 Takes first N elements.

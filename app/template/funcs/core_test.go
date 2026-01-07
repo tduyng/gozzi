@@ -465,3 +465,36 @@ func TestLe(t *testing.T) {
 		})
 	}
 }
+
+func TestLen(t *testing.T) {
+	tests := []struct {
+		name    string
+		v       any
+		want    int
+		wantErr bool
+	}{
+		{"slice", []int{1, 2, 3}, 3, false},
+		{"empty slice", []int{}, 0, false},
+		{"array", [3]int{1, 2, 3}, 3, false},
+		{"string", "hello", 5, false},
+		{"empty string", "", 0, false},
+		{"map", map[string]int{"a": 1, "b": 2}, 2, false},
+		{"empty map", map[string]int{}, 0, false},
+		{"nil", nil, 0, true},
+		{"int: invalid", 42, 0, true},
+		{"struct: invalid", struct{}{}, 0, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Len(tt.v)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Len() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("Len() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

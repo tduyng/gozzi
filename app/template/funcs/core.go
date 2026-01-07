@@ -51,6 +51,62 @@ func Ne(a, b any) bool {
 	return !Eq(a, b)
 }
 
+// Gt returns true if a > b
+func Gt(a, b any) (bool, error) {
+	return compare(a, b, func(cmp int) bool { return cmp > 0 })
+}
+
+// Ge returns true if a >= b
+func Ge(a, b any) (bool, error) {
+	return compare(a, b, func(cmp int) bool { return cmp >= 0 })
+}
+
+// Lt returns true if a < b
+func Lt(a, b any) (bool, error) {
+	return compare(a, b, func(cmp int) bool { return cmp < 0 })
+}
+
+// Le returns true if a <= b
+func Le(a, b any) (bool, error) {
+	return compare(a, b, func(cmp int) bool { return cmp <= 0 })
+}
+
+func compare(a, b any, op func(int) bool) (bool, error) {
+	aVal, aOk := toNumber(a)
+	bVal, bOk := toNumber(b)
+
+	if !aOk {
+		return false, fmt.Errorf("cannot compare: first argument is not a number (%T)", a)
+	}
+	if !bOk {
+		return false, fmt.Errorf("cannot compare: second argument is not a number (%T)", b)
+	}
+
+	if aVal < bVal {
+		return op(-1), nil
+	} else if aVal > bVal {
+		return op(1), nil
+	}
+	return op(0), nil
+}
+
+func toNumber(v any) (float64, bool) {
+	switch val := v.(type) {
+	case int:
+		return float64(val), true
+	case int64:
+		return float64(val), true
+	case int32:
+		return float64(val), true
+	case float64:
+		return val, true
+	case float32:
+		return float64(val), true
+	default:
+		return 0, false
+	}
+}
+
 func And(values ...any) bool {
 	for _, v := range values {
 		if !isTruthy(v) {

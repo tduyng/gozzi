@@ -103,6 +103,10 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("sub", FuncDef{Fn: funcs.Sub, Description: "Subtract b from a"})
 	r.MustRegister("eq", FuncDef{Fn: funcs.Eq, Description: "Test equality"})
 	r.MustRegister("ne", FuncDef{Fn: funcs.Ne, Description: "Test inequality"})
+	r.MustRegister("gt", FuncDef{Fn: funcs.Gt, Description: "Test greater than (a > b)"})
+	r.MustRegister("ge", FuncDef{Fn: funcs.Ge, Description: "Test greater or equal (a >= b)"})
+	r.MustRegister("lt", FuncDef{Fn: funcs.Lt, Description: "Test less than (a < b)"})
+	r.MustRegister("le", FuncDef{Fn: funcs.Le, Description: "Test less or equal (a <= b)"})
 	r.MustRegister("and", FuncDef{Fn: funcs.And, Description: "Logical AND"})
 	r.MustRegister("or", FuncDef{Fn: funcs.Or, Description: "Logical OR"})
 

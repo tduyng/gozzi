@@ -347,3 +347,121 @@ func TestPluralize(t *testing.T) {
 		})
 	}
 }
+
+func TestGt(t *testing.T) {
+	tests := []struct {
+		name    string
+		a       any
+		b       any
+		want    bool
+		wantErr bool
+	}{
+		{"int: 5 > 3", 5, 3, true, false},
+		{"int: 3 > 5", 3, 5, false, false},
+		{"int: 5 > 5", 5, 5, false, false},
+		{"float: 5.5 > 3.3", 5.5, 3.3, true, false},
+		{"mixed: 5 > 3.3", 5, 3.3, true, false},
+		{"mixed: 3.3 > 5", 3.3, 5, false, false},
+		{"int64: 100 > 50", int64(100), int64(50), true, false},
+		{"string: invalid", "a", "b", false, true},
+		{"nil: invalid", nil, 5, false, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Gt(tt.a, tt.b)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Gt() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("Gt() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGe(t *testing.T) {
+	tests := []struct {
+		name    string
+		a       any
+		b       any
+		want    bool
+		wantErr bool
+	}{
+		{"int: 5 >= 3", 5, 3, true, false},
+		{"int: 3 >= 5", 3, 5, false, false},
+		{"int: 5 >= 5", 5, 5, true, false},
+		{"float: 5.5 >= 5.5", 5.5, 5.5, true, false},
+		{"mixed: 5 >= 5.0", 5, 5.0, true, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Ge(tt.a, tt.b)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Ge() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("Ge() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLt(t *testing.T) {
+	tests := []struct {
+		name    string
+		a       any
+		b       any
+		want    bool
+		wantErr bool
+	}{
+		{"int: 3 < 5", 3, 5, true, false},
+		{"int: 5 < 3", 5, 3, false, false},
+		{"int: 5 < 5", 5, 5, false, false},
+		{"float: 3.3 < 5.5", 3.3, 5.5, true, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Lt(tt.a, tt.b)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Lt() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("Lt() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLe(t *testing.T) {
+	tests := []struct {
+		name    string
+		a       any
+		b       any
+		want    bool
+		wantErr bool
+	}{
+		{"int: 3 <= 5", 3, 5, true, false},
+		{"int: 5 <= 3", 5, 3, false, false},
+		{"int: 5 <= 5", 5, 5, true, false},
+		{"float: 3.3 <= 3.3", 3.3, 3.3, true, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Le(tt.a, tt.b)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Le() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("Le() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

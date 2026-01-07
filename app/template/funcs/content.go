@@ -202,17 +202,27 @@ func RelatedPosts(pageData any, allPosts []*content.Node) []*content.Node {
 	case *content.Node:
 		page = v
 	case map[string]any:
-		// Create a pseudo-node from template data
+		// Extract Config FIRST, before creating the node
+		// This is critical because template context has structure:
+		// { "Config": {...}, "Permalink": "...", "Series": ... }
+		var config map[string]any
+		var permalink string
+
+		if cfg, ok := v["Config"].(map[string]any); ok {
+			// Nested Config field exists (template context)
+			config = cfg
+		} else {
+			// Fallback: treat entire map as config (legacy/direct usage)
+			config = v
+		}
+
+		if pl, ok := v["Permalink"].(string); ok {
+			permalink = pl
+		}
+
 		page = &content.Node{
-			Config: v,
-		}
-		// Extract nested config if it exists
-		if config, ok := v["Config"].(map[string]any); ok {
-			page.Config = config
-		}
-		// Extract permalink
-		if permalink, ok := v["Permalink"].(string); ok {
-			page.Permalink = permalink
+			Config:    config,
+			Permalink: permalink,
 		}
 	default:
 		return []*content.Node{} // Unsupported type

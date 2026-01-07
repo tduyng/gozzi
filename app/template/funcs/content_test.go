@@ -680,3 +680,110 @@ func TestRelatedPosts_EmptyInput(t *testing.T) {
 		t.Errorf("Expected no related posts with empty posts list, got %d", len(related))
 	}
 }
+
+// TestRelatedPosts_WithTemplateContext tests the critical bug fix where
+// template context (map[string]any with nested Config field) wasn't
+// being parsed correctly, causing tag extraction to fail.
+func TestRelatedPosts_WithTemplateContext(t *testing.T) {
+	now := time.Now()
+
+	// Simulate template context structure as passed from templates
+	// Structure: { "Config": {...}, "Permalink": "...", "Series": ... }
+	templateContext := map[string]any{
+		"Config": map[string]any{
+			"title": "Test Post",
+			"tags":  []any{"blog", "go"}, // tags as []any (TOML parsing result)
+			"date":  now,
+		},
+		"Permalink": "/blog/test-post/",
+	}
+
+	allPosts := []*content.Node{
+		{
+			Permalink: "/blog/post-1/",
+			Config: map[string]any{
+				"title": "Post 1",
+				"tags":  []string{"blog", "tutorial"},
+				"date":  now.AddDate(0, 0, -5),
+			},
+		},
+		{
+			Permalink: "/blog/post-2/",
+			Config: map[string]any{
+				"title": "Post 2",
+				"tags":  []string{"go", "programming"},
+				"date":  now.AddDate(0, 0, -3),
+			},
+		},
+		{
+			Permalink: "/blog/post-3/",
+			Config: map[string]any{
+				"title": "Post 3",
+				"tags":  []string{"python"},
+				"date":  now.AddDate(0, 0, -1),
+			},
+		},
+	}
+
+	// This should extract tags correctly from nested Config
+	related := RelatedPosts(templateContext, allPosts)
+
+	// Should find related posts (post-1 matches "blog", post-2 matches "go")
+	if len(related) == 0 {
+		t.Fatal("Expected to find related posts from template context, got none")
+	}
+
+	// Verify we got posts with matching tags
+	foundBlogMatch := false
+	foundGoMatch := false
+	for _, r := range related {
+		if r.Permalink == "/blog/post-1/" {
+			foundBlogMatch = true
+		}
+		if r.Permalink == "/blog/post-2/" {
+			foundGoMatch = true
+		}
+		// Should not include post-3 (no tag overlap)
+		if r.Permalink == "/blog/post-3/" {
+			t.Error("Should not include post-3 (no tag overlap with 'blog' or 'go')")
+		}
+	}
+
+	if !foundBlogMatch {
+		t.Error("Expected to find post-1 (matches 'blog' tag)")
+	}
+	if !foundGoMatch {
+		t.Error("Expected to find post-2 (matches 'go' tag)")
+	}
+}
+
+// TestRelatedPosts_WithLegacyDirectConfig tests backwards compatibility
+// when Config is passed directly (not nested in template context)
+func TestRelatedPosts_WithLegacyDirectConfig(t *testing.T) {
+	now := time.Now()
+
+	// Legacy usage: passing config directly (no "Config" wrapper)
+	directConfig := map[string]any{
+		"title":     "Test Post",
+		"tags":      []string{"go", "testing"},
+		"date":      now,
+		"Permalink": "/blog/legacy-post/",
+	}
+
+	allPosts := []*content.Node{
+		{
+			Permalink: "/blog/related/",
+			Config: map[string]any{
+				"tags": []string{"go"},
+				"date": now.AddDate(0, 0, -1),
+			},
+		},
+	}
+
+	// Should still work with legacy direct config
+	related := RelatedPosts(directConfig, allPosts)
+
+	if len(related) == 0 {
+		t.Error("Expected to find related posts with legacy direct config")
+	}
+}

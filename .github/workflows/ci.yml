@@ -90,7 +90,7 @@ jobs:
           # that are challenging to make cross-platform. Unit tests provide
           # adequate coverage of core logic, and binaries are tested via builds.
           echo "Running unit tests on Windows (integration tests skipped)..."
-          go test -v -race -short ./app/...
+          go test -v -race $(go list ./... | grep -v '/integration')
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.25'

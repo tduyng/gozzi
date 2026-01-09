@@ -321,7 +321,12 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 		}
 	}
 
-	return b.copyStaticAssets()
+	// NOTE: Static file copying is handled by the watcher in serve mode.
+	// The watcher explicitly copies individual changed static files before calling
+	// incrementalGenerate (see watcher.go lines 247-254).
+	// Full rebuilds (via fullGenerate) still copy all static files.
+	// This avoids redundant copying of potentially thousands of static files.
+	return nil
 }
 
 // SnapshotTaxonomyValues captures current taxonomy values for changed files.

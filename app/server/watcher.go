@@ -253,7 +253,7 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 			}
 		}
 
-		// Generate - use incremental build (which also copies ALL static at the end)
+		// Generate - use incremental build
 		genStart := time.Now()
 		err := s.gen.GenerateWithOptions(s.parser.ContentMap["."], builder.GenerateOptions{
 			Incremental:       true,

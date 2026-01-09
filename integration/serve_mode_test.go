@@ -979,7 +979,9 @@ Updated content with static file.`
 		}
 
 		// Copy static file (as watcher does)
-		if err := gen.CopyStaticFile(staticPath); err != nil {
+		// Since buildSite calls os.Chdir(sitePath), we can use relative paths
+		relStaticPath := "static/css/test.css"
+		if err := gen.CopyStaticFile(relStaticPath); err != nil {
 			t.Fatalf("static copy failed: %v", err)
 		}
 

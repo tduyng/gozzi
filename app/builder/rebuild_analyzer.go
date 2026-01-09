@@ -222,6 +222,9 @@ func urlize(s string) string {
 // findNode finds a content node by file path
 func (ra *RebuildAnalyzer) findNode(relPath string) *content.Node {
 	dir := filepath.Dir(relPath)
+	// Normalize to forward slashes for ContentMap lookup (Windows compatibility)
+	dir = filepath.ToSlash(dir)
+
 	if dir == "." {
 		dir = ""
 	}
@@ -237,7 +240,7 @@ func (ra *RebuildAnalyzer) findNode(relPath string) *content.Node {
 	}
 
 	if filepath.Base(relPath) == "index.md" {
-		parentDir := filepath.Dir(dir)
+		parentDir := filepath.ToSlash(filepath.Dir(dir))
 		if parentDir == "." {
 			parentDir = ""
 		}
@@ -271,7 +274,7 @@ func (ra *RebuildAnalyzer) findNode(relPath string) *content.Node {
 	}
 
 	baseSlug := strings.TrimSuffix(filepath.Base(relPath), ".md")
-	fullSlug := strings.TrimSuffix(relPath, ".md")
+	fullSlug := strings.TrimSuffix(filepath.ToSlash(relPath), ".md")
 
 	for _, child := range parentNode.Children {
 		if child.Slug == baseSlug || child.Slug == fullSlug {

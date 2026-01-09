@@ -7,14 +7,15 @@ import (
 )
 
 func TestNewI18n(t *testing.T) {
-	i18n := NewI18n("en", "/tmp/data")
+	tempDataDir := filepath.Join(os.TempDir(), "data")
+	i18n := NewI18n("en", tempDataDir)
 
 	if i18n.DefaultLang != "en" {
 		t.Errorf("expected default lang 'en', got %s", i18n.DefaultLang)
 	}
 
-	if i18n.dataDir != "/tmp/data" {
-		t.Errorf("expected dataDir '/tmp/data', got %s", i18n.dataDir)
+	if i18n.dataDir != tempDataDir {
+		t.Errorf("expected dataDir %q, got %s", tempDataDir, i18n.dataDir)
 	}
 
 	if len(i18n.Languages) != 0 {
@@ -23,7 +24,8 @@ func TestNewI18n(t *testing.T) {
 }
 
 func TestNewI18n_EmptyDefaultLang(t *testing.T) {
-	i18n := NewI18n("", "/tmp/data")
+	tempDataDir := filepath.Join(os.TempDir(), "data")
+	i18n := NewI18n("", tempDataDir)
 
 	if i18n.DefaultLang != "en" {
 		t.Errorf("expected default lang to fall back to 'en', got %s", i18n.DefaultLang)

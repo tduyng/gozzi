@@ -18,6 +18,10 @@ import (
 )
 
 func TestNewDevServer(t *testing.T) {
+	// Use platform-independent temp paths
+	tempConfigPath := filepath.Join(os.TempDir(), "config.toml")
+	tempContentDir := filepath.Join(os.TempDir(), "content")
+
 	tests := []struct {
 		name       string
 		configPath string
@@ -26,13 +30,13 @@ func TestNewDevServer(t *testing.T) {
 	}{
 		{
 			name:       "creates dev server successfully",
-			configPath: "/tmp/config.toml",
-			contentDir: "/tmp/content",
+			configPath: tempConfigPath,
+			contentDir: tempContentDir,
 			validate: func(t *testing.T, server *DevServer, err error) {
 				require.NoError(t, err)
 				assert.NotNil(t, server)
-				assert.Equal(t, "/tmp/config.toml", server.configPath)
-				assert.Equal(t, "/tmp/content", server.contentDir)
+				assert.Equal(t, tempConfigPath, server.configPath)
+				assert.Equal(t, tempContentDir, server.contentDir)
 				assert.NotNil(t, server.watcher)
 				assert.NotNil(t, server.clients)
 				assert.Empty(t, server.clients)
@@ -333,7 +337,7 @@ func createTestSite(_ *testing.T) *config.Site {
 	return &config.Site{
 		Title:     "Test Site",
 		BaseURL:   "http://localhost",
-		OutputDir: "/tmp/output",
+		OutputDir: filepath.Join(os.TempDir(), "output"),
 	}
 }
 

@@ -170,23 +170,27 @@ ci-build-cross-act:
     @echo "Running cross-platform build with act..."
     @act -j build-cross-platform --rm {{ _act_flags }}
 
-# Run all tests natively (same as CI - RECOMMENDED)
+# Run all tests natively on current platform (Linux/macOS)
+# NOTE: This only tests YOUR platform, not all 3 (Linux/macOS/Windows) like GitHub Actions
 [group('ci')]
 ci-test:
-    @echo "🧪 Running all tests natively (same as CI)..."
+    @echo "🧪 Running all tests on current platform ($(uname -s))..."
+    @echo "⚠️  Note: This only tests $(uname -s), not Linux/macOS/Windows like real CI"
     @echo ""
     @TZ=UTC go test -v -race ./...
     @echo ""
-    @echo "✅ All tests passed!"
+    @echo "✅ All tests passed on $(uname -s)!"
 
-# Run unit tests only (mimics Windows CI behavior - RECOMMENDED)
+# Run unit tests only (same command as Windows CI, but runs on current platform)
+# NOTE: Runs same COMMAND as Windows CI, but on YOUR OS (can't catch Windows-specific issues)
 [group('ci')]
 ci-test-unit:
-    @echo "🧪 Running unit tests (integration tests skipped, same as Windows CI)..."
+    @echo "🧪 Running unit tests (integration skipped) on $(uname -s)..."
+    @echo "⚠️  Same command as Windows CI, but running on $(uname -s) - may not catch Windows-specific issues"
     @echo ""
     @TZ=UTC go test -v -race $(go list ./... | grep -v '/integration')
     @echo ""
-    @echo "✅ All unit tests passed!"
+    @echo "✅ All unit tests passed on $(uname -s)!"
 
 # Dry run CI (show what would run without executing)
 [group('ci')]
@@ -200,12 +204,14 @@ ci-debug:
     @echo "Running CI with debug output..."
     @act --verbose --rm {{ _act_flags }}
 
-# Run full CI checks natively (lint + security + test - RECOMMENDED)
+# Run full CI checks natively on current platform (lint + security + test)
+# NOTE: Only tests YOUR platform - real CI tests Linux + macOS + Windows
 [group('ci')]
 ci-all:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🚀 Running full CI pipeline natively..."
+    echo "🚀 Running CI checks on current platform ($(uname -s))..."
+    echo "⚠️  Real CI tests 3 platforms (Linux/macOS/Windows) - this only tests $(uname -s)"
     echo ""
     just ci-lint
     echo ""
@@ -213,7 +219,8 @@ ci-all:
     echo ""
     just ci-test
     echo ""
-    echo "🎉 All CI checks passed!"
+    echo "🎉 All CI checks passed on $(uname -s)!"
+    echo "ℹ️  Push to GitHub to test on all platforms (Linux/macOS/Windows)"
 
 # ==================================================================================== #
 # DEVELOPMENT

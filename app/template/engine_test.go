@@ -185,7 +185,7 @@ func TestCreateDefaultRegistry(t *testing.T) {
 		// Conditional (new)
 		"cond",
 		// Collections
-		"first", "last", "len", "slice", "contains", "in", "reverse", "concat", "sort_by", "limit", "where", "group_by", "related_posts",
+		"first", "last", "len", "slice", "contains", "in", "reverse", "concat", "sort_by", "limit", "where", "group_by", "related_posts", "append",
 		// Set operations (new)
 		"uniq", "intersect", "union",
 		// Strings

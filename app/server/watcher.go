@@ -161,22 +161,8 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 		}
 	}
 
-	// Handle static file changes
-	if len(staticFiles) > 0 && !hasConfigChange && len(contentFiles) == 0 && len(templateFiles) == 0 {
-		// Only static files changed - copy them and notify clients
-		for _, staticFile := range staticFiles {
-			if err := s.gen.CopyStaticFile(staticFile); err != nil {
-				log.Printf("Error copying static file %s: %v", staticFile, err)
-			}
-		}
-		s.notifyClients()
-		log.Printf("Static files updated in %dms", time.Since(start).Milliseconds())
-		return
-	}
-
-	// If we have other changes along with static files, they'll be handled by the full/incremental build below
-
 	// Handle config changes (requires full rebuild)
+	// Config changes take priority and trigger full rebuild which handles everything
 	if hasConfigChange {
 		log.Println("Config changed - performing full rebuild")
 		if err := s.reloadConfig(); err != nil {
@@ -193,14 +179,41 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 	}
 
 	// Handle template changes
+	// Templates require full rebuild which handles static files too
 	if len(templateFiles) > 0 {
 		log.Printf("Templates changed: %v", templateFiles)
 		if err := s.gen.ReloadTemplates(); err != nil {
 			log.Printf("Template reload error: %v", err)
-		} else {
-			count := s.gen.InvalidateTemplateCache(templateFiles)
-			log.Printf("Invalidated %d cached renders", count)
+			return
 		}
+		count := s.gen.InvalidateTemplateCache(templateFiles)
+		log.Printf("Invalidated %d cached renders", count)
+
+		// Template changes always trigger full rebuild (whether or not there are content changes)
+		log.Println("Template change - performing full rebuild")
+		genStart := time.Now()
+		if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
+			log.Printf("Generate error: %v", err)
+			return
+		}
+		log.Printf("Generate took %dms", time.Since(genStart).Milliseconds())
+		s.notifyClients()
+		log.Printf("Rebuild completed in %dms", time.Since(start).Milliseconds())
+		return
+	}
+
+	// Handle static-only changes
+	// If only static files changed with no content/template/config changes, just copy them
+	if len(staticFiles) > 0 && len(contentFiles) == 0 {
+		log.Printf("Static-only changes: %d files", len(staticFiles))
+		for _, staticFile := range staticFiles {
+			if err := s.gen.CopyStaticFile(staticFile); err != nil {
+				log.Printf("Error copying static file %s: %v", staticFile, err)
+			}
+		}
+		s.notifyClients()
+		log.Printf("Static files updated in %dms", time.Since(start).Milliseconds())
+		return
 	}
 
 	// Handle content changes
@@ -221,22 +234,24 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 		}
 		log.Printf("Parse took %dms", time.Since(parseStart).Milliseconds())
 
-		// Generate - use incremental build when possible
-		genStart := time.Now()
-		var err error
-
-		if len(templateFiles) == 0 {
-			// Pure content change - use incremental build
-			err = s.gen.GenerateWithOptions(s.parser.ContentMap["."], builder.GenerateOptions{
-				Incremental:       true,
-				ChangedFiles:      contentFiles,
-				ContentDir:        s.contentDir,
-				OldTaxonomyValues: oldTaxonomies,
-			})
-		} else {
-			// Template changed - do full rebuild
-			err = s.gen.Generate(s.parser.ContentMap["."])
+		// Copy any changed static files before generating content
+		if len(staticFiles) > 0 {
+			log.Printf("Also copying %d static files", len(staticFiles))
+			for _, staticFile := range staticFiles {
+				if err := s.gen.CopyStaticFile(staticFile); err != nil {
+					log.Printf("Error copying static file %s: %v", staticFile, err)
+				}
+			}
 		}
+
+		// Generate - use incremental build (which also copies ALL static at the end)
+		genStart := time.Now()
+		err := s.gen.GenerateWithOptions(s.parser.ContentMap["."], builder.GenerateOptions{
+			Incremental:       true,
+			ChangedFiles:      contentFiles,
+			ContentDir:        s.contentDir,
+			OldTaxonomyValues: oldTaxonomies,
+		})
 
 		if err != nil {
 			log.Printf("Generate error: %v", err)

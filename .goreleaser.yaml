@@ -12,8 +12,14 @@ builds:
     goos:
       - linux
       - darwin
+      - windows
     goarch:
+      - amd64
       - arm64
+    ignore:
+      # Windows ARM64 support is limited, you can exclude it if needed
+      # - goos: windows
+      #   goarch: arm64
 
 archives:
   - formats: [tar.gz]

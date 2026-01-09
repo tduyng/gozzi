@@ -119,7 +119,7 @@ func GenerateSlug(path string, parent *Node) string {
 	slug = strings.Trim(slug, "-")
 
 	if parent != nil && parent.Slug != "" {
-		return filepath.Join(parent.Slug, slug)
+		return filepath.ToSlash(filepath.Join(parent.Slug, slug))
 	}
 
 	return slug

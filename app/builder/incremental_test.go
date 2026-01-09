@@ -38,6 +38,9 @@ func captureOutput(outputDir string) (*outputState, error) {
 			return err
 		}
 
+		// Normalize to forward slashes for cross-platform consistency
+		relPath = filepath.ToSlash(relPath)
+
 		// Read and hash file content
 		content, err := os.ReadFile(path)
 		if err != nil {

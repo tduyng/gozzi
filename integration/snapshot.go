@@ -121,17 +121,22 @@ func (sm *SnapshotMatcher) captureSnapshot(sitePath string, filesToCheck []strin
 	publicDir := filepath.Join(sitePath, "public")
 
 	for _, relPath := range filesToCheck {
+		// Normalize path to use forward slashes for cross-platform snapshots
+		normalizedPath := filepath.ToSlash(relPath)
+
 		fullPath := filepath.Join(publicDir, relPath)
 		content, err := os.ReadFile(fullPath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				// File doesn't exist - record as empty
-				snapshot.Files[relPath] = ""
+				snapshot.Files[normalizedPath] = ""
 			} else {
 				sm.t.Fatalf("failed to read file %s: %v", relPath, err)
 			}
 		} else {
-			snapshot.Files[relPath] = string(content)
+			// Normalize line endings to LF for cross-platform consistency
+			normalizedContent := strings.ReplaceAll(string(content), "\r\n", "\n")
+			snapshot.Files[normalizedPath] = normalizedContent
 		}
 	}
 

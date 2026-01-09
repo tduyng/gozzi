@@ -201,5 +201,5 @@ func (p *ContentParser) resolveImgURL(fm *config.FrontMatter, slug string) strin
 		return baseURL + img
 	}
 
-	return baseURL + filepath.Join("/", slug, img)
+	return baseURL + filepath.ToSlash(filepath.Join("/", slug, img))
 }

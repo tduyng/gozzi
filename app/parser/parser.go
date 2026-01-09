@@ -140,6 +140,8 @@ func (p *ContentParser) parseFiles(rootDir string, files []string) error {
 	_ = pool.ProcessFiles(files, func(ctx context.Context, filePath string) error {
 		relPath, _ := filepath.Rel(rootDir, filePath)
 		dir := filepath.Dir(relPath)
+		// Normalize to forward slashes for cross-platform ContentMap keys
+		dir = filepath.ToSlash(dir)
 
 		switch {
 		case filepath.Base(filePath) == "_index.md":

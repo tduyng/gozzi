@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"html/template"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -142,9 +143,10 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 	if dir == "." {
 		sectionSlug = ""
 	} else {
-		parentDir := filepath.Dir(dir)
+		// Use path.Dir/Base to keep forward slashes (dir is already normalized)
+		parentDir := path.Dir(dir)
 		parent = p.GetOrCreateSection(parentDir)
-		baseName := filepath.Base(dir)
+		baseName := path.Base(dir)
 		sectionSlug = content.GenerateSlug(baseName, nil)
 
 		if parent.Slug != "" {

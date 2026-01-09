@@ -101,6 +101,8 @@ func buildSite(t *testing.T, sitePath string) (*builder.Builder, *parser.Content
 func verifyFileExists(t *testing.T, sitePath string, relPath string) {
 	t.Helper()
 
+	// Convert forward slashes to OS-specific separator for cross-platform compatibility
+	relPath = filepath.FromSlash(relPath)
 	fullPath := filepath.Join(sitePath, "public", relPath)
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 		t.Errorf("expected file does not exist: %s", relPath)
@@ -111,6 +113,8 @@ func verifyFileExists(t *testing.T, sitePath string, relPath string) {
 func verifyFileNotExists(t *testing.T, sitePath string, relPath string) {
 	t.Helper()
 
+	// Convert forward slashes to OS-specific separator for cross-platform compatibility
+	relPath = filepath.FromSlash(relPath)
 	fullPath := filepath.Join(sitePath, "public", relPath)
 	if _, err := os.Stat(fullPath); !os.IsNotExist(err) {
 		t.Errorf("file should not exist: %s", relPath)
@@ -121,6 +125,8 @@ func verifyFileNotExists(t *testing.T, sitePath string, relPath string) {
 func verifyFileContent(t *testing.T, sitePath string, relPath string, expectedContent string) {
 	t.Helper()
 
+	// Convert forward slashes to OS-specific separator for cross-platform compatibility
+	relPath = filepath.FromSlash(relPath)
 	fullPath := filepath.Join(sitePath, "public", relPath)
 	content, err := os.ReadFile(fullPath)
 	if err != nil {
@@ -136,6 +142,8 @@ func verifyFileContent(t *testing.T, sitePath string, relPath string, expectedCo
 func verifyFileNotContains(t *testing.T, sitePath string, relPath string, unexpectedContent string) {
 	t.Helper()
 
+	// Convert forward slashes to OS-specific separator for cross-platform compatibility
+	relPath = filepath.FromSlash(relPath)
 	fullPath := filepath.Join(sitePath, "public", relPath)
 	content, err := os.ReadFile(fullPath)
 	if err != nil {
@@ -151,6 +159,8 @@ func verifyFileNotContains(t *testing.T, sitePath string, relPath string, unexpe
 func readFileContent(t *testing.T, sitePath string, relPath string) string {
 	t.Helper()
 
+	// Convert forward slashes to OS-specific separator for cross-platform compatibility
+	relPath = filepath.FromSlash(relPath)
 	fullPath := filepath.Join(sitePath, "public", relPath)
 	content, err := os.ReadFile(fullPath)
 	if err != nil {

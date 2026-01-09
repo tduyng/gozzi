@@ -32,6 +32,197 @@ audit: check-tools
     @test -z "$(gofmt -s -l $(find . -type f -name '*.go' -not -path './vendor/*'))"
 
 # ==================================================================================== #
+# GITHUB ACTIONS (LOCAL)
+# ==================================================================================== #
+
+# Detect architecture and set act flags for Apple Silicon
+_act_flags := if arch() == "aarch64" { "--container-architecture linux/amd64" } else if arch() == "arm64" { "--container-architecture linux/amd64" } else { "" }
+
+# Install act (GitHub Actions local runner)
+[group('ci')]
+install-act:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if command -v act &> /dev/null; then
+        echo "✓ act is already installed ($(act --version))"
+    else
+        echo "Installing act..."
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            brew install act
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+        else
+            echo "Please install act manually: https://github.com/nektos/act#installation"
+            exit 1
+        fi
+        echo "✓ act installed successfully"
+    fi
+
+# Check container runtime status
+[group('ci')]
+ci-check:
+    #!/usr/bin/env bash
+    echo "🔍 Checking container runtime..."
+    if command -v docker >/dev/null 2>&1; then
+        echo "✓ Docker detected"
+        docker ps >/dev/null 2>&1 && echo "✓ Docker is running" || echo "⚠️  Docker is not running - start Docker Desktop"
+    elif command -v podman >/dev/null 2>&1; then
+        echo "✓ Podman detected"
+        podman ps >/dev/null 2>&1 && echo "✓ Podman machine is running" || echo "⚠️  Podman machine not running - run 'podman machine start'"
+    else
+        echo "❌ No container runtime found - install Docker or Podman"
+        exit 1
+    fi
+    echo ""
+    echo "Architecture: $(uname -m)"
+    [ "$(uname -m)" = "arm64" ] && echo "ℹ️  Using --container-architecture linux/amd64 for Apple Silicon"
+
+# List all available GitHub Actions jobs
+[group('ci')]
+ci-list:
+    @act -l {{ _act_flags }}
+
+# Run all CI jobs locally (requires Docker/Podman)
+[group('ci')]
+ci-run-all:
+    @echo "Running all CI jobs locally..."
+    @act --rm {{ _act_flags }}
+
+# Run lint job locally (with act)
+[group('ci')]
+ci-lint-act:
+    @echo "Running lint job with act..."
+    @act -j lint --rm {{ _act_flags }}
+
+# Run lint job natively (without Docker - RECOMMENDED)
+[group('ci')]
+ci-lint:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔍 Running lint checks natively (same as CI)..."
+    echo ""
+    echo "→ Installing golangci-lint if needed..."
+    if ! command -v golangci-lint &> /dev/null; then
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+    fi
+    echo ""
+    echo "→ Running golangci-lint..."
+    golangci-lint run --timeout=5m
+    echo ""
+    echo "→ Checking formatting..."
+    UNFORMATTED=$(gofmt -s -l $(find . -type f -name '*.go' -not -path './vendor/*'))
+    if [ -n "$UNFORMATTED" ]; then
+        echo "❌ The following files are not formatted:"
+        echo "$UNFORMATTED"
+        exit 1
+    fi
+    echo "✓ All files are formatted"
+    echo ""
+    echo "→ Running go vet..."
+    go vet ./...
+    echo ""
+    echo "✅ All lint checks passed!"
+
+# Run test job locally (all platforms) with act
+[group('ci')]
+ci-test-act:
+    @echo "Running test job with act..."
+    @act -j test --rm {{ _act_flags }}
+
+# Run test job for specific OS (ubuntu-latest, macos-latest, windows-latest)
+[group('ci')]
+ci-test-os OS:
+    @echo "Running test job for {{ OS }}..."
+    @act -j test --rm {{ _act_flags }} --matrix os:{{ OS }}
+
+# Run security scan job locally (with act)
+[group('ci')]
+ci-security-act:
+    @echo "Running security scan with act..."
+    @act -j security --rm {{ _act_flags }}
+
+# Run security scan natively (without Docker - RECOMMENDED)
+[group('ci')]
+ci-security:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Running security checks natively (same as CI)..."
+    echo ""
+    echo "→ Installing govulncheck if needed..."
+    if ! command -v govulncheck &> /dev/null; then
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+    fi
+    echo ""
+    echo "→ Running govulncheck..."
+    govulncheck ./...
+    echo ""
+    echo "✅ No vulnerabilities found!"
+
+# Run build job locally (with act)
+[group('ci')]
+ci-build-act:
+    @echo "Running build job with act..."
+    @act -j build --rm {{ _act_flags }}
+
+# Run cross-platform build job locally (with act)
+[group('ci')]
+ci-build-cross-act:
+    @echo "Running cross-platform build with act..."
+    @act -j build-cross-platform --rm {{ _act_flags }}
+
+# Run all tests natively on current platform (Linux/macOS)
+# NOTE: This only tests YOUR platform, not all 3 (Linux/macOS/Windows) like GitHub Actions
+[group('ci')]
+ci-test:
+    @echo "🧪 Running all tests on current platform ($(uname -s))..."
+    @echo "⚠️  Note: This only tests $(uname -s), not Linux/macOS/Windows like real CI"
+    @echo ""
+    @TZ=UTC go test -v -race ./...
+    @echo ""
+    @echo "✅ All tests passed on $(uname -s)!"
+
+# Run unit tests only (same command as Windows CI, but runs on current platform)
+# NOTE: Runs same COMMAND as Windows CI, but on YOUR OS (can't catch Windows-specific issues)
+[group('ci')]
+ci-test-unit:
+    @echo "🧪 Running unit tests (integration skipped) on $(uname -s)..."
+    @echo "⚠️  Same command as Windows CI, but running on $(uname -s) - may not catch Windows-specific issues"
+    @echo ""
+    @TZ=UTC go test -v -race $(go list ./... | grep -v '/integration')
+    @echo ""
+    @echo "✅ All unit tests passed on $(uname -s)!"
+
+# Dry run CI (show what would run without executing)
+[group('ci')]
+ci-dry-run:
+    @echo "Showing CI jobs (dry run)..."
+    @act -n {{ _act_flags }}
+
+# Run CI with debug output
+[group('ci')]
+ci-debug:
+    @echo "Running CI with debug output..."
+    @act --verbose --rm {{ _act_flags }}
+
+# Run full CI checks natively on current platform (lint + security + test)
+# NOTE: Only tests YOUR platform - real CI tests Linux + macOS + Windows
+[group('ci')]
+ci-all:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🚀 Running CI checks on current platform ($(uname -s))..."
+    echo "⚠️  Real CI tests 3 platforms (Linux/macOS/Windows) - this only tests $(uname -s)"
+    echo ""
+    just ci-lint
+    echo ""
+    just ci-security
+    echo ""
+    just ci-test
+    echo ""
+    echo "🎉 All CI checks passed on $(uname -s)!"
+    echo "ℹ️  Push to GitHub to test on all platforms (Linux/macOS/Windows)"
+
+# ==================================================================================== #
 # DEVELOPMENT
 # ==================================================================================== #
 

@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 )
 
@@ -18,12 +18,13 @@ type fileHandler struct {
 }
 
 func (h *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := filepath.Clean(r.URL.Path)
-	if path == "." {
-		path = "/"
+	// Keep URL path as-is (http.Dir expects forward slashes, not OS-specific separators)
+	urlPath := path.Clean(r.URL.Path)
+	if urlPath == "." {
+		urlPath = "/"
 	}
 
-	f, err := h.root.Open(path)
+	f, err := h.root.Open(urlPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			h.serve404(w, r)
@@ -38,7 +39,8 @@ func (h *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	stat, _ := f.Stat()
 
 	if stat.IsDir() {
-		indexPath := filepath.Join(path, "index.html")
+		// Use path.Join for URL paths (always forward slashes, works on Windows)
+		indexPath := path.Join(urlPath, "index.html")
 		indexFile, err := h.root.Open(indexPath)
 		if err != nil {
 			h.serve404(w, r)
@@ -52,7 +54,7 @@ func (h *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	if h.dev && strings.HasSuffix(path, ".html") {
+	if h.dev && strings.HasSuffix(urlPath, ".html") {
 		h.serveHTML(f, w)
 		return
 	}

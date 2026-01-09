@@ -79,18 +79,12 @@ jobs:
           TZ: UTC
         run: go test -v -race ./...
 
-      - name: Run tests (Windows - unit tests only)
+      - name: Run tests (Windows)
         if: matrix.os == 'windows-latest'
         env:
           TZ: UTC
         shell: bash
-        run: |
-          # Windows: Run unit tests only (skip integration tests)
-          # Integration tests have platform-specific filesystem/HTTP behaviors
-          # that are challenging to make cross-platform. Unit tests provide
-          # adequate coverage of core logic, and binaries are tested via builds.
-          echo "Running unit tests on Windows (integration tests skipped)..."
-          go test -v -race $(go list ./... | grep -v '/integration')
+        run: go test -v -race ./...
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.25'

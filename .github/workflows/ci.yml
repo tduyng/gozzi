@@ -2,9 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main, dev]
   pull_request:
-    branches: [main, dev]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -50,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         go-version: ['1.25']
     steps:
       - name: Checkout code
@@ -74,11 +73,24 @@ jobs:
           TZ: UTC
         run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
-      - name: Run tests
-        if: matrix.os != 'ubuntu-latest'
+      - name: Run tests (macOS)
+        if: matrix.os == 'macos-latest'
         env:
           TZ: UTC
         run: go test -v -race ./...
+
+      - name: Run tests (Windows - unit tests only)
+        if: matrix.os == 'windows-latest'
+        env:
+          TZ: UTC
+        shell: bash
+        run: |
+          # Windows: Run unit tests only (skip integration tests)
+          # Integration tests have platform-specific filesystem/HTTP behaviors
+          # that are challenging to make cross-platform. Unit tests provide
+          # adequate coverage of core logic, and binaries are tested via builds.
+          echo "Running unit tests on Windows (integration tests skipped)..."
+          go test -v -race -short ./app/...
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.25'
@@ -148,9 +160,19 @@ jobs:
       matrix:
         include:
           - goos: linux
+            goarch: amd64
+          - goos: linux
             goarch: arm64
           - goos: darwin
+            goarch: amd64
+          - goos: darwin
             goarch: arm64
+          - goos: windows
+            goarch: amd64
+            ext: .exe
+          - goos: windows
+            goarch: arm64
+            ext: .exe
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -163,11 +185,12 @@ jobs:
 
       - name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
         env:
+          CGO_ENABLED: 0
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: |
           echo "Building for $GOOS/$GOARCH..."
-          go build -o gozzi-${{ matrix.goos }}-${{ matrix.goarch }} .
+          go build -o gozzi-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} .
           echo "✓ Build successful for $GOOS/$GOARCH"
 
   status-check:

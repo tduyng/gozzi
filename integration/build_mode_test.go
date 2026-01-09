@@ -3,6 +3,7 @@ package integration
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -92,7 +93,11 @@ func TestBuildMode_FreshBuild(t *testing.T) {
 		duration := time.Since(start)
 
 		// Full build of test site should be very fast
+		// Windows has slower filesystem operations, so allow more time
 		maxDuration := 2 * time.Second
+		if runtime.GOOS == "windows" {
+			maxDuration = 5 * time.Second
+		}
 		if duration > maxDuration {
 			t.Errorf("build took too long: %v (max: %v)", duration, maxDuration)
 		}

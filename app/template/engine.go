@@ -122,6 +122,7 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("uniq", FuncDef{Fn: funcs.Uniq, Description: "Remove duplicate elements from slice"})
 	r.MustRegister("intersect", FuncDef{Fn: funcs.Intersect, Description: "Get elements common to both slices"})
 	r.MustRegister("union", FuncDef{Fn: funcs.Union, Description: "Get all unique elements from both slices"})
+	r.MustRegister("append", FuncDef{Fn: funcs.Append, Description: "Append element to slice"})
 	r.MustRegister("reverse", FuncDef{Fn: funcs.Reverse, Description: "Reverse a slice of nodes"})
 	r.MustRegister("concat", FuncDef{Fn: funcs.Concat, Description: "Merge multiple slices into one"})
 	r.MustRegister("sort_by", FuncDef{Fn: funcs.SortBy, Description: "Sort nodes by field"})

@@ -386,3 +386,8 @@ func Union(a, b []any) []any {
 
 	return result
 }
+
+// Append adds an element to a slice and returns the new slice
+func Append(slice []any, elem any) []any {
+	return append(slice, elem)
+}

@@ -689,3 +689,26 @@ func TestUnion(t *testing.T) {
 		})
 	}
 }
+
+func TestAppend(t *testing.T) {
+	tests := []struct {
+		name  string
+		slice []any
+		elem  any
+		want  []any
+	}{
+		{"append to empty", []any{}, 1, []any{1}},
+		{"append to existing", []any{1, 2}, 3, []any{1, 2, 3}},
+		{"append string", []any{"a", "b"}, "c", []any{"a", "b", "c"}},
+		{"append mixed types", []any{1, "two"}, 3.0, []any{1, "two", 3.0}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Append(tt.slice, tt.elem)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Append() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

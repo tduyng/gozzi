@@ -844,3 +844,240 @@ Original content paragraph.
 		}
 	})
 }
+
+// TestServeMode_MixedChangeScenarios tests the critical bug fix for handling
+// simultaneous template and content changes (race condition fix)
+func TestServeMode_MixedChangeScenarios(t *testing.T) {
+	t.Run("TemplateAndContent_BothChangesApplied", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Create initial content
+		post1Path := filepath.Join(sitePath, "content/blog/mixed-test.md")
+		post1Content := `+++
+title = "Mixed Test"
+date = 2024-01-15
+template = "post.html"
++++
+
+Original content here.`
+		os.WriteFile(post1Path, []byte(post1Content), 0644)
+
+		// Initial build
+		if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("initial parse failed: %v", err)
+		}
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("initial build failed: %v", err)
+		}
+
+		// Verify initial state
+		verifyFileContent(t, sitePath, "blog/mixed-test/index.html", "Original content here")
+
+		// Simulate BOTH template and content changing (the critical scenario)
+		// Step 1: Snapshot taxonomy BEFORE any changes
+		oldTaxonomies := gen.SnapshotTaxonomyValues([]string{post1Path}, filepath.Join(sitePath, "content"))
+
+		// Step 2: Modify content file
+		updatedContent := `+++
+title = "Mixed Test - UPDATED"
+date = 2024-01-15
+template = "post.html"
++++
+
+Updated content after simultaneous change.`
+		os.WriteFile(post1Path, []byte(updatedContent), 0644)
+
+		// Step 3: Parse the updated content (this is what watcher.go now does FIRST)
+		time.Sleep(10 * time.Millisecond)
+		if err := contentParser.ParseFiles(filepath.Join(sitePath, "content"), []string{post1Path}); err != nil {
+			t.Fatalf("failed to re-parse content: %v", err)
+		}
+
+		// Step 4: Simulate template reload (happens after content parsing in our fix)
+		if err := gen.ReloadTemplates(); err != nil {
+			t.Fatalf("template reload failed: %v", err)
+		}
+
+		// Step 5: Do a full rebuild (as template changes trigger full rebuild)
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("rebuild after template+content change failed: %v", err)
+		}
+
+		// CRITICAL VERIFICATION: Both changes should be reflected
+		outputPath := filepath.Join(sitePath, "public/blog/mixed-test/index.html")
+		outputContent, err := os.ReadFile(outputPath)
+		if err != nil {
+			t.Fatalf("failed to read output: %v", err)
+		}
+
+		// Check that content change was applied
+		if !strings.Contains(string(outputContent), "Updated content after simultaneous change") {
+			t.Error("CRITICAL BUG: Content change was LOST when template also changed!")
+			t.Logf("Output content: %s", string(outputContent))
+		}
+
+		// Check that updated title is present
+		if !strings.Contains(string(outputContent), "Mixed Test - UPDATED") {
+			t.Error("Updated title not found in output")
+		}
+
+		// Ensure old content is gone
+		if strings.Contains(string(outputContent), "Original content here") {
+			t.Error("Old content still present after update")
+		}
+
+		_ = oldTaxonomies // Acknowledge we captured it (needed for incremental builds)
+	})
+
+	t.Run("ContentAndStatic_BothChangesApplied", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Create initial content and static file
+		postPath := filepath.Join(sitePath, "content/blog/static-test.md")
+		postContent := `+++
+title = "Static Test"
+date = 2024-01-20
+template = "post.html"
++++
+
+Content referencing static file.`
+		os.WriteFile(postPath, []byte(postContent), 0644)
+
+		staticDir := filepath.Join(sitePath, "static/css")
+		os.MkdirAll(staticDir, 0755)
+		staticPath := filepath.Join(staticDir, "test.css")
+		os.WriteFile(staticPath, []byte("/* original css */"), 0644)
+
+		// Initial build
+		if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("parse failed: %v", err)
+		}
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("build failed: %v", err)
+		}
+
+		// Snapshot before changes
+		oldTaxonomies := gen.SnapshotTaxonomyValues([]string{postPath}, filepath.Join(sitePath, "content"))
+
+		// Change BOTH content and static file
+		updatedContent := `+++
+title = "Static Test - UPDATED"
+date = 2024-01-20
+template = "post.html"
++++
+
+Updated content with static file.`
+		os.WriteFile(postPath, []byte(updatedContent), 0644)
+		os.WriteFile(staticPath, []byte("/* updated css */"), 0644)
+
+		// Parse content
+		time.Sleep(10 * time.Millisecond)
+		if err := contentParser.ParseFiles(filepath.Join(sitePath, "content"), []string{postPath}); err != nil {
+			t.Fatalf("re-parse failed: %v", err)
+		}
+
+		// Copy static file (as watcher does)
+		if err := gen.CopyStaticFile(staticPath); err != nil {
+			t.Fatalf("static copy failed: %v", err)
+		}
+
+		// Incremental build
+		err := gen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:       true,
+			ChangedFiles:      []string{postPath},
+			ContentDir:        filepath.Join(sitePath, "content"),
+			OldTaxonomyValues: oldTaxonomies,
+		})
+		if err != nil {
+			t.Fatalf("incremental rebuild failed: %v", err)
+		}
+
+		// Verify content change
+		verifyFileContent(t, sitePath, "blog/static-test/index.html", "Updated content with static file")
+
+		// Verify static file change
+		cssContent, err := os.ReadFile(filepath.Join(sitePath, "public/css/test.css"))
+		if err != nil {
+			t.Fatalf("failed to read static file: %v", err)
+		}
+		if !strings.Contains(string(cssContent), "/* updated css */") {
+			t.Error("Static file was not updated")
+		}
+	})
+
+	t.Run("Template_Content_Static_AllChangesApplied", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Create initial files
+		postPath := filepath.Join(sitePath, "content/blog/all-three.md")
+		postContent := `+++
+title = "All Three Test"
+date = 2024-01-25
+template = "post.html"
++++
+
+Initial content.`
+		os.WriteFile(postPath, []byte(postContent), 0644)
+
+		staticDir := filepath.Join(sitePath, "static/js")
+		os.MkdirAll(staticDir, 0755)
+		staticPath := filepath.Join(staticDir, "test.js")
+		os.WriteFile(staticPath, []byte("// original js"), 0644)
+
+		// Initial build
+		if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("parse failed: %v", err)
+		}
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("build failed: %v", err)
+		}
+
+		// Change ALL THREE: template, content, and static
+		// Content change
+		updatedContent := `+++
+title = "All Three Test - FINAL"
+date = 2024-01-25
+template = "post.html"
++++
+
+Final content with all changes applied.`
+		os.WriteFile(postPath, []byte(updatedContent), 0644)
+
+		// Static change
+		os.WriteFile(staticPath, []byte("// final js"), 0644)
+
+		// Parse content FIRST (our fix)
+		time.Sleep(10 * time.Millisecond)
+		if err := contentParser.ParseFiles(filepath.Join(sitePath, "content"), []string{postPath}); err != nil {
+			t.Fatalf("re-parse failed: %v", err)
+		}
+
+		// Template reload
+		if err := gen.ReloadTemplates(); err != nil {
+			t.Fatalf("template reload failed: %v", err)
+		}
+
+		// Full rebuild (template change triggers this)
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("rebuild failed: %v", err)
+		}
+
+		// Verify all three changes applied
+		outputHTML, _ := os.ReadFile(filepath.Join(sitePath, "public/blog/all-three/index.html"))
+		if !strings.Contains(string(outputHTML), "Final content with all changes applied") {
+			t.Error("Content change was lost with template+content+static change")
+		}
+		if !strings.Contains(string(outputHTML), "All Three Test - FINAL") {
+			t.Error("Title change was lost")
+		}
+
+		// Verify static file
+		jsContent, _ := os.ReadFile(filepath.Join(sitePath, "public/js/test.js"))
+		if !strings.Contains(string(jsContent), "// final js") {
+			t.Error("Static file change was lost")
+		}
+	})
+}

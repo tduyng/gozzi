@@ -178,6 +178,27 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 		return
 	}
 
+	// Parse content changes FIRST (before checking templates)
+	// This ensures template rebuilds use fresh content when both change together
+	var oldTaxonomies map[string]map[string]any
+	if len(contentFiles) > 0 {
+		log.Printf("Content changed: %d files", len(contentFiles))
+		for _, f := range contentFiles {
+			log.Printf("  - Content file: %s", f)
+		}
+
+		// Snapshot taxonomy values BEFORE parsing
+		oldTaxonomies = s.gen.SnapshotTaxonomyValues(contentFiles, s.contentDir)
+
+		// Parse changed files
+		parseStart := time.Now()
+		if err := s.parser.ParseFiles(s.contentDir, contentFiles); err != nil {
+			log.Printf("Parse error: %v", err)
+			return
+		}
+		log.Printf("Parse took %dms", time.Since(parseStart).Milliseconds())
+	}
+
 	// Handle template changes
 	// Templates require full rebuild which handles static files too
 	if len(templateFiles) > 0 {
@@ -189,7 +210,8 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 		count := s.gen.InvalidateTemplateCache(templateFiles)
 		log.Printf("Invalidated %d cached renders", count)
 
-		// Template changes always trigger full rebuild (whether or not there are content changes)
+		// Template changes always trigger full rebuild
+		// If content was parsed above, the full rebuild will use the fresh content
 		log.Println("Template change - performing full rebuild")
 		genStart := time.Now()
 		if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
@@ -216,23 +238,10 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 		return
 	}
 
-	// Handle content changes
+	// Handle content-only changes (templates already handled above)
 	if len(contentFiles) > 0 {
-		log.Printf("Content changed: %d files", len(contentFiles))
-		for _, f := range contentFiles {
-			log.Printf("  - Content file: %s", f)
-		}
-
-		// Snapshot taxonomy values BEFORE parsing
-		oldTaxonomies := s.gen.SnapshotTaxonomyValues(contentFiles, s.contentDir)
-
-		// Parse changed files
-		parseStart := time.Now()
-		if err := s.parser.ParseFiles(s.contentDir, contentFiles); err != nil {
-			log.Printf("Parse error: %v", err)
-			return
-		}
-		log.Printf("Parse took %dms", time.Since(parseStart).Milliseconds())
+		// Content was already parsed above, now we just need to generate
+		// oldTaxonomies was already captured before parsing
 
 		// Copy any changed static files before generating content
 		if len(staticFiles) > 0 {

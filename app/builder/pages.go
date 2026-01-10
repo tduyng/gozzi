@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -54,8 +55,16 @@ func (b *Builder) generatePage(node *content.Node) error {
 		}
 	}
 	nodeMap := node.ToMap()
+
 	// Parent section doesn't need full content
-	parentMap := node.Parent.ToMapMinimal()
+	// Safely handle pages without parents (e.g., orphaned content)
+	var parentMap map[string]any
+	if node.Parent != nil {
+		parentMap = node.Parent.ToMapMinimal()
+	} else {
+		// Provide empty parent map for orphaned pages
+		parentMap = make(map[string]any)
+	}
 
 	// Add series navigation if this page is part of a series
 	if seriesName, ok := node.Config["series"].(string); ok && seriesName != "" {
@@ -263,7 +272,12 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 
 	if !cached && b.site.MinifyHTML {
 		m := minify.New()
-		if minified, err := m.MinifyHTML(content); err == nil {
+		minified, err := m.MinifyHTML(content)
+		if err != nil {
+			// Log warning but continue with unminified content
+			// Minification errors shouldn't break the build
+			log.Printf("Warning: HTML minification failed for %s: %v", outputPath, err)
+		} else {
 			content = minified
 			b.renderCache.Set(tplName, dataHash, content)
 		}

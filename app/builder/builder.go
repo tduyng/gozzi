@@ -134,9 +134,14 @@ func (b *Builder) fullGenerate(contentRoot *content.Node) error {
 		})
 	}
 
+	// Count nodes to properly size the error channel
+	nodeCount := b.countNodes(contentRoot)
+
 	sem := make(chan struct{}, runtime.NumCPU()*2)
 	var wg sync.WaitGroup
-	errChan := make(chan error, 100)
+	// Size error channel to hold all potential errors (one per node)
+	// This prevents goroutine deadlock if many nodes fail processing
+	errChan := make(chan error, nodeCount)
 
 	b.walkNodes(contentRoot, func(n *content.Node) {
 		wg.Add(1)
@@ -227,7 +232,9 @@ func (b *Builder) incrementalGenerate(contentRoot *content.Node, opts GenerateOp
 
 	sem := make(chan struct{}, runtime.NumCPU()*2)
 	var wg sync.WaitGroup
-	errChan := make(chan error, 100)
+	// Size error channel to match number of changed nodes
+	// This prevents goroutine deadlock if many nodes fail processing
+	errChan := make(chan error, len(changedNodes))
 
 	for _, node := range changedNodes {
 		wg.Add(1)
@@ -371,6 +378,17 @@ func (b *Builder) walkNodes(node *content.Node, fn func(*content.Node)) {
 	for _, child := range node.Children {
 		b.walkNodes(child, fn)
 	}
+}
+
+func (b *Builder) countNodes(node *content.Node) int {
+	if node == nil {
+		return 0
+	}
+	count := 1
+	for _, child := range node.Children {
+		count += b.countNodes(child)
+	}
+	return count
 }
 
 func (b *Builder) hasTemplate(name string) bool {

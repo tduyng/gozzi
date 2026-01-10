@@ -325,11 +325,11 @@ func copyFile(src, dst string) error {
 			Path:      dst,
 		})
 	}
-	defer func() {
-		_ = out.Close()
-	}()
 
-	copied, err := io.Copy(out, in)
+	// Copy file content - close output file immediately after
+	_, err = io.Copy(out, in)
+	closeErr := out.Close()
+
 	if err != nil {
 		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 			Operation: "copy_file_content",
@@ -337,7 +337,15 @@ func copyFile(src, dst string) error {
 			Path:      fmt.Sprintf("%s -> %s", src, dst),
 		})
 	}
-	_ = copied // Suppress unused variable warning
+
+	if closeErr != nil {
+		return utils.WrapWithContext(closeErr, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "close_destination_file",
+			Component: "builder",
+			Path:      dst,
+		})
+	}
+
 	return nil
 }
 

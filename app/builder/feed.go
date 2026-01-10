@@ -3,6 +3,7 @@ package builder
 import (
 	"bytes"
 	"encoding/xml"
+	"log"
 	"os"
 	"path/filepath"
 	"slices"
@@ -104,16 +105,31 @@ func (b *Builder) generateAtomFeed() error {
 		},
 	}
 
-	if b.site.Extra["author"] != nil {
-		author := b.site.Extra["author"].(map[string]any)
-		feed.Author = &AtomAuthor{
-			Name:  author["name"].(string),
-			Email: author["email"].(string),
+	// Safely extract author information with type checking
+	if authorData, ok := b.site.Extra["author"].(map[string]any); ok {
+		author := &AtomAuthor{}
+		if name, ok := authorData["name"].(string); ok {
+			author.Name = name
+		}
+		if email, ok := authorData["email"].(string); ok {
+			author.Email = email
+		}
+		// Only set feed.Author if we have at least a name
+		if author.Name != "" {
+			feed.Author = author
 		}
 	}
 
 	for _, entry := range entries {
-		date := entry.Config["date"].(time.Time).UTC()
+		// Safely extract date with fallback to zero time
+		date, ok := entry.Config["date"].(time.Time)
+		if !ok {
+			// Skip entries without valid dates
+			log.Printf("Warning: Skipping feed entry %s - missing or invalid date field", entry.Permalink)
+			continue
+		}
+		date = date.UTC()
+
 		updated := date
 		if u, ok := entry.Config["updated"].(time.Time); ok {
 			updated = u.UTC()
@@ -124,12 +140,19 @@ func (b *Builder) generateAtomFeed() error {
 			categories = tags
 		}
 
+		// Safely extract title and description with defaults
+		title, _ := entry.Config["title"].(string)
+		if title == "" {
+			title = "Untitled"
+		}
+		description, _ := entry.Config["description"].(string)
+
 		feed.Entries = append(feed.Entries, AtomEntry{
-			Title:     entry.Config["title"].(string),
+			Title:     title,
 			ID:        entry.Permalink,
 			Published: date.Format(time.RFC3339),
 			Updated:   updated.Format(time.RFC3339),
-			Summary:   entry.Config["description"].(string),
+			Summary:   description,
 			Content: struct {
 				Type string `xml:"type,attr"`
 				Data string `xml:",cdata"`

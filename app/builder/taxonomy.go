@@ -189,8 +189,21 @@ func (b *Builder) buildStandardPageList(entry *parser.TaxonomyEntry) []map[strin
 	sortedPages := make([]*content.Node, len(entry.Pages))
 	copy(sortedPages, entry.Pages)
 	slices.SortFunc(sortedPages, func(a, b *content.Node) int {
-		dateA := a.Config["date"].(time.Time)
-		dateB := b.Config["date"].(time.Time)
+		// Safely extract dates with fallback to zero time
+		dateA, okA := a.Config["date"].(time.Time)
+		dateB, okB := b.Config["date"].(time.Time)
+
+		// If either date is missing, put that page last
+		if !okA && !okB {
+			return 0 // Both missing, maintain order
+		}
+		if !okA {
+			return 1 // a missing, put a after b
+		}
+		if !okB {
+			return -1 // b missing, put b after a
+		}
+
 		return dateB.Compare(dateA)
 	})
 

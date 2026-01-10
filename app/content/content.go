@@ -151,3 +151,12 @@ func extractBaseName(path string) string {
 	}
 	return base
 }
+
+// StripDatePrefixFromPath strips date prefixes from all path components
+func StripDatePrefixFromPath(path string) string {
+	parts := strings.Split(filepath.ToSlash(path), "/")
+	for i, part := range parts {
+		parts[i] = datePrefixRe.ReplaceAllString(part, "")
+	}
+	return filepath.Join(parts...)
+}

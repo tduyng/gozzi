@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/minify"
 	"github.com/tduyng/gozzi/app/scss"
 	"github.com/tduyng/gozzi/app/utils"
@@ -351,21 +352,47 @@ func copyFile(src, dst string) error {
 
 // CopyStaticFile copies a single static file from static/ to the output directory
 func (b *Builder) CopyStaticFile(srcPath string) error {
-	// srcPath should be like "static/css/cv.css"
-	if !strings.HasPrefix(srcPath, "static") {
-		return nil // Not a static file
-	}
+	var relPath string
+	var err error
 
-	relPath, err := filepath.Rel("static", srcPath)
-	if err != nil {
-		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
-			Operation: "get_relative_path",
-			Component: "builder",
-			Path:      srcPath,
-		})
+	// Handle files from static/ directory
+	if strings.HasPrefix(srcPath, "static") {
+		relPath, err = filepath.Rel("static", srcPath)
+		if err != nil {
+			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+				Operation: "get_relative_path",
+				Component: "builder",
+				Path:      srcPath,
+			})
+		}
+	} else if strings.HasPrefix(srcPath, "content") {
+		relPath, err = filepath.Rel("content", srcPath)
+		if err != nil {
+			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+				Operation: "get_relative_path_from_content",
+				Component: "builder",
+				Path:      srcPath,
+			})
+		}
+		relPath = content.StripDatePrefixFromPath(relPath)
+	} else {
+		return nil
 	}
 
 	destPath := filepath.Join(b.site.OutputDir, relPath)
+
+	// Check if source file exists (handles deletions)
+	if _, err := os.Stat(srcPath); os.IsNotExist(err) {
+		// File was deleted, remove from output
+		if err := os.Remove(destPath); err != nil && !os.IsNotExist(err) {
+			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+				Operation: "remove_deleted_static_file",
+				Component: "builder",
+				Path:      destPath,
+			})
+		}
+		return nil
+	}
 
 	// Handle SCSS compilation first
 	if b.site.CompileSCSS && strings.HasSuffix(srcPath, ".scss") {

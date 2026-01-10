@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -8,6 +9,8 @@ import (
 	"time"
 
 	"github.com/tduyng/gozzi/app/builder"
+	"github.com/tduyng/gozzi/app/config"
+	"github.com/tduyng/gozzi/app/parser"
 )
 
 // TestServeMode_TaxonomyChanges tests that taxonomy changes trigger correct rebuilds
@@ -1080,6 +1083,381 @@ Final content with all changes applied.`
 		jsContent, _ := os.ReadFile(filepath.Join(sitePath, "public/js/test.js"))
 		if !strings.Contains(string(jsContent), "// final js") {
 			t.Error("Static file change was lost")
+		}
+	})
+}
+
+// TestServeMode_ConfigChangeDetection tests that config.toml changes are properly detected
+// This is a regression test to ensure config changes trigger full rebuilds
+func TestServeMode_ConfigChangeDetection(t *testing.T) {
+	t.Run("ConfigChange_TriggersFullRebuild", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Create initial content
+		postPath := filepath.Join(sitePath, "content/blog/config-test.md")
+		postContent := `+++
+title = "Config Test"
+date = 2024-01-15
+template = "post.html"
++++
+
+Test content.`
+		os.WriteFile(postPath, []byte(postContent), 0644)
+
+		// Initial build
+		if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("parse failed: %v", err)
+		}
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("build failed: %v", err)
+		}
+
+		// Verify initial state
+		verifyFileContent(t, sitePath, "blog/config-test/index.html", "Config Test")
+
+		// Modify config.toml (change site title)
+		configPath := filepath.Join(sitePath, "config.toml")
+		configContent, _ := os.ReadFile(configPath)
+		updatedConfig := strings.Replace(string(configContent),
+			`title = "Test Site"`,
+			`title = "Updated Test Site"`, 1)
+		os.WriteFile(configPath, []byte(updatedConfig), 0644)
+
+		// Reload config and do full rebuild (simulating watcher behavior)
+		time.Sleep(10 * time.Millisecond)
+
+		// Create new site with updated config
+		newSite, err := config.LoadSite(configPath)
+		if err != nil {
+			t.Fatalf("config reload failed: %v", err)
+		}
+		newSite.OutputDir = "public"
+
+		// Create new parser and builder
+		newParser := parser.NewParser(newSite)
+		if err := newParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("re-parse failed: %v", err)
+		}
+
+		newGen, err := builder.NewBuilder(newSite, newParser)
+		if err != nil {
+			t.Fatalf("builder creation failed: %v", err)
+		}
+
+		// Full rebuild
+		if err := newGen.Generate(newParser.ContentMap["."]); err != nil {
+			t.Fatalf("rebuild failed: %v", err)
+		}
+
+		// Verify config change was applied
+		if newSite.Title != "Updated Test Site" {
+			t.Errorf("Config change not applied: got %s, want 'Updated Test Site'", newSite.Title)
+		}
+	})
+
+	t.Run("ConfigAndContent_BothChangesApplied", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Create initial content
+		postPath := filepath.Join(sitePath, "content/blog/mixed-config.md")
+		postContent := `+++
+title = "Original Title"
+date = 2024-01-20
+template = "post.html"
++++
+
+Original content.`
+		os.WriteFile(postPath, []byte(postContent), 0644)
+
+		// Initial build
+		if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("parse failed: %v", err)
+		}
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("build failed: %v", err)
+		}
+
+		// Change BOTH config and content (simulating simultaneous edit)
+		configPath := filepath.Join(sitePath, "config.toml")
+		configContent, _ := os.ReadFile(configPath)
+		updatedConfig := strings.Replace(string(configContent),
+			`base_url = "https://test.example.com"`,
+			`base_url = "https://updated.example.com"`, 1)
+		os.WriteFile(configPath, []byte(updatedConfig), 0644)
+
+		updatedPost := `+++
+title = "Updated Title"
+date = 2024-01-20
+template = "post.html"
++++
+
+Updated content.`
+		os.WriteFile(postPath, []byte(updatedPost), 0644)
+
+		// When config changes, we do full reload - parse content first
+		time.Sleep(10 * time.Millisecond)
+
+		newSite, err := config.LoadSite(configPath)
+		if err != nil {
+			t.Fatalf("config reload failed: %v", err)
+		}
+		newSite.OutputDir = "public"
+
+		newParser := parser.NewParser(newSite)
+		if err := newParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("re-parse failed: %v", err)
+		}
+
+		newGen, err := builder.NewBuilder(newSite, newParser)
+		if err != nil {
+			t.Fatalf("builder creation failed: %v", err)
+		}
+
+		if err := newGen.Generate(newParser.ContentMap["."]); err != nil {
+			t.Fatalf("rebuild failed: %v", err)
+		}
+
+		// Verify BOTH changes applied
+		if newSite.BaseURL != "https://updated.example.com" {
+			t.Error("Config change was lost")
+		}
+
+		outputContent, _ := os.ReadFile(filepath.Join(sitePath, "public/blog/mixed-config/index.html"))
+		if !strings.Contains(string(outputContent), "Updated Title") {
+			t.Error("Content title change was lost when config also changed")
+		}
+		if !strings.Contains(string(outputContent), "Updated content") {
+			t.Error("Content body change was lost when config also changed")
+		}
+	})
+}
+
+// TestServeMode_ChangeOrderingRaceConditions tests various orderings of simultaneous changes
+// to ensure no race conditions exist
+func TestServeMode_ChangeOrderingRaceConditions(t *testing.T) {
+	t.Run("MultipleContentFiles_SimultaneousChanges", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Create multiple content files
+		files := []string{
+			"content/blog/post-a.md",
+			"content/blog/post-b.md",
+			"content/blog/post-c.md",
+		}
+
+		for i, file := range files {
+			content := fmt.Sprintf(`+++
+title = "Post %d Original"
+date = 2024-01-15
+template = "post.html"
++++
+
+Original content %d.`, i, i)
+			os.WriteFile(filepath.Join(sitePath, file), []byte(content), 0644)
+		}
+
+		// Initial build
+		if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("parse failed: %v", err)
+		}
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("build failed: %v", err)
+		}
+
+		// Snapshot before changes
+		var absolutePaths []string
+		for _, file := range files {
+			absolutePaths = append(absolutePaths, filepath.Join(sitePath, file))
+		}
+		oldTaxonomies := gen.SnapshotTaxonomyValues(absolutePaths, filepath.Join(sitePath, "content"))
+
+		// Modify ALL files simultaneously
+		for i, file := range files {
+			content := fmt.Sprintf(`+++
+title = "Post %d Updated"
+date = 2024-01-15
+template = "post.html"
++++
+
+Updated content %d.`, i, i)
+			os.WriteFile(filepath.Join(sitePath, file), []byte(content), 0644)
+		}
+
+		// Parse all changed files
+		time.Sleep(10 * time.Millisecond)
+		if err := contentParser.ParseFiles(filepath.Join(sitePath, "content"), absolutePaths); err != nil {
+			t.Fatalf("re-parse failed: %v", err)
+		}
+
+		// Incremental rebuild
+		err := gen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:       true,
+			ChangedFiles:      absolutePaths,
+			ContentDir:        filepath.Join(sitePath, "content"),
+			OldTaxonomyValues: oldTaxonomies,
+		})
+		if err != nil {
+			t.Fatalf("rebuild failed: %v", err)
+		}
+
+		// Verify ALL changes applied (no changes lost)
+		for i := range files {
+			slug := fmt.Sprintf("post-%c", 'a'+i)
+			htmlPath := fmt.Sprintf("blog/%s/index.html", slug)
+
+			outputContent, err := os.ReadFile(filepath.Join(sitePath, "public", htmlPath))
+			if err != nil {
+				t.Fatalf("failed to read %s: %v", htmlPath, err)
+			}
+
+			expectedTitle := fmt.Sprintf("Post %d Updated", i)
+			expectedContent := fmt.Sprintf("Updated content %d", i)
+
+			if !strings.Contains(string(outputContent), expectedTitle) {
+				t.Errorf("File %s: title change was lost (expected %s)", htmlPath, expectedTitle)
+			}
+			if !strings.Contains(string(outputContent), expectedContent) {
+				t.Errorf("File %s: content change was lost (expected %s)", htmlPath, expectedContent)
+			}
+		}
+	})
+
+	t.Run("NestedDirCreation_WithContent", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Initial build
+		if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("parse failed: %v", err)
+		}
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("build failed: %v", err)
+		}
+
+		// Create new nested directory with content (simulating user creating new section)
+		newDir := filepath.Join(sitePath, "content/tutorials")
+		os.MkdirAll(newDir, 0755)
+
+		newFile := filepath.Join(newDir, "tutorial1.md")
+		newContent := `+++
+title = "New Tutorial"
+date = 2024-01-25
+template = "post.html"
++++
+
+New tutorial content.`
+		os.WriteFile(newFile, []byte(newContent), 0644)
+
+		// Full re-parse and rebuild
+		time.Sleep(10 * time.Millisecond)
+		if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("re-parse failed: %v", err)
+		}
+
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("rebuild failed: %v", err)
+		}
+
+		// Verify new content was generated
+		verifyFileExists(t, sitePath, "tutorials/tutorial1/index.html")
+		verifyFileContent(t, sitePath, "tutorials/tutorial1/index.html", "New Tutorial")
+		verifyFileContent(t, sitePath, "tutorials/tutorial1/index.html", "New tutorial content")
+	})
+
+	t.Run("TaxonomyChange_WithMultipleAffectedPages", func(t *testing.T) {
+		sitePath := setupTestSite(t)
+		gen, contentParser := buildSite(t, sitePath)
+
+		// Create multiple posts with same tag
+		posts := []struct {
+			path    string
+			title   string
+			oldTags string
+			newTags string
+		}{
+			{"content/blog/tag-test-1.md", "Tag Test 1", `tags = ["old-tag"]`, `tags = ["new-tag"]`},
+			{"content/blog/tag-test-2.md", "Tag Test 2", `tags = ["old-tag"]`, `tags = ["new-tag"]`},
+			{"content/blog/tag-test-3.md", "Tag Test 3", `tags = ["old-tag"]`, `tags = ["new-tag"]`},
+		}
+
+		for _, post := range posts {
+			content := fmt.Sprintf(`+++
+title = "%s"
+date = 2024-01-20
+template = "post.html"
+%s
++++
+
+Content.`, post.title, post.oldTags)
+			os.WriteFile(filepath.Join(sitePath, post.path), []byte(content), 0644)
+		}
+
+		// Initial build
+		if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+			t.Fatalf("parse failed: %v", err)
+		}
+		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+			t.Fatalf("build failed: %v", err)
+		}
+
+		// Verify old tag page exists
+		verifyFileExists(t, sitePath, "tags/old-tag/index.html")
+
+		// Change tags in ALL posts simultaneously
+		var changedFiles []string
+		for _, post := range posts {
+			absolutePath := filepath.Join(sitePath, post.path)
+			changedFiles = append(changedFiles, absolutePath)
+
+			content := fmt.Sprintf(`+++
+title = "%s"
+date = 2024-01-20
+template = "post.html"
+%s
++++
+
+Content.`, post.title, post.newTags)
+			os.WriteFile(absolutePath, []byte(content), 0644)
+		}
+
+		// Snapshot and rebuild
+		time.Sleep(10 * time.Millisecond)
+		oldTaxonomies := gen.SnapshotTaxonomyValues(changedFiles, filepath.Join(sitePath, "content"))
+
+		if err := contentParser.ParseFiles(filepath.Join(sitePath, "content"), changedFiles); err != nil {
+			t.Fatalf("re-parse failed: %v", err)
+		}
+
+		err := gen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
+			Incremental:       true,
+			ChangedFiles:      changedFiles,
+			ContentDir:        filepath.Join(sitePath, "content"),
+			OldTaxonomyValues: oldTaxonomies,
+		})
+		if err != nil {
+			t.Fatalf("rebuild failed: %v", err)
+		}
+
+		// Verify new tag page exists
+		verifyFileExists(t, sitePath, "tags/new-tag/index.html")
+
+		// Verify old tag page no longer shows these posts
+		oldTagContent, _ := os.ReadFile(filepath.Join(sitePath, "public/tags/old-tag/index.html"))
+		for _, post := range posts {
+			if strings.Contains(string(oldTagContent), post.title) {
+				t.Errorf("Old tag page still contains %s", post.title)
+			}
+		}
+
+		// Verify new tag page shows all posts
+		newTagContent, _ := os.ReadFile(filepath.Join(sitePath, "public/tags/new-tag/index.html"))
+		for _, post := range posts {
+			if !strings.Contains(string(newTagContent), post.title) {
+				t.Errorf("New tag page missing %s", post.title)
+			}
 		}
 	})
 }

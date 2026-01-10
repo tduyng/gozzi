@@ -57,11 +57,34 @@ func (s *DevServer) watchChanges() {
 		}
 	}
 
+	absConfigPath, absErr := filepath.Abs(s.configPath)
+	if absErr != nil {
+		log.Printf("Warning: Could not get absolute path for config %s: %v", s.configPath, absErr)
+	} else {
+		if watchErr := s.watcher.Add(absConfigPath); watchErr != nil {
+			log.Printf("Warning: Could not watch config file %s: %v", absConfigPath, watchErr)
+		}
+	}
+
 	for {
 		select {
 		case event, ok := <-s.watcher.Events:
 			if !ok {
 				continue
+			}
+
+			// Handle config file atomic replacement (vim, sed -i, etc.)
+			// These editors REMOVE the old file and CREATE a new one
+			absConfigPath, _ := filepath.Abs(s.configPath)
+			absEventPath, _ := filepath.Abs(event.Name)
+
+			if absEventPath == absConfigPath {
+				if event.Op&fsnotify.Create == fsnotify.Create {
+					// Re-add the config file to watch after atomic replacement
+					if err := s.watcher.Add(absConfigPath); err != nil {
+						log.Printf("Error re-watching config file: %v", err)
+					}
+				}
 			}
 
 			// Handle new directory creation

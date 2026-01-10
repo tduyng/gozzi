@@ -214,3 +214,160 @@ func TestCopyFileWithoutMinify(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, content, string(readContent), "Content should be unchanged")
 }
+
+func TestCopyStaticFile_FromStaticDir(t *testing.T) {
+	b, tempDir := createTestBuilder(t)
+
+	staticDir := filepath.Join(tempDir, "static")
+	require.NoError(t, os.MkdirAll(filepath.Join(staticDir, "css"), 0755))
+
+	cssFile := filepath.Join(staticDir, "css", "main.css")
+	cssContent := "body { margin: 0; }"
+	require.NoError(t, os.WriteFile(cssFile, []byte(cssContent), 0644))
+
+	// Use filepath.Join for cross-platform compatibility
+	srcPath := filepath.Join("static", "css", "main.css")
+	err := b.CopyStaticFile(srcPath)
+	assert.NoError(t, err)
+
+	outputPath := filepath.Join(b.site.OutputDir, "css", "main.css")
+	assert.FileExists(t, outputPath)
+
+	content, err := os.ReadFile(outputPath)
+	assert.NoError(t, err)
+	assert.Equal(t, cssContent, string(content))
+}
+
+func TestCopyStaticFile_FromContentDir(t *testing.T) {
+	b, tempDir := createTestBuilder(t)
+
+	contentDir := filepath.Join(tempDir, "content", "blog", "post")
+	imgDir := filepath.Join(contentDir, "img")
+	require.NoError(t, os.MkdirAll(imgDir, 0755))
+
+	imgFile := filepath.Join(imgDir, "cover.webp")
+	imgContent := "fake image data"
+	require.NoError(t, os.WriteFile(imgFile, []byte(imgContent), 0644))
+
+	// Use filepath.Join for cross-platform compatibility
+	srcPath := filepath.Join("content", "blog", "post", "img", "cover.webp")
+	err := b.CopyStaticFile(srcPath)
+	assert.NoError(t, err)
+
+	outputPath := filepath.Join(b.site.OutputDir, "blog", "post", "img", "cover.webp")
+	assert.FileExists(t, outputPath)
+
+	content, err := os.ReadFile(outputPath)
+	assert.NoError(t, err)
+	assert.Equal(t, imgContent, string(content))
+}
+
+func TestCopyStaticFile_WithDatePrefix(t *testing.T) {
+	b, tempDir := createTestBuilder(t)
+
+	contentDir := filepath.Join(tempDir, "content", "books", "2026-01-01-harry-potter-7")
+	imgDir := filepath.Join(contentDir, "img")
+	require.NoError(t, os.MkdirAll(imgDir, 0755))
+
+	imgFile := filepath.Join(imgDir, "cover.webp")
+	imgContent := "book cover image"
+	require.NoError(t, os.WriteFile(imgFile, []byte(imgContent), 0644))
+
+	// Use filepath.Join for cross-platform compatibility (Windows: \, Unix: /)
+	srcPath := filepath.Join("content", "books", "2026-01-01-harry-potter-7", "img", "cover.webp")
+	err := b.CopyStaticFile(srcPath)
+	assert.NoError(t, err)
+
+	wrongPath := filepath.Join(b.site.OutputDir, "books", "2026-01-01-harry-potter-7", "img", "cover.webp")
+	assert.NoFileExists(t, wrongPath, "Date prefix should be stripped")
+
+	correctPath := filepath.Join(b.site.OutputDir, "books", "harry-potter-7", "img", "cover.webp")
+	assert.FileExists(t, correctPath, "Asset should be in slug-based directory")
+
+	content, err := os.ReadFile(correctPath)
+	assert.NoError(t, err)
+	assert.Equal(t, imgContent, string(content))
+}
+
+func TestCopyStaticFile_MultipleDatePrefixes(t *testing.T) {
+	b, tempDir := createTestBuilder(t)
+
+	contentDir := filepath.Join(tempDir, "content", "2024-05-10-blog", "2026-01-01-post")
+	imgDir := filepath.Join(contentDir, "img")
+	require.NoError(t, os.MkdirAll(imgDir, 0755))
+
+	imgFile := filepath.Join(imgDir, "photo.jpg")
+	imgContent := "photo data"
+	require.NoError(t, os.WriteFile(imgFile, []byte(imgContent), 0644))
+
+	// Use filepath.Join for cross-platform compatibility
+	srcPath := filepath.Join("content", "2024-05-10-blog", "2026-01-01-post", "img", "photo.jpg")
+	err := b.CopyStaticFile(srcPath)
+	assert.NoError(t, err)
+
+	wrongPath := filepath.Join(b.site.OutputDir, "2024-05-10-blog", "2026-01-01-post", "img", "photo.jpg")
+	assert.NoFileExists(t, wrongPath, "Date prefixes should be stripped from all path components")
+
+	correctPath := filepath.Join(b.site.OutputDir, "blog", "post", "img", "photo.jpg")
+	assert.FileExists(t, correctPath, "All date prefixes should be stripped")
+
+	content, err := os.ReadFile(correctPath)
+	assert.NoError(t, err)
+	assert.Equal(t, imgContent, string(content))
+}
+
+func TestCopyStaticFile_FileDeletion(t *testing.T) {
+	b, tempDir := createTestBuilder(t)
+
+	contentDir := filepath.Join(tempDir, "content", "blog", "post")
+	imgDir := filepath.Join(contentDir, "img")
+	require.NoError(t, os.MkdirAll(imgDir, 0755))
+
+	imgFile := filepath.Join(imgDir, "old.png")
+	require.NoError(t, os.WriteFile(imgFile, []byte("old image"), 0644))
+
+	// Use filepath.Join for cross-platform compatibility
+	srcPath := filepath.Join("content", "blog", "post", "img", "old.png")
+	err := b.CopyStaticFile(srcPath)
+	assert.NoError(t, err)
+
+	outputPath := filepath.Join(b.site.OutputDir, "blog", "post", "img", "old.png")
+	assert.FileExists(t, outputPath)
+
+	require.NoError(t, os.Remove(imgFile))
+
+	err = b.CopyStaticFile(srcPath)
+	assert.NoError(t, err)
+
+	assert.NoFileExists(t, outputPath, "Deleted file should be removed from output")
+}
+
+func TestCopyStaticFile_InvalidPath(t *testing.T) {
+	b, _ := createTestBuilder(t)
+
+	err := b.CopyStaticFile("random/path/file.txt")
+	assert.NoError(t, err, "Non-static/content paths should be silently ignored")
+}
+
+func TestCopyStaticFile_NestedStructure(t *testing.T) {
+	b, tempDir := createTestBuilder(t)
+
+	contentDir := filepath.Join(tempDir, "content", "docs", "2025-12-15-tutorial", "assets", "images")
+	require.NoError(t, os.MkdirAll(contentDir, 0755))
+
+	imgFile := filepath.Join(contentDir, "diagram.svg")
+	imgContent := "<svg>diagram</svg>"
+	require.NoError(t, os.WriteFile(imgFile, []byte(imgContent), 0644))
+
+	// Use filepath.Join for cross-platform compatibility
+	srcPath := filepath.Join("content", "docs", "2025-12-15-tutorial", "assets", "images", "diagram.svg")
+	err := b.CopyStaticFile(srcPath)
+	assert.NoError(t, err)
+
+	correctPath := filepath.Join(b.site.OutputDir, "docs", "tutorial", "assets", "images", "diagram.svg")
+	assert.FileExists(t, correctPath)
+
+	content, err := os.ReadFile(correctPath)
+	assert.NoError(t, err)
+	assert.Equal(t, imgContent, string(content))
+}

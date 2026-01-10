@@ -2,6 +2,7 @@ package content
 
 import (
 	"html/template"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -401,6 +402,82 @@ func TestNodeType_Constants(t *testing.T) {
 	// Test that the NodeType constants have expected values
 	assert.Equal(t, NodeType(0), NodeTypeSection)
 	assert.Equal(t, NodeType(1), NodeTypePage)
+}
+
+func TestStripDatePrefixFromPath(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "single_date_prefix",
+			input:    "books/2026-01-01-harry-potter-7/img/cover.webp",
+			expected: filepath.Join("books", "harry-potter-7", "img", "cover.webp"),
+		},
+		{
+			name:     "multiple_date_prefixes",
+			input:    "2024-05-10-blog/2026-01-01-post/img/photo.jpg",
+			expected: filepath.Join("blog", "post", "img", "photo.jpg"),
+		},
+		{
+			name:     "no_date_prefix",
+			input:    "blog/post/img/cover.webp",
+			expected: filepath.Join("blog", "post", "img", "cover.webp"),
+		},
+		{
+			name:     "date_with_underscores",
+			input:    "2024_05_10_blog/2026_01_01_post/file.txt",
+			expected: filepath.Join("blog", "post", "file.txt"),
+		},
+		{
+			name:     "mixed_date_formats",
+			input:    "2024-5-10-blog/2026_1_1_post/data.json",
+			expected: filepath.Join("blog", "post", "data.json"),
+		},
+		{
+			name:     "deep_nesting_with_dates",
+			input:    "docs/2025-12-15-tutorial/assets/images/diagram.svg",
+			expected: filepath.Join("docs", "tutorial", "assets", "images", "diagram.svg"),
+		},
+		{
+			name:     "only_date_prefix",
+			input:    "2026-01-01-file.txt",
+			expected: "file.txt",
+		},
+		{
+			name:     "empty_string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "single_component_no_date",
+			input:    "file.txt",
+			expected: "file.txt",
+		},
+		{
+			name:     "single_component_with_date",
+			input:    "2026-01-01-file.txt",
+			expected: "file.txt",
+		},
+		{
+			name:     "windows_style_paths",
+			input:    "blog/2026-01-01-post/img/cover.webp",
+			expected: filepath.Join("blog", "post", "img", "cover.webp"),
+		},
+		{
+			name:     "cross_platform_path_normalization",
+			input:    filepath.Join("blog", "2026-01-01-post", "img", "cover.webp"),
+			expected: filepath.Join("blog", "post", "img", "cover.webp"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := StripDatePrefixFromPath(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }
 
 func TestRegexPatterns(t *testing.T) {

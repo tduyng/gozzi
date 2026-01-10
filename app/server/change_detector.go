@@ -92,12 +92,15 @@ func (cd *ChangeDetector) ClassifyChange(path string) ChangeType {
 
 	// Check if it's in content directory
 	if strings.HasPrefix(absPath, absContent) {
-		// Only .md files are content
+		// .md files are content
 		if ext == ".md" {
 			return ChangeTypeContent
 		}
-		// Other files in content directory are ignored (assets are handled separately)
-		return ChangeTypeIgnored
+		// ALL other files in content directory (except system/temp files) are treated as static files
+		// This includes images, videos, PDFs, etc. No need to hardcode extensions.
+		// Examples: content/books/post-name/img/cover.webp, content/docs/file.pdf
+		// The flexible approach: if it's not markdown and not a system file, copy it as static
+		return ChangeTypeStatic
 	}
 
 	// Check if it's a template (must be under templates/ directory)

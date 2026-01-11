@@ -1,19 +1,20 @@
-## [0.0.37](https://github.com/tduyng/gozzi/compare/v0.0.36..v0.0.37) - 2026-01-09
-
-### 🚀 Features
-
-- *(windows)* Add comprehensive Windows and AMD64 platform support - ([8e076b5](https://github.com/tduyng/gozzi/commit/8e076b522231222710fbf85fbabb2c99ed97aecc))
+## [0.0.38](https://github.com/tduyng/gozzi/compare/v0.0.37..v0.0.38) - 2026-01-11
 
 ### 🐛 Bug Fixes
 
-- *(test)* Relax performance baseline timeout for Windows - ([dbaa193](https://github.com/tduyng/gozzi/commit/dbaa193c151a8b51a9eb47c1959e21f7519f237e))
-- *(windows)* Normalize paths in incremental build analyzer - ([c8b2ea2](https://github.com/tduyng/gozzi/commit/c8b2ea293fb5ae1a48e9e2c7a6ac4e68fbe3b17f))
-- *(windows)* Normalize ContentMap keys to forward slashes on Windows - ([63bc004](https://github.com/tduyng/gozzi/commit/63bc004ac9c0e9fa7f2d1bf0d3e4f8d011c43109))
-- *(windows)* Use path.Join for http.Dir URLs on Windows - ([78193c9](https://github.com/tduyng/gozzi/commit/78193c98f31813b7af1b8ab8255c64eda42d8f7f))
-- *(windows)* Replace hardcoded /tmp paths with cross-platform temp directories - ([c2e40a1](https://github.com/tduyng/gozzi/commit/c2e40a14528221d0730477e8beff884c19ca39e9))
+- *(builder)* Handle content assets copying and deletion in watch mode - ([614b527](https://github.com/tduyng/gozzi/commit/614b52729a913f04b2c8cebead70f88af4d813e9))
+- *(watcher)* Detect and copy ALL asset files in content directory - ([62e7c44](https://github.com/tduyng/gozzi/commit/62e7c44876f5fd8ec87f53aac2cf397a5c30926b))
+- *(watcher)* Detect config change - ([bc39f6e](https://github.com/tduyng/gozzi/commit/bc39f6e928acfd00ad2e8837a355f6ec9f38d501))
+- *(watcher)* Understand template and static files change - ([e00a038](https://github.com/tduyng/gozzi/commit/e00a0387bde2868a96a07ed365d3d116b53d0e17))
+- Config.toml change detection with atomic file replacement - ([e6f7010](https://github.com/tduyng/gozzi/commit/e6f70100ab4371df5954dd66a3b88ad5dac36dd7))
 
-### ⚙️ Miscellaneous Tasks
+### 🚜 Refactor
 
-- *(windows)* Enable integration tests on all platforms - ([409a819](https://github.com/tduyng/gozzi/commit/409a819510903330457aee6007aa12661f44cef2))
-- *(windows)* Add local CI testing with act - ([2fa628d](https://github.com/tduyng/gozzi/commit/2fa628dfada645a63dc065621e21863b233655c1))
+- *(watch)* Clean logic change - ([9ea67f3](https://github.com/tduyng/gozzi/commit/9ea67f33c8e1bca489ef3cdbb327d6120c35d5b2))
+- *(watcher)* Avoid 2 times of copy static files - ([5ac05ad](https://github.com/tduyng/gozzi/commit/5ac05ad60881eb328937fd6076aede46a81fa9d2))
+- Check error safety - ([4483112](https://github.com/tduyng/gozzi/commit/4483112adba2309cbaaae467b0461ffd02d63cc3))
+
+### 🧪 Testing
+
+- Add comprehensive cross-platform tests for content asset copying with date prefixes - ([f2ca163](https://github.com/tduyng/gozzi/commit/f2ca163867fb482336e901880e52025a4894b8d2))
 

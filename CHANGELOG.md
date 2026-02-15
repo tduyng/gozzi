@@ -1,5 +1,20 @@
 # What's changed
 
+## [0.0.39](https://github.com/tduyng/gozzi/compare/v0.0.38..v0.0.39) - 2026-02-15
+
+### 🚀 Features
+
+- Remove incremental build, avoid complexity and potential bugs - ([018798e](https://github.com/tduyng/gozzi/commit/018798eaa56fed4f50bf1804b140d04afc1a9a4c))
+
+### 🚜 Refactor
+
+- Simplify parser - ([f063d9d](https://github.com/tduyng/gozzi/commit/f063d9d1205baaf268e7c21c29ebaa51cc8a8043))
+
+### ⚙️ Miscellaneous Tasks
+
+- Simplify commands - ([66c9d45](https://github.com/tduyng/gozzi/commit/66c9d453250fd9727c36a8e1375af09408df4b4e))
+- Do not need create LATEST_CHANGELOG - ([6b7445c](https://github.com/tduyng/gozzi/commit/6b7445c31b73f4e90fb8082f972a8df45d23f70c))
+
 ## [0.0.38](https://github.com/tduyng/gozzi/compare/v0.0.37..v0.0.38) - 2026-01-11
 
 ### 🐛 Bug Fixes

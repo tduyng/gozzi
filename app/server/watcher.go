@@ -185,7 +185,6 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 	}
 
 	// Handle config changes (requires full rebuild)
-	// Config changes take priority and trigger full rebuild which handles everything
 	if hasConfigChange {
 		log.Println("Config changed - performing full rebuild")
 		if err := s.reloadConfig(); err != nil {
@@ -201,97 +200,49 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 		return
 	}
 
-	// Parse content changes FIRST (before checking templates)
-	// This ensures template rebuilds use fresh content when both change together
-	var oldTaxonomies map[string]map[string]any
-	if len(contentFiles) > 0 {
-		log.Printf("Content changed: %d files", len(contentFiles))
-		for _, f := range contentFiles {
-			log.Printf("  - Content file: %s", f)
-		}
-
-		// Snapshot taxonomy values BEFORE parsing
-		oldTaxonomies = s.gen.SnapshotTaxonomyValues(contentFiles, s.contentDir)
-
-		// Parse changed files
-		parseStart := time.Now()
-		if err := s.parser.ParseFiles(s.contentDir, contentFiles); err != nil {
-			log.Printf("Parse error: %v", err)
-			return
-		}
-		log.Printf("Parse took %dms", time.Since(parseStart).Milliseconds())
-	}
-
-	// Handle template changes
-	// Templates require full rebuild which handles static files too
+	// Handle template changes - reload templates first
 	if len(templateFiles) > 0 {
 		log.Printf("Templates changed: %v", templateFiles)
 		if err := s.gen.ReloadTemplates(); err != nil {
 			log.Printf("Template reload error: %v", err)
 			return
 		}
-		count := s.gen.InvalidateTemplateCache(templateFiles)
-		log.Printf("Invalidated %d cached renders", count)
-
-		// Template changes always trigger full rebuild
-		// If content was parsed above, the full rebuild will use the fresh content
-		log.Println("Template change - performing full rebuild")
-		genStart := time.Now()
-		if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
-			log.Printf("Generate error: %v", err)
-			return
-		}
-		log.Printf("Generate took %dms", time.Since(genStart).Milliseconds())
-		s.notifyClients()
-		log.Printf("Rebuild completed in %dms", time.Since(start).Milliseconds())
-		return
 	}
 
-	// Handle static-only changes
-	// If only static files changed with no content/template/config changes, just copy them
-	if len(staticFiles) > 0 && len(contentFiles) == 0 {
-		log.Printf("Static-only changes: %d files", len(staticFiles))
+	// Copy static files if any changed
+	if len(staticFiles) > 0 {
+		log.Printf("Static files changed: %d files", len(staticFiles))
 		for _, staticFile := range staticFiles {
 			if err := s.gen.CopyStaticFile(staticFile); err != nil {
 				log.Printf("Error copying static file %s: %v", staticFile, err)
 			}
 		}
-		s.notifyClients()
-		log.Printf("Static files updated in %dms", time.Since(start).Milliseconds())
-		return
 	}
 
-	// Handle content-only changes (templates already handled above)
+	// Handle content changes - re-parse content if changed
 	if len(contentFiles) > 0 {
-		// Content was already parsed above, now we just need to generate
-		// oldTaxonomies was already captured before parsing
-
-		// Copy any changed static files before generating content
-		if len(staticFiles) > 0 {
-			log.Printf("Also copying %d static files", len(staticFiles))
-			for _, staticFile := range staticFiles {
-				if err := s.gen.CopyStaticFile(staticFile); err != nil {
-					log.Printf("Error copying static file %s: %v", staticFile, err)
-				}
-			}
+		log.Printf("Content changed: %d files", len(contentFiles))
+		for _, f := range contentFiles {
+			log.Printf("  - Content file: %s", f)
 		}
 
-		// Generate - use incremental build
-		genStart := time.Now()
-		err := s.gen.GenerateWithOptions(s.parser.ContentMap["."], builder.GenerateOptions{
-			Incremental:       true,
-			ChangedFiles:      contentFiles,
-			ContentDir:        s.contentDir,
-			OldTaxonomyValues: oldTaxonomies,
-		})
-
-		if err != nil {
-			log.Printf("Generate error: %v", err)
+		// Parse all content (full reparse for simplicity and correctness)
+		parseStart := time.Now()
+		if err := s.parser.Parse(s.contentDir); err != nil {
+			log.Printf("Parse error: %v", err)
 			return
 		}
-
-		log.Printf("Generate took %dms", time.Since(genStart).Milliseconds())
+		log.Printf("Parse took %dms", time.Since(parseStart).Milliseconds())
 	}
+
+	// Always do full rebuild - fast enough for development
+	log.Println("Performing full rebuild")
+	genStart := time.Now()
+	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
+		log.Printf("Generate error: %v", err)
+		return
+	}
+	log.Printf("Generate took %dms", time.Since(genStart).Milliseconds())
 
 	// Notify live reload clients
 	s.notifyClients()

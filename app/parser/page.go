@@ -28,13 +28,6 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		})
 	}
 
-	p.stats.TotalFiles.Add(1)
-	if !p.hashCache.HasChanged(path, mdContent) {
-		p.stats.FilesSkipped.Add(1)
-		return nil
-	}
-	p.stats.FilesParsed.Add(1)
-
 	pageConfig, contentPart, err := config.LoadFrontMatter(mdContent)
 	if err != nil {
 		return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{

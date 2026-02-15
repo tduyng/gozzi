@@ -235,39 +235,25 @@ func copyDir(src, dst string) error {
 	})
 }
 
-// incrementalRebuild simulates watch mode incremental rebuild
+// incrementalRebuild simulates watch mode rebuild (now just does full rebuild)
 func incrementalRebuild(t *testing.T, gen *builder.Builder, contentParser *parser.ContentParser, sitePath string, changedFiles []string) {
 	t.Helper()
 
-	// Snapshot old taxonomy values BEFORE parsing
-	oldTaxonomyValues := gen.SnapshotTaxonomyValues(changedFiles, filepath.Join(sitePath, "content"))
-
-	// Give file time to settle
-	time.Sleep(10 * time.Millisecond)
-
-	// Reparse changed files
-	if err := contentParser.ParseFiles(filepath.Join(sitePath, "content"), changedFiles); err != nil {
-		t.Fatalf("failed to re-parse: %v", err)
+	// Full rebuild - simpler and correct
+	if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
+		t.Fatalf("failed to parse content: %v", err)
 	}
 
-	// Incremental rebuild
-	err := gen.GenerateWithOptions(contentParser.ContentMap["."], builder.GenerateOptions{
-		Incremental:       true,
-		ChangedFiles:      changedFiles,
-		ContentDir:        filepath.Join(sitePath, "content"),
-		OldTaxonomyValues: oldTaxonomyValues,
-	})
-	if err != nil {
+	if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
 		t.Fatalf("failed to rebuild: %v", err)
 	}
+
+	_ = changedFiles
 }
 
-// fullRebuild performs a complete site rebuild (like serve mode on template change)
+// fullRebuild performs a complete site rebuild
 func fullRebuild(t *testing.T, gen *builder.Builder, contentParser *parser.ContentParser, sitePath string) {
 	t.Helper()
-
-	// Clear render cache to ensure fresh builds
-	gen.ClearRenderCache()
 
 	if err := contentParser.Parse(filepath.Join(sitePath, "content")); err != nil {
 		t.Fatalf("failed to re-parse content: %v", err)

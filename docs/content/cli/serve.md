@@ -153,10 +153,10 @@ Optimized rebuild process for fast development:
 - Prevents excessive rebuilds during rapid changes
 - Multiple changes are batched together
 
-**Incremental Processing:**
-- Only regenerates what changed
-- Preserves existing files
-- Fast rebuild times
+**Full Rebuilds:**
+- Fast full rebuilds (Go is fast enough)
+- Always correct - no stale cache issues
+- Handles deleted files properly
 
 **Hot Config Reloading:**
 - Config changes don't require server restart
@@ -170,7 +170,7 @@ Optimized rebuild process for fast development:
 
 ### Development Optimizations
 
-**Smart Caching:**
+**Smart Serving:**
 - Serves from output directory
 - Proper cache headers for development
 - No stale content issues
@@ -241,10 +241,10 @@ When you run `gozzi serve`, here's what happens:
    - Filters out irrelevant files (e.g., `.git/`, `node_modules/`)
    - Debounces rapid changes (500ms)
 
-5. **Smart Rebuilding**
-   - Config changes → reload config + full rebuild
-   - Template changes → reload templates + full rebuild
-   - Content changes → incremental rebuild
+5. **Rebuilding**
+   - Config changes → reload config + rebuild
+   - Template changes → reload templates + rebuild
+   - Content changes → full rebuild (fast!)
    - Static file changes → copy to output
 
 6. **Browser Notification**
@@ -300,7 +300,7 @@ gozzi serve
 
 The server is optimized for fast development:
 
-- Incremental builds by default
+- Fast full rebuilds (Go is fast enough)
 - Efficient file watching with `fsnotify`
 - Debounced rebuilds prevent excessive rebuilds
 - Minimal memory footprint

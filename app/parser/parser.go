@@ -13,7 +13,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/tduyng/gozzi/app/cache"
 	"github.com/tduyng/gozzi/app/config"
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/markdown"
@@ -42,8 +41,7 @@ type ContentParser struct {
 	mu                 sync.Mutex
 	md                 goldmark.Markdown
 	shortcodeProcessor *markdown.ShortcodeProcessor
-	hashCache          *cache.HashCache // Content hash cache for incremental parsing
-	stats              *ParseStats      // Statistics for monitoring
+	stats              *ParseStats // Statistics for monitoring
 }
 
 // NewParser creates a new ContentParser with the given site configuration.
@@ -58,7 +56,6 @@ func NewParser(cfg *config.Site) *ContentParser {
 		ContentMap: make(map[string]*content.Node),
 		Tags:       make(map[string]*TagEntry),
 		Taxonomies: make(map[string]*Taxonomy),
-		hashCache:  cache.NewHashCache(),
 		stats:      &ParseStats{},
 		md: goldmark.New(
 			goldmark.WithExtensions(
@@ -278,11 +275,6 @@ func (p *ContentParser) ResetStats() {
 	p.stats.FilesSkipped.Store(0)
 	p.stats.FilesParsed.Store(0)
 	p.stats.TotalFiles.Store(0)
-}
-
-// GetHashCache returns the hash cache for external access
-func (p *ContentParser) GetHashCache() *cache.HashCache {
-	return p.hashCache
 }
 
 // sortChildren recursively sorts all Children slices for deterministic output

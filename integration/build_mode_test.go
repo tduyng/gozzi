@@ -13,7 +13,7 @@ import (
 func TestBuildMode_FreshBuild(t *testing.T) {
 	t.Run("FreshBuild_GeneratesAllPages", func(t *testing.T) {
 		sitePath := setupTestSite(t)
-		gen, _ := buildSite(t, sitePath)
+		_, _ = buildSite(t, sitePath)
 
 		// Verify expected files exist
 		// Homepage
@@ -47,12 +47,6 @@ func TestBuildMode_FreshBuild(t *testing.T) {
 		// Verify tag pages for post3
 		verifyFileExists(t, sitePath, "tags/golang/index.html")
 		verifyFileExists(t, sitePath, "tags/testing/index.html")
-
-		// Verify cache stats (should start with 0% hit rate on fresh build)
-		stats := gen.GetCacheStats()
-		if stats.HitRate > 0 {
-			t.Errorf("expected 0%% cache hit rate on fresh build, got %.1f%%", stats.HitRate)
-		}
 	})
 
 	t.Run("FreshBuild_ContentCorrectness", func(t *testing.T) {
@@ -126,15 +120,11 @@ func TestBuildMode_ConfigChange(t *testing.T) {
 
 		// Rebuild
 		gen, _ := buildSite(t, sitePath)
-		stats := gen.GetCacheStats()
-
-		// Cache hit rate should be 0% (full rebuild)
-		if stats.HitRate > 0 {
-			t.Errorf("expected 0%% cache hit rate after config change, got %.1f%%", stats.HitRate)
-		}
 
 		// Verify config change reflected in posts without custom images
 		verifyFileContent(t, sitePath, "blog/post2/index.html", "/img/new-default.jpg")
+
+		_ = gen
 	})
 
 	t.Run("ConfigChange_BaseURL_UpdatesAllLinks", func(t *testing.T) {
@@ -166,7 +156,6 @@ func TestBuildMode_TemplateChange(t *testing.T) {
 
 		// Rebuild without changes
 		gen.Generate(contentParser.ContentMap["."])
-		beforeStats := gen.GetCacheStats()
 
 		// Modify template - use actual tag from template
 		templatePath := filepath.Join(sitePath, "templates/post.html")
@@ -174,23 +163,14 @@ func TestBuildMode_TemplateChange(t *testing.T) {
 		modified := strings.Replace(string(content), "<body>", "<body class=\"v2\">", 1)
 		os.WriteFile(templatePath, []byte(modified), 0644)
 
-		// Reload templates
+		// Reload templates and rebuild
 		gen.ReloadTemplates()
-		gen.InvalidateTemplateCache([]string{"post.html"})
-
-		gen.ResetCacheStats()
 		gen.Generate(contentParser.ContentMap["."])
-		afterStats := gen.GetCacheStats()
-
-		// All posts using post.html should be regenerated
-		if afterStats.Misses == 0 {
-			t.Error("expected cache misses after template change")
-		}
 
 		// Verify template change is reflected
 		verifyFileContent(t, sitePath, "blog/post1/index.html", `class="v2"`)
 
-		_ = beforeStats
+		_ = gen
 	})
 
 	t.Run("TemplateChange_DoesNotAffectOtherTemplates", func(t *testing.T) {
@@ -205,7 +185,6 @@ func TestBuildMode_TemplateChange(t *testing.T) {
 
 		// Reload and rebuild
 		gen.ReloadTemplates()
-		gen.InvalidateTemplateCache([]string{"post.html"})
 		gen.Generate(contentParser.ContentMap["."])
 
 		// Post pages should have the change
@@ -216,6 +195,8 @@ func TestBuildMode_TemplateChange(t *testing.T) {
 		if strings.Contains(string(content), `data-test="modified"`) {
 			t.Error("section pages should not be affected by post.html template change")
 		}
+
+		_ = gen
 	})
 }
 
@@ -386,35 +367,6 @@ func TestBuildMode_StaticAssets(t *testing.T) {
 
 		verifyFileExists(t, sitePath, "images/icons/test.svg")
 		verifyFileContent(t, sitePath, "images/icons/test.svg", "<svg>")
-	})
-
-	t.Run("StaticFiles_DoNotTriggerContentRebuild", func(t *testing.T) {
-		sitePath := setupTestSite(t)
-		gen, contentParser := buildSite(t, sitePath)
-
-		// Populate cache with initial build
-		gen.ClearRenderCache()
-		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
-			t.Fatalf("initial build failed: %v", err)
-		}
-
-		// Add new static file
-		newStaticFile := filepath.Join(sitePath, "static/new-asset.txt")
-		os.WriteFile(newStaticFile, []byte("new content"), 0644)
-
-		// Rebuild WITHOUT clearing cache - should get high cache hit rate
-		gen.ResetCacheStats()
-		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
-			t.Fatalf("rebuild failed: %v", err)
-		}
-
-		stats := gen.GetCacheStats()
-		// Static file changes shouldn't affect content rendering
-		if stats.HitRate < 80 {
-			t.Errorf("expected high cache hit rate when only static files change, got %.1f%%", stats.HitRate)
-		}
-
-		verifyFileExists(t, sitePath, "new-asset.txt")
 	})
 }
 

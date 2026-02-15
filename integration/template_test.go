@@ -19,7 +19,6 @@ func TestTemplate_Changes(t *testing.T) {
 
 		// Reload and rebuild
 		gen.ReloadTemplates()
-		gen.InvalidateTemplateCache([]string{"post.html"})
 		fullRebuild(t, gen, contentParser, sitePath)
 
 		// Verify change reflected
@@ -38,7 +37,6 @@ func TestTemplate_Changes(t *testing.T) {
 		modifyFile(t, templatePath, "<body>", "<body data-v=\"2\">")
 
 		gen.ReloadTemplates()
-		gen.InvalidateTemplateCache([]string{"post.html"})
 		fullRebuild(t, gen, contentParser, sitePath)
 
 		// Posts changed
@@ -67,7 +65,6 @@ func TestTemplate_HotReload(t *testing.T) {
 
 		// Reload templates (like serve mode does)
 		gen.ReloadTemplates()
-		gen.InvalidateTemplateCache([]string{"post.html"})
 		fullRebuild(t, gen, contentParser, sitePath)
 
 		verifyFileContent(t, sitePath, "blog/post1/index.html", `class="reloaded"`)
@@ -141,19 +138,12 @@ func TestTemplate_CacheInvalidation(t *testing.T) {
 		templatePath := filepath.Join(sitePath, "templates/post.html")
 		modifyFile(t, templatePath, "<body>", "<body data-cache-test=\"1\">")
 
-		// Invalidate cache
+		// Reload templates
 		gen.ReloadTemplates()
-		gen.InvalidateTemplateCache([]string{"post.html"})
-		gen.ResetCacheStats()
 
 		fullRebuild(t, gen, contentParser, sitePath)
 
-		// Should have cache misses for all posts using this template
-		stats := gen.GetCacheStats()
-		if stats.Misses == 0 {
-			t.Error("expected cache misses after template invalidation")
-		}
-
+		// Verify template change is reflected
 		verifyFileContent(t, sitePath, "blog/post1/index.html", `data-cache-test="1"`)
 	})
 }

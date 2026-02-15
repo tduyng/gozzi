@@ -88,7 +88,6 @@ content (rendered here)
 - Concurrent processing
 - Minimal dependencies
 - Efficient markdown parsing
-- Template caching
 
 **Typical build times:**
 - 10 pages: ~10-20ms

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tduyng/gozzi/app/cache"
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/minify"
 	"github.com/tduyng/gozzi/app/utils"
@@ -114,13 +112,11 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	var tpl *template.Template
-	var tplName string
 
 	if node != nil {
 		for _, name := range node.TemplateChain() {
 			tpl = b.templ.Lookup(name)
 			if tpl != nil {
-				tplName = name
 				break
 			}
 		}
@@ -128,13 +124,11 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		for _, name := range templateNames {
 			tpl = b.templ.Lookup(name)
 			if tpl != nil {
-				tplName = name
 				break
 			}
 		}
 	} else {
 		tpl = b.templ.Lookup("404.html")
-		tplName = "404.html"
 	}
 
 	if tpl == nil {
@@ -145,142 +139,14 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		})
 	}
 
-	var cacheKey any
-	if node != nil {
-		// Convert time.Time to stable string for cache key
-		key := map[string]any{
-			"Path":      node.Path,
-			"Content":   string(node.Content),
-			"WordCount": node.WordCount,
-			"ReadTime":  node.ReadTime,
-		}
-
-		if title, ok := node.Config["title"].(string); ok {
-			key["Title"] = title
-		}
-		if date, ok := node.Config["date"].(time.Time); ok {
-			key["Date"] = date.Format("2006-01-02")
-		}
-		if desc, ok := node.Config["description"].(string); ok {
-			key["Description"] = desc
-		}
-		if template, ok := node.Config["template"].(string); ok {
-			key["Template"] = template
-		}
-		if tags, ok := node.Config["tags"]; ok {
-			key["Tags"] = fmt.Sprint(tags)
-		}
-		// Include series in cache key (affects navigation rendering)
-		if series, ok := node.Config["series"]; ok {
-			key["Series"] = fmt.Sprint(series)
-		}
-		if seriesOrder, ok := node.Config["series_order"]; ok {
-			key["SeriesOrder"] = fmt.Sprint(seriesOrder)
-		}
-		// Include categories in cache key
-		if categories, ok := node.Config["categories"]; ok {
-			key["Categories"] = fmt.Sprint(categories)
-		}
-		// Extra config affects template rendering via partials
-		if extra, ok := node.Config["extra"]; ok {
-			key["Extra"] = extra
-		}
-
-		// Section pages include children metadata in cache key
-		if node.Type == content.NodeTypeSection {
-			isHomepage := node.Path == "." || node.Path == "" || node.Path == "_index.md" ||
-				node.Slug == "" || node.Slug == "/"
-
-			if isHomepage {
-				// Homepage can reference ANY section's data, so include relevant sections in cache key
-				// This ensures homepage cache invalidates when any child page changes
-
-				// Determine which sections to include based on config
-				var sectionsToInclude []string
-				if len(b.site.HomepageCacheSections) > 0 {
-					// Use user-configured sections
-					sectionsToInclude = b.site.HomepageCacheSections
-				} else {
-					// Default: include all sections (fallback for sites without config)
-					sectionsToInclude = make([]string, 0)
-					for sectionPath, sectionNode := range b.parser.ContentMap {
-						if sectionNode.Type == content.NodeTypeSection && sectionPath != "." {
-							sectionsToInclude = append(sectionsToInclude, sectionPath)
-						}
-					}
-				}
-
-				// Build cache key for specified sections
-				allSections := make(map[string][]string)
-				for _, sectionPath := range sectionsToInclude {
-					sectionNode, exists := b.parser.ContentMap[sectionPath]
-					if !exists || sectionNode.Type != content.NodeTypeSection || len(sectionNode.Children) == 0 {
-						continue
-					}
-
-					childKeys := make([]string, len(sectionNode.Children))
-					for i, child := range sectionNode.Children {
-						parts := b.buildChildCacheKeyParts(child)
-						childKeys[i] = strings.Join(parts, "|")
-					}
-					allSections[sectionPath] = childKeys
-				}
-
-				if len(allSections) > 0 {
-					key["AllSections"] = allSections
-				}
-			} else if len(node.Children) > 0 {
-				// Regular sections only need their own children in cache key
-				childKeys := make([]string, len(node.Children))
-				for i, child := range node.Children {
-					parts := b.buildChildCacheKeyParts(child)
-					childKeys[i] = strings.Join(parts, "|")
-				}
-				key["Children"] = childKeys
-			}
-		}
-
-		if b.site.Extra != nil {
-			key["SiteExtra"] = b.site.Extra
-		}
-
-		cacheKey = key
-	} else {
-		cacheKey = b.createStableCacheKey(tplName, data)
-	}
-
-	dataHash, err := cache.ComputeDataHash(cacheKey)
-	if err != nil {
-		return utils.WrapWithContext(utils.ErrTemplate, err, utils.ErrorContext{
-			Operation: "compute_cache_hash",
-			Component: "builder",
-			Path:      outputPath,
-		})
-	}
-
-	content, cached, err := b.renderCache.GetOrCompute(tplName, dataHash, func() ([]byte, error) {
-		return b.executeTemplate(tpl, data)
-	})
-
+	// Render template directly without caching
+	content, err := b.executeTemplate(tpl, data)
 	if err != nil {
 		return utils.WrapWithContext(err, utils.ErrTemplate, utils.ErrorContext{
 			Operation: "execute_template",
 			Component: "builder",
 			Path:      outputPath,
 		})
-	}
-
-	if !cached && b.site.MinifyHTML {
-		m := minify.New()
-		minified, err := m.MinifyHTML(content)
-		if err != nil {
-			// Log warning but continue with unminified content
-			// Minification errors shouldn't break the build
-			log.Printf("Warning: HTML minification failed for %s: %v", outputPath, err)
-		} else {
-			content = minified
-			b.renderCache.Set(tplName, dataHash, content)
-		}
 	}
 
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {

@@ -73,12 +73,11 @@ func TestStatic_Changes(t *testing.T) {
 		verifyFileContent(t, sitePath, "style.css", "monospace")
 	})
 
-	t.Run("StaticChange_NoContentRebuild", func(t *testing.T) {
+	t.Run("StaticChange_TriggersRebuild", func(t *testing.T) {
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
-		// Get baseline - do a full rebuild to populate cache
-		gen.ClearRenderCache()
+		// Get baseline - do a full rebuild
 		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
 			t.Fatalf("baseline build failed: %v", err)
 		}
@@ -87,16 +86,9 @@ func TestStatic_Changes(t *testing.T) {
 		staticPath := filepath.Join(sitePath, "static/style.css")
 		modifyFile(t, staticPath, "font-family", "font-family: sans-serif")
 
-		// Rebuild WITHOUT clearing cache (to test cache effectiveness)
-		gen.ResetCacheStats()
+		// Rebuild
 		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
 			t.Fatalf("rebuild after static change failed: %v", err)
-		}
-
-		stats := gen.GetCacheStats()
-		// Should have high cache hit rate since content didn't change
-		if stats.HitRate < 80 {
-			t.Errorf("expected high cache hit rate when only static files change, got %.1f%%", stats.HitRate)
 		}
 
 		// Verify static file was updated
@@ -121,12 +113,11 @@ func TestStatic_NewFiles(t *testing.T) {
 		verifyFileContent(t, sitePath, "new-asset.txt", "new content")
 	})
 
-	t.Run("NewStatic_NoContentRebuild", func(t *testing.T) {
+	t.Run("NewStatic_TriggersRebuild", func(t *testing.T) {
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
-		// Baseline - populate cache
-		gen.ClearRenderCache()
+		// Baseline - full rebuild
 		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
 			t.Fatalf("baseline build failed: %v", err)
 		}
@@ -135,16 +126,9 @@ func TestStatic_NewFiles(t *testing.T) {
 		newFile := filepath.Join(sitePath, "static/another.js")
 		os.WriteFile(newFile, []byte("console.log('hi')"), 0644)
 
-		// Rebuild WITHOUT clearing cache
-		gen.ResetCacheStats()
+		// Rebuild
 		if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
 			t.Fatalf("rebuild failed: %v", err)
-		}
-
-		stats := gen.GetCacheStats()
-		// Should have high cache hit rate - content unchanged
-		if stats.HitRate < 80 {
-			t.Errorf("new static file should not affect content cache, got %.1f%% hit rate", stats.HitRate)
 		}
 
 		// Verify new static file was copied

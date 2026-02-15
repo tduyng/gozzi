@@ -362,13 +362,14 @@ tag VERSION:
     @git pull origin main
     @echo "Updating {{ version_file }}..."
     @echo "{{ VERSION }}" > {{ version_file }}
-    @echo "→ Generating changelog for v{{ VERSION }}…"
+    @echo "→ Generating changelog..."
     @git cliff --unreleased --tag "v{{ VERSION }}" --prepend {{ changelog }}
-    @git cliff --unreleased --tag "v{{ VERSION }}" --strip all --output LATEST_CHANGELOG.md
-    @git add {{ changelog }} LATEST_CHANGELOG.md {{ version_file }}
+    @git cliff --unreleased --tag "v{{ VERSION }}" --strip all > LATEST_CHANGELOG.md
+    @rm LATEST_CHANGELOG.md  # Clean tmp
+    @git add {{ changelog }} {{ version_file }}
     @git commit -m "chore: release v{{ VERSION }}"
     @git tag -a v{{ VERSION }} -m "Release v{{ VERSION }}"
-    @echo "Tag v{{ VERSION }} created. Push with: git push && git push origin v{{ VERSION }}"
+    @echo "Push: git push && git push origin v{{ VERSION }}"
 
 # Test goreleaser build locally (without publishing)
 [group('release')]

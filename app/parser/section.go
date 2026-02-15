@@ -1,4 +1,3 @@
-// Package parser provides section parsing for _index.md files.
 package parser
 
 import (
@@ -17,6 +16,9 @@ import (
 )
 
 func (p *ContentParser) parseSection(path, dir string) error {
+	p.stats.TotalFiles.Add(1)
+	p.stats.FilesParsed.Add(1)
+
 	mdContent, err := os.ReadFile(path)
 	if err != nil {
 		return utils.WrapWithContext(utils.ErrFileSystem, err, utils.ErrorContext{
@@ -35,11 +37,14 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		})
 	}
 
+	if frontMatter == nil {
+		frontMatter = &config.FrontMatter{}
+	}
+
 	if frontMatter.Draft && !p.Site.BuildDrafts {
 		return nil
 	}
 
-	// Process shortcodes if processor is available
 	if p.shortcodeProcessor != nil {
 		contentPart, err = p.shortcodeProcessor.Process(contentPart)
 		if err != nil {
@@ -66,7 +71,6 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	sectionConfig := frontMatter.ToConfig()
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, nil)
 
-	// Detect and set language for this section
 	lang := p.detectLanguage(path, dir, frontMatter)
 	mergedConfig["lang"] = lang
 
@@ -75,18 +79,13 @@ func (p *ContentParser) parseSection(path, dir string) error {
 
 	existingNode := p.GetOrCreateSection(dir)
 
-	// Use the existing node's slug (which is correctly calculated from the directory)
 	slug := existingNode.Slug
 	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
 	mergedConfig["img_url"] = p.resolveImgURL(frontMatter, slug)
 
 	wordCount, readTime := calculateReadStats(string(contentPart))
 
-	// Extract aliases from frontmatter
 	aliases := frontMatter.Aliases
-	if aliases == nil {
-		aliases = []string{}
-	}
 
 	newNode := &content.Node{
 		Type:      content.NodeTypeSection,
@@ -124,7 +123,6 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	return nil
 }
 
-// GetOrCreateSection retrieves or creates a section node.
 func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 	if node, exists := p.ContentMap[dir]; exists {
 		return node
@@ -136,7 +134,6 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 	if dir == "." {
 		sectionSlug = ""
 	} else {
-		// Use path.Dir/Base to keep forward slashes (dir is already normalized)
 		parentDir := path.Dir(dir)
 		parent = p.GetOrCreateSection(parentDir)
 		baseName := path.Base(dir)

@@ -259,56 +259,6 @@ func (b *Builder) buildTaxonomyURL(permalink string) string {
 	return b.site.BaseURL + permalink
 }
 
-// generateSelectiveTaxonomies regenerates only affected taxonomy terms.
-func (b *Builder) generateSelectiveTaxonomies(taxonomyName string, affectedTerms []string) error {
-	taxonomy, exists := b.parser.Taxonomies[taxonomyName]
-
-	if !exists || len(affectedTerms) == 0 {
-		return nil
-	}
-
-	termTemplate := singularize(taxonomyName) + ".html"
-	if !b.hasTemplate(termTemplate) {
-		return nil
-	}
-
-	// Create taxonomy directory
-	taxonomyDir := filepath.Join(b.site.OutputDir, taxonomyName)
-	if err := os.MkdirAll(taxonomyDir, 0755); err != nil {
-		return fmt.Errorf("failed to create %s directory: %w", taxonomyName, err)
-	}
-
-	// Regenerate affected term pages
-	for _, slug := range affectedTerms {
-		// Skip empty slugs (invalid)
-		if slug == "" || strings.TrimSpace(slug) == "" {
-			continue
-		}
-
-		if entry, exists := taxonomy.Entries[slug]; exists && entry.Count > 0 {
-			if err := b.generateTaxonomyTerm(taxonomyName, slug, entry, termTemplate); err != nil {
-				return err
-			}
-		} else {
-			// Term no longer exists or has zero posts, delete the term page
-			termDir := filepath.Join(b.site.OutputDir, taxonomyName, slug)
-			if err := os.RemoveAll(termDir); err != nil && !os.IsNotExist(err) {
-				return fmt.Errorf("failed to remove empty term directory %s: %w", termDir, err)
-			}
-		}
-	}
-
-	// Regenerate index page
-	indexTemplate := taxonomyName + ".html"
-	if b.hasTemplate(indexTemplate) {
-		if err := b.generateTaxonomyIndex(taxonomyName, taxonomy, indexTemplate); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // singularize converts plural taxonomy names to singular for template names.
 // This is a simple implementation - add more rules as needed.
 func singularize(plural string) string {

@@ -3,7 +3,9 @@ package builder
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sync"
 
@@ -82,17 +84,31 @@ func (b *Builder) ReloadTemplates() error {
 
 // Generate processes the content tree and generates the complete static site.
 func (b *Builder) Generate(contentRoot *content.Node) error {
-	return b.fullGenerate(contentRoot)
+	return b.fullGenerate(contentRoot, false)
 }
 
 // GenerateWithOptions processes the content tree with specific generation options.
 // For backwards compatibility, this always performs a full build.
 func (b *Builder) GenerateWithOptions(contentRoot *content.Node, _ GenerateOptions) error {
-	return b.fullGenerate(contentRoot)
+	return b.fullGenerate(contentRoot, false)
+}
+
+// GenerateClean performs a full rebuild and cleans the output directory first.
+// Use this after file deletions to remove stale content.
+func (b *Builder) GenerateClean(contentRoot *content.Node) error {
+	return b.fullGenerate(contentRoot, true)
 }
 
 // fullGenerate performs a complete site rebuild.
-func (b *Builder) fullGenerate(contentRoot *content.Node) error {
+// If cleanOutput is true, it removes stale files from previous builds.
+func (b *Builder) fullGenerate(contentRoot *content.Node, cleanOutput bool) error {
+	// Clean output directory only when needed (e.g., after file deletions)
+	if cleanOutput {
+		if err := b.cleanOutputDir(); err != nil {
+			return err
+		}
+	}
+
 	if contentRoot == nil {
 		if err := os.MkdirAll(b.site.OutputDir, 0755); err != nil {
 			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
@@ -180,6 +196,40 @@ func (b *Builder) fullGenerate(contentRoot *content.Node) error {
 	}
 
 	return b.copyStaticAssets()
+}
+
+// cleanOutputDir removes all files in output directory to ensure clean rebuild.
+func (b *Builder) cleanOutputDir() error {
+	outputDir := b.site.OutputDir
+
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+		return nil
+	}
+
+	entries, err := os.ReadDir(outputDir)
+	if err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "read_output_directory",
+			Component: "builder",
+			Path:      outputDir,
+		})
+	}
+
+	for _, entry := range entries {
+		entryPath := filepath.Join(outputDir, entry.Name())
+
+		if entry.IsDir() {
+			if err := os.RemoveAll(entryPath); err != nil {
+				log.Printf("Warning: Could not remove directory %s: %v", entryPath, err)
+			}
+		} else {
+			if err := os.Remove(entryPath); err != nil {
+				log.Printf("Warning: Could not remove file %s: %v", entryPath, err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (b *Builder) processNode(node *content.Node) error {

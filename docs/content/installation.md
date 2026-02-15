@@ -24,30 +24,56 @@ gozzi version
 
 ## Alternative Methods
 
+### Homebrew (macOS/Linux)
+
+```sh
+brew install tduyng/tap/gozzi
+```
+
+Or tap for latest updates:
+
+```sh
+brew tap tduyng/tap
+brew install gozzi
+```
+
 ### Prebuilt Binaries
 
 Download from [GitHub Releases](https://github.com/tduyng/gozzi/releases):
 
-**macOS:**
-
 ```sh
-curl -LO https://github.com/tduyng/gozzi/releases/download/vX.Y.Z/gozzi_Darwin_arm64.tar.gz
-tar -xzf gozzi_Darwin_arm64.tar.gz
-sudo mv gozzi /usr/local/bin/
+# macOS ARM64
+curl -LO https://github.com/tduyng/gozzi/releases/download/vX.Y.Z/gozzi_X.Y.Z_darwin_arm64.tar.gz
+
+# macOS AMD64
+curl -LO https://github.com/tduyng/gozzi/releases/download/vX.Y.Z/gozzi_X.Y.Z_darwin_amd64.tar.gz
+
+# Linux ARM64
+curl -LO https://github.com/tduyng/gozzi/releases/download/vX.Y.Z/gozzi_X.Y.Z_linux_arm64.tar.gz
+
+# Linux AMD64
+curl -LO https://github.com/tduyng/gozzi/releases/download/vX.Y.Z/gozzi_X.Y.Z_linux_amd64.tar.gz
+
+# Windows
+curl -LO https://github.com/tduyng/gozzi/releases/download/vX.Y.Z/gozzi_X.Y.Z_windows_amd64.zip
 ```
 
-**Linux:**
+Extract and install:
 
 ```sh
-curl -LO https://github.com/tduyng/gozzi/releases/download/vX.Y.Z/gozzi_Linux_x86_64.tar.gz
-tar -xzf gozzi_Linux_x86_64.tar.gz
+# macOS / Linux
+tar -xzf gozzi_X.Y.Z_*.tar.gz
 sudo mv gozzi /usr/local/bin/
+
+# Windows (PowerShell)
+# 1. Extract gozzi_X.Y.Z_windows_amd64.zip
+# 2. Create folder C:\gozzi and move gozzi.exe there
+# 3. Add C:\gozzi to PATH:
+#    [System Properties] > [Environment Variables] > [User variables] > [Path] > [Edit] > [New]
+# 4. Restart terminal and run: gozzi version
 ```
 
-**Windows:**
-Download the `.zip` from [releases](https://github.com/tduyng/gozzi/releases), extract, and add to PATH.
-
-> Replace `vX.Y.Z` with the latest version number.
+Replace `X.Y.Z` with the latest version.
 
 ### From Source
 

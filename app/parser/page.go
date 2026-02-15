@@ -1,4 +1,3 @@
-// Package parser provides page parsing for individual markdown files.
 package parser
 
 import (
@@ -18,6 +17,8 @@ import (
 )
 
 func (p *ContentParser) parsePage(path, dir string) error {
+	p.stats.TotalFiles.Add(1)
+	p.stats.FilesParsed.Add(1)
 
 	mdContent, err := os.ReadFile(path)
 	if err != nil {
@@ -37,11 +38,14 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		})
 	}
 
+	if pageConfig == nil {
+		pageConfig = &config.FrontMatter{}
+	}
+
 	if pageConfig.Draft && !p.Site.BuildDrafts {
 		return nil
 	}
 
-	// Process shortcodes if processor is available
 	if p.shortcodeProcessor != nil {
 		contentPart, err = p.shortcodeProcessor.Process(contentPart)
 		if err != nil {
@@ -75,8 +79,6 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	}
 
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, pageConfig.ToConfig())
-
-	// Detect and set language for this page
 	lang := p.detectLanguage(path, dir, pageConfig)
 	mergedConfig["lang"] = lang
 
@@ -87,10 +89,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		pagePath = dir
 	} else {
 		parent = p.GetOrCreateSection(dir)
-		// Handle both absolute and relative paths
 		if filepath.IsAbs(path) {
-			// For absolute paths, construct the path from content/ + dir + filename
-			// to match the format used during initial build
 			pagePath = filepath.Join("content", dir, filepath.Base(path))
 		} else {
 			pagePath = strings.TrimSuffix(path, "content/")
@@ -104,18 +103,13 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
 	mergedConfig["img_url"] = p.resolveImgURL(pageConfig, slug)
 
-	// Generate summary
 	summaryGen := summary.New()
 	if p.Site.SummaryLength > 0 {
 		summaryGen.SentenceCount = p.Site.SummaryLength
 	}
 	summaryText := summaryGen.Generate(pageConfig.Description, template.HTML(htmlBuf.String()))
 
-	// Extract aliases from frontmatter
 	aliases := pageConfig.Aliases
-	if aliases == nil {
-		aliases = []string{}
-	}
 
 	pageNode := &content.Node{
 		Path:      pagePath,
@@ -137,11 +131,8 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	var targetNode *content.Node
 	for _, child := range parent.Children {
 		if child.Path == pageNode.Path {
-			// This ensures any pointers to this node (from RebuildAnalyzer, Builder, etc.)
-			// see the updated data
 			p.RemovePageFromAllTaxonomies(child)
 
-			// Update all fields of the existing node
 			child.Slug = pageNode.Slug
 			child.Permalink = pageNode.Permalink
 			child.URL = pageNode.URL
@@ -152,7 +143,6 @@ func (p *ContentParser) parsePage(path, dir string) error {
 			child.ReadTime = pageNode.ReadTime
 			child.Toc = pageNode.Toc
 			child.Aliases = pageNode.Aliases
-			// Note: Path, Type, and Parent should not change
 
 			targetNode = child
 			found = true
@@ -164,10 +154,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		targetNode = pageNode
 	}
 
-	// Parse all taxonomies (tags, categories, series, custom)
 	p.ParseTaxonomies(pageConfig, targetNode)
-
-	// Maintain backwards compatibility with Tags field
 	if len(pageConfig.Tags) > 0 {
 		p.parseTags(pageConfig, targetNode)
 	}

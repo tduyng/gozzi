@@ -7,9 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
-	"time"
 
 	"github.com/tduyng/gozzi/app/content"
 	"github.com/tduyng/gozzi/app/minify"
@@ -19,7 +17,6 @@ import (
 func (b *Builder) generateSection(node *content.Node) error {
 	outputPath := filepath.Join(b.site.OutputDir, node.Slug, "index.html")
 
-	// Templates render {{.Section.Content}} so sections need full content
 	nodeMap := node.ToMap()
 
 	data := map[string]any{
@@ -31,12 +28,10 @@ func (b *Builder) generateSection(node *content.Node) error {
 		"Section": nodeMap,
 	}
 
-	// Generate the main section page
 	if err := b.renderTemplate(node, outputPath, data); err != nil {
 		return err
 	}
 
-	// Generate alias redirects
 	return b.generateAliasRedirects(node)
 }
 
@@ -54,17 +49,13 @@ func (b *Builder) generatePage(node *content.Node) error {
 	}
 	nodeMap := node.ToMap()
 
-	// Parent section doesn't need full content
-	// Safely handle pages without parents (e.g., orphaned content)
 	var parentMap map[string]any
 	if node.Parent != nil {
 		parentMap = node.Parent.ToMapMinimal()
 	} else {
-		// Provide empty parent map for orphaned pages
 		parentMap = make(map[string]any)
 	}
 
-	// Add series navigation if this page is part of a series
 	if seriesName, ok := node.Config["series"].(string); ok && seriesName != "" {
 		if seriesNav := b.getSeriesNavigation(node, seriesName); seriesNav != nil {
 			nodeMap["Series"] = seriesNav
@@ -79,12 +70,10 @@ func (b *Builder) generatePage(node *content.Node) error {
 		"Page":   nodeMap, "Section": parentMap,
 	}
 
-	// Generate the main page
 	if err := b.renderTemplate(node, outputPath, data); err != nil {
 		return err
 	}
 
-	// Generate alias redirects
 	return b.generateAliasRedirects(node)
 }
 
@@ -139,7 +128,6 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 		})
 	}
 
-	// Render template directly without caching
 	content, err := b.executeTemplate(tpl, data)
 	if err != nil {
 		return utils.WrapWithContext(err, utils.ErrTemplate, utils.ErrorContext{
@@ -168,7 +156,6 @@ func (b *Builder) renderTemplate(node *content.Node, outputPath string, data any
 	return nil
 }
 
-// executeTemplate renders a template to bytes.
 func (b *Builder) executeTemplate(tpl *template.Template, data any) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := tpl.Execute(&buf, data); err != nil {
@@ -186,100 +173,6 @@ func (b *Builder) executeTemplate(tpl *template.Template, data any) ([]byte, err
 	}
 
 	return content, nil
-}
-
-// createStableCacheKey creates a deterministic cache key for auxiliary pages.
-func (b *Builder) createStableCacheKey(templateName string, data any) map[string]any {
-	key := map[string]any{
-		"Template": templateName,
-	}
-
-	dataMap, ok := data.(map[string]any)
-	if !ok {
-		return key
-	}
-
-	pageData, ok := dataMap["Page"].(map[string]any)
-	if !ok {
-		return key
-	}
-
-	if tag, ok := pageData["Tag"].(string); ok {
-		key["Tag"] = tag
-
-		if pages, ok := pageData["Pages"].([]map[string]any); ok {
-			pageKeys := make([]string, len(pages))
-			for i, page := range pages {
-				parts := []string{}
-
-				if permalink, ok := page["Permalink"].(string); ok {
-					parts = append(parts, permalink)
-				}
-
-				if config, ok := page["Config"].(map[string]any); ok {
-					if title, ok := config["title"].(string); ok {
-						parts = append(parts, title)
-					}
-					if date, ok := config["date"].(time.Time); ok {
-						parts = append(parts, date.Format("2006-01-02"))
-					}
-					if extra, ok := config["extra"].(map[string]any); ok {
-						if featured, ok := extra["featured"].(bool); ok {
-							parts = append(parts, fmt.Sprintf("featured:%v", featured))
-						}
-					}
-				}
-
-				pageKeys[i] = strings.Join(parts, "|")
-			}
-			key["Pages"] = pageKeys
-		}
-	}
-
-	if tags, ok := pageData["Tags"].([]map[string]any); ok {
-		tagKeys := make([]string, len(tags))
-		for i, tag := range tags {
-			name := fmt.Sprint(tag["Name"])
-			count := fmt.Sprint(tag["Count"])
-			permalink := fmt.Sprint(tag["Permalink"])
-			tagKeys[i] = fmt.Sprintf("%s:%s:%s", name, count, permalink)
-		}
-		key["Tags"] = tagKeys
-	}
-
-	// Handle taxonomy index pages with Terms field (series, categories, etc.)
-	if terms, ok := pageData["Terms"].([]map[string]any); ok {
-		termKeys := make([]string, len(terms))
-		for i, term := range terms {
-			name := fmt.Sprint(term["Name"])
-			slug := fmt.Sprint(term["Slug"])
-			count := fmt.Sprint(term["Count"])
-			permalink := fmt.Sprint(term["Permalink"])
-			termKeys[i] = fmt.Sprintf("%s:%s:%s:%s", name, slug, count, permalink)
-		}
-		key["Terms"] = termKeys
-	}
-
-	if title, ok := pageData["Title"].(string); ok {
-		key["Title"] = title
-	}
-
-	if path, ok := pageData["Path"].(string); ok {
-		key["Path"] = path
-	}
-
-	if siteData, ok := dataMap["Site"].(map[string]any); ok {
-		if config, ok := siteData["Config"].(map[string]any); ok {
-			if baseURL, ok := config["base_url"]; ok {
-				key["SiteBaseURL"] = fmt.Sprint(baseURL)
-			}
-			if siteTitle, ok := config["title"]; ok {
-				key["SiteTitle"] = fmt.Sprint(siteTitle)
-			}
-		}
-	}
-
-	return key
 }
 
 func (b *Builder) copyPageAssets(node *content.Node) error {
@@ -409,43 +302,4 @@ func urlizeHelper(s string) string {
 	}
 
 	return strings.Trim(slug, "-")
-}
-
-// buildChildCacheKeyParts extracts cache-relevant data from a child node.
-// This ensures consistent cache key generation for child pages across different contexts.
-func (b *Builder) buildChildCacheKeyParts(child *content.Node) []string {
-	parts := []string{child.Path}
-
-	if title, ok := child.Config["title"].(string); ok {
-		parts = append(parts, title)
-	}
-	if date, ok := child.Config["date"].(time.Time); ok {
-		parts = append(parts, date.Format("2006-01-02"))
-	}
-	if desc, ok := child.Config["description"].(string); ok {
-		parts = append(parts, desc)
-	}
-
-	// Include content to ensure section cache invalidates when child content changes
-	parts = append(parts, string(child.Content))
-
-	// Include extra config (affects template rendering)
-	if extra, ok := child.Config["extra"]; ok {
-		if extraMap, ok := extra.(map[string]any); ok {
-			keys := make([]string, 0, len(extraMap))
-			for k := range extraMap {
-				keys = append(keys, k)
-			}
-			sort.Strings(keys)
-			extraParts := make([]string, 0, len(keys))
-			for _, k := range keys {
-				extraParts = append(extraParts, fmt.Sprintf("%s=%v", k, extraMap[k]))
-			}
-			parts = append(parts, strings.Join(extraParts, ","))
-		} else {
-			parts = append(parts, fmt.Sprintf("%v", extra))
-		}
-	}
-
-	return parts
 }

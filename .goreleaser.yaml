@@ -1,21 +1,18 @@
 version: 2
 
-before:
-  hooks:
-    - go mod tidy
-    - go generate ./...
-
 builds:
-  - id: gozzi
-    env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
+  - goos:
       - darwin
+      - linux
       - windows
     goarch:
       - amd64
       - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.buildTime={{.Date}}
 
 archives:
   - formats: [tar.gz]

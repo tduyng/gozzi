@@ -84,7 +84,12 @@ func handleBuildCommand(args []string) {
 		}
 	}
 
-	if err := gen.Generate(contentParser.ContentMap["."]); err != nil {
+	generateFunc := gen.Generate
+	if *cleanOutput {
+		generateFunc = gen.GenerateClean
+	}
+
+	if err := generateFunc(contentParser.ContentMap["."]); err != nil {
 		log.Fatal(err)
 	}
 
@@ -183,7 +188,7 @@ Options:
 func initApp(configPath, contentDir string, buildDrafts bool) (*config.Site, *parser.ContentParser, *builder.Builder) {
 	site, err := config.LoadSite(configPath)
 	if err != nil {
-		log.Fatalf("Error loading config %s: %v", configPath, err)
+		log.Fatalf("Error loading config %s:\n  %v\n\nTip: Check your config.toml for syntax errors", configPath, err)
 	}
 
 	site.BuildDrafts = buildDrafts
@@ -192,13 +197,13 @@ func initApp(configPath, contentDir string, buildDrafts bool) (*config.Site, *pa
 	// Get project directory from config path
 	projectDir := filepath.Dir(configPath)
 	if err := site.LoadDataFiles(projectDir); err != nil {
-		log.Fatalf("Error loading data files: %v", err)
+		log.Fatalf("Error loading data files:\n  %v\n\nTip: Check your data/ directory for invalid YAML or JSON", err)
 	}
 
 	// Load i18n translations if i18n is configured
 	if site.I18n != nil {
 		if err := site.I18n.LoadTranslations(); err != nil {
-			log.Fatalf("Error loading i18n translations: %v", err)
+			log.Fatalf("Error loading i18n translations:\n  %v\n\nTip: Check your i18n language files for syntax errors", err)
 		}
 	}
 

@@ -1,4 +1,3 @@
-// Package parser provides content parsing and markdown processing with concurrent file processing.
 package parser
 
 import (
@@ -25,26 +24,23 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 )
 
-// ParseStats tracks incremental parsing statistics
 type ParseStats struct {
-	FilesSkipped atomic.Uint64 // Files skipped due to unchanged content
-	FilesParsed  atomic.Uint64 // Files actually parsed
-	TotalFiles   atomic.Uint64 // Total files encountered
+	FilesSkipped atomic.Uint64
+	FilesParsed  atomic.Uint64
+	TotalFiles   atomic.Uint64
 }
 
-// ContentParser parses markdown content files and builds the content tree.
 type ContentParser struct {
 	Site               *config.Site
 	ContentMap         map[string]*content.Node
-	Tags               map[string]*TagEntry // Deprecated: Use Taxonomies["tags"] instead
-	Taxonomies         map[string]*Taxonomy // All taxonomies (tags, categories, series, custom)
+	Tags               map[string]*TagEntry
+	Taxonomies         map[string]*Taxonomy
 	mu                 sync.Mutex
 	md                 goldmark.Markdown
 	shortcodeProcessor *markdown.ShortcodeProcessor
-	stats              *ParseStats // Statistics for monitoring
+	stats              *ParseStats
 }
 
-// NewParser creates a new ContentParser with the given site configuration.
 func NewParser(cfg *config.Site) *ContentParser {
 	syntaxTheme := cfg.SyntaxTheme
 	if syntaxTheme == "" {
@@ -79,7 +75,6 @@ func NewParser(cfg *config.Site) *ContentParser {
 	}
 }
 
-// Parse walks the content directory and parses all markdown files.
 func (p *ContentParser) Parse(rootDir string) error {
 	p.mu.Lock()
 	for k := range p.ContentMap {
@@ -104,13 +99,11 @@ func (p *ContentParser) Parse(rootDir string) error {
 		return nil
 	})
 
-	// Sort files for deterministic parsing order
 	slices.Sort(files)
 
 	return p.parseFiles(rootDir, files)
 }
 
-// ParseFiles parses only the specified files for incremental rebuilds.
 func (p *ContentParser) ParseFiles(rootDir string, files []string) error {
 	var mdFiles []string
 	for _, f := range files {
@@ -123,13 +116,11 @@ func (p *ContentParser) ParseFiles(rootDir string, files []string) error {
 		return nil
 	}
 
-	// Sort files for deterministic parsing order
 	slices.Sort(mdFiles)
 
 	return p.parseFiles(rootDir, mdFiles)
 }
 
-// parseFiles is the internal implementation that parses a list of files.
 func (p *ContentParser) parseFiles(rootDir string, files []string) error {
 	ctx := context.Background()
 	pool := utils.NewWorkerPool(ctx)
@@ -137,7 +128,6 @@ func (p *ContentParser) parseFiles(rootDir string, files []string) error {
 	_ = pool.ProcessFiles(files, func(ctx context.Context, filePath string) error {
 		relPath, _ := filepath.Rel(rootDir, filePath)
 		dir := filepath.Dir(relPath)
-		// Normalize to forward slashes for cross-platform ContentMap keys
 		dir = filepath.ToSlash(dir)
 
 		switch {
@@ -152,7 +142,6 @@ func (p *ContentParser) parseFiles(rootDir string, files []string) error {
 	paginator := paginate.New(p.ContentMap)
 	paginator.BuildLinks()
 
-	// Sort children for deterministic output
 	p.sortChildren()
 
 	return nil
@@ -170,19 +159,16 @@ func calculateReadStats(content string) (int, int) {
 	return wordCount, readTime
 }
 
-// GetMarkdownProcessor returns the configured goldmark markdown processor.
 func (p *ContentParser) GetMarkdownProcessor() goldmark.Markdown {
 	return p.md
 }
 
-// SetShortcodeTemplates updates the markdown processor with shortcode support.
 func (p *ContentParser) SetShortcodeTemplates(templates *template.Template) {
 	syntaxTheme := p.Site.SyntaxTheme
 	if syntaxTheme == "" {
 		syntaxTheme = "dracula"
 	}
 
-	// Initialize shortcode processor
 	p.shortcodeProcessor = markdown.NewShortcodeProcessor(templates)
 
 	p.md = goldmark.New(
@@ -218,51 +204,37 @@ func buildURL(baseURL, slug string) string {
 	return baseURL + "/" + slug
 }
 
-// detectLanguage detects the language for a content file from:
-// 1. Directory structure (e.g., content/en/, content/fr/)
-// 2. File suffix (e.g., about.en.md, about.fr.md)
-// 3. Frontmatter language field
-// 4. Site default language (fallback)
 func (p *ContentParser) detectLanguage(path, dir string, fm *config.FrontMatter) string {
-	// 1. Check frontmatter first (highest priority)
 	if fm != nil && fm.Lang != "" {
 		return fm.Lang
 	}
 
-	// 2. Check file suffix (e.g., about.en.md)
 	basename := filepath.Base(path)
 	if ext := filepath.Ext(basename); ext == ".md" {
 		nameWithoutExt := strings.TrimSuffix(basename, ext)
 		parts := strings.Split(nameWithoutExt, ".")
 		if len(parts) >= 2 {
-			// Last part before .md could be language code
 			potentialLang := parts[len(parts)-1]
-			// Validate it's a configured language
 			if p.Site.I18n != nil && p.Site.I18n.GetLanguage(potentialLang) != nil {
 				return potentialLang
 			}
 		}
 	}
 
-	// 3. Check directory structure (e.g., content/en/, content/fr/)
 	if dir != "." && dir != "" {
-		// Get the first directory component
 		parts := strings.Split(filepath.ToSlash(dir), "/")
 		if len(parts) > 0 {
 			firstDir := parts[0]
-			// Validate it's a configured language
 			if p.Site.I18n != nil && p.Site.I18n.GetLanguage(firstDir) != nil {
 				return firstDir
 			}
 		}
 	}
 
-	// 4. Fallback to site default language
 	if p.Site.I18n != nil {
 		return p.Site.I18n.GetDefaultLanguage().Code
 	}
 
-	// 5. Ultimate fallback
 	if p.Site.Lang != "" {
 		return p.Site.Lang
 	}
@@ -270,14 +242,12 @@ func (p *ContentParser) detectLanguage(path, dir string, fm *config.FrontMatter)
 	return "en"
 }
 
-// ResetStats resets parsing statistics
 func (p *ContentParser) ResetStats() {
 	p.stats.FilesSkipped.Store(0)
 	p.stats.FilesParsed.Store(0)
 	p.stats.TotalFiles.Store(0)
 }
 
-// sortChildren recursively sorts all Children slices for deterministic output
 func (p *ContentParser) sortChildren() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -287,13 +257,11 @@ func (p *ContentParser) sortChildren() {
 	}
 }
 
-// sortNodeChildren recursively sorts a node's children by path
 func (p *ContentParser) sortNodeChildren(node *content.Node) {
 	if node == nil || len(node.Children) == 0 {
 		return
 	}
 
-	// Sort children by path for deterministic order
 	slices.SortFunc(node.Children, func(a, b *content.Node) int {
 		if a.Path < b.Path {
 			return -1
@@ -304,7 +272,6 @@ func (p *ContentParser) sortNodeChildren(node *content.Node) {
 		return 0
 	})
 
-	// Recursively sort grandchildren
 	for _, child := range node.Children {
 		p.sortNodeChildren(child)
 	}

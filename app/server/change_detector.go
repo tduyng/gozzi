@@ -48,36 +48,52 @@ type FileChange struct {
 
 // ChangeDetector detects and classifies file changes
 type ChangeDetector struct {
-	contentDir string
-	outputDir  string
-	configPath string
-	fileHashes map[string]string
+	contentDir    string
+	outputDir     string
+	configPath    string
+	templatesPath string
+	staticPath    string
+	fileHashes    map[string]string
 }
 
 // NewChangeDetector creates a new change detector
 func NewChangeDetector(contentDir, outputDir, configPath string) *ChangeDetector {
+	// Compute absolute paths to ensure consistent comparison regardless of CWD
+	absConfig, _ := filepath.Abs(configPath)
+	projectRoot := filepath.Dir(absConfig)
+
+	// Resolve contentDir and outputDir to absolute paths
+	absContentDir, _ := filepath.Abs(contentDir)
+	absOutputDir, _ := filepath.Abs(outputDir)
+
+	templatesPath := filepath.Join(projectRoot, "templates")
+	staticPath := filepath.Join(projectRoot, "static")
+
 	return &ChangeDetector{
-		contentDir: contentDir,
-		outputDir:  outputDir,
-		configPath: configPath,
-		fileHashes: make(map[string]string),
+		contentDir:    absContentDir,
+		outputDir:     absOutputDir,
+		configPath:    absConfig,
+		templatesPath: templatesPath,
+		staticPath:    staticPath,
+		fileHashes:    make(map[string]string),
 	}
 }
 
 // ClassifyChange determines what type of change this file represents
 func (cd *ChangeDetector) ClassifyChange(path string) ChangeType {
-	// Normalize paths for comparison
 	absPath, _ := filepath.Abs(path)
 	absOutput, _ := filepath.Abs(cd.outputDir)
 	absContent, _ := filepath.Abs(cd.contentDir)
 	absConfig, _ := filepath.Abs(cd.configPath)
 
-	// Ignore output directory
 	if strings.HasPrefix(absPath, absOutput) {
 		return ChangeTypeIgnored
 	}
 
-	// Ignore system and temporary files
+	if strings.Contains(absPath, "/.git/") || strings.HasSuffix(absPath, "/.git") {
+		return ChangeTypeIgnored
+	}
+
 	base := filepath.Base(path)
 	if cd.isSystemFile(base) {
 		return ChangeTypeIgnored
@@ -85,53 +101,39 @@ func (cd *ChangeDetector) ClassifyChange(path string) ChangeType {
 
 	ext := filepath.Ext(path)
 
-	// Check if it's the config file
 	if absPath == absConfig {
 		return ChangeTypeConfig
 	}
 
-	// Check if it's in content directory
 	if strings.HasPrefix(absPath, absContent) {
-		// .md files are content
 		if ext == ".md" {
 			return ChangeTypeContent
 		}
-		// ALL other files in content directory (except system/temp files) are treated as static files
-		// This includes images, videos, PDFs, etc. No need to hardcode extensions.
-		// Examples: content/books/post-name/img/cover.webp, content/docs/file.pdf
-		// The flexible approach: if it's not markdown and not a system file, copy it as static
 		return ChangeTypeStatic
 	}
 
-	// Check if it's a template (must be under templates/ directory)
-	templatesPath, _ := filepath.Abs("templates")
+	templatesPath, _ := filepath.Abs(cd.templatesPath)
+	staticPath, _ := filepath.Abs(cd.staticPath)
 	if strings.HasPrefix(absPath, templatesPath) && ext == ".html" {
 		return ChangeTypeTemplate
 	}
 
-	// Check if it's static assets (must be under static/ directory)
-	staticPath, _ := filepath.Abs("static")
 	if strings.HasPrefix(absPath, staticPath) {
 		return ChangeTypeStatic
 	}
 
-	// Everything else is ignored
 	return ChangeTypeIgnored
 }
 
-// isSystemFile checks if a filename should be ignored (system/temp files)
 func (cd *ChangeDetector) isSystemFile(filename string) bool {
-	// Hidden files
 	if strings.HasPrefix(filename, ".") {
 		return true
 	}
 
-	// Backup files
 	if strings.HasPrefix(filename, "~") || strings.HasSuffix(filename, "~") {
 		return true
 	}
 
-	// Editor temporary files
 	if strings.HasSuffix(filename, ".swp") ||
 		strings.HasSuffix(filename, ".swo") ||
 		strings.HasSuffix(filename, ".swn") ||
@@ -141,13 +143,10 @@ func (cd *ChangeDetector) isSystemFile(filename string) bool {
 		return true
 	}
 
-	// Vim/Neovim numbered backup files (e.g., "4913", "1234")
-	// These have no extension and are purely numeric
 	if filepath.Ext(filename) == "" && isNumericFilename(filename) {
 		return true
 	}
 
-	// Log files
 	if filepath.Ext(filename) == ".log" {
 		return true
 	}
@@ -155,7 +154,6 @@ func (cd *ChangeDetector) isSystemFile(filename string) bool {
 	return false
 }
 
-// isNumericFilename checks if a filename consists only of digits
 func isNumericFilename(filename string) bool {
 	if len(filename) == 0 {
 		return false
@@ -168,26 +166,22 @@ func isNumericFilename(filename string) bool {
 	return true
 }
 
-// shouldIgnoreDir checks if a directory should be ignored
 func (cd *ChangeDetector) shouldIgnoreDir(path string) bool {
 	absOutput, _ := filepath.Abs(cd.outputDir)
 	absPath, _ := filepath.Abs(path)
 
-	// Ignore output directory
 	if strings.HasPrefix(absPath, absOutput) {
 		return true
 	}
 
-	// Ignore hidden directories
 	base := filepath.Base(path)
+
 	return strings.HasPrefix(base, ".")
 }
 
-// HasChanged checks if a file's content has actually changed using MD5 hash
 func (cd *ChangeDetector) HasChanged(path string) (bool, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		// File was deleted or can't be read
 		delete(cd.fileHashes, path)
 		return true, nil
 	}
@@ -203,7 +197,6 @@ func (cd *ChangeDetector) HasChanged(path string) (bool, error) {
 	return false, nil
 }
 
-// DetectChange combines classification and change detection
 func (cd *ChangeDetector) DetectChange(path string) (*FileChange, error) {
 	changeType := cd.ClassifyChange(path)
 
@@ -226,13 +219,12 @@ func (cd *ChangeDetector) DetectChange(path string) (*FileChange, error) {
 		}, nil
 	}
 
-	// Calculate relative path based on type
 	var relPath string
 	switch changeType {
 	case ChangeTypeContent:
 		relPath, _ = filepath.Rel(cd.contentDir, path)
 	case ChangeTypeTemplate:
-		relPath, _ = filepath.Rel("templates", path)
+		relPath, _ = filepath.Rel(cd.templatesPath, path)
 	case ChangeTypeStatic:
 		relPath = path
 	case ChangeTypeConfig:
@@ -246,13 +238,11 @@ func (cd *ChangeDetector) DetectChange(path string) (*FileChange, error) {
 	}, nil
 }
 
-// InitializeHashes pre-populates file hashes for watched directories
-// This prevents spurious rebuilds on first file touch after server start
 func (cd *ChangeDetector) InitializeHashes() error {
 	paths := []string{
 		cd.contentDir,
-		"templates",
-		"static",
+		cd.templatesPath,
+		cd.staticPath,
 		cd.configPath,
 	}
 
@@ -262,35 +252,29 @@ func (cd *ChangeDetector) InitializeHashes() error {
 				return nil // Skip paths with errors
 			}
 
-			// Skip directories
 			if d.IsDir() {
-				// Skip ignored directories
 				if cd.shouldIgnoreDir(p) {
 					return filepath.SkipDir
 				}
 				return nil
 			}
 
-			// Skip system/temp files
 			if cd.isSystemFile(filepath.Base(p)) {
 				return nil
 			}
 
-			// Only hash files we actually care about
 			changeType := cd.ClassifyChange(p)
 			if changeType == ChangeTypeIgnored {
 				return nil
 			}
 
-			// Pre-compute and store hash
 			content, err := os.ReadFile(p)
 			if err != nil {
-				return nil // Skip files we can't read
+				return nil
 			}
 			cd.fileHashes[p] = fmt.Sprintf("%x", md5.Sum(content))
 			return nil
 		}); err != nil {
-			// Don't fail if a path doesn't exist
 			if !os.IsNotExist(err) {
 				return err
 			}

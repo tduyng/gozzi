@@ -352,6 +352,11 @@ func copyFile(src, dst string) error {
 
 // CopyStaticFile copies a single static file from static/ to the output directory
 func (b *Builder) CopyStaticFile(srcPath string) error {
+	// Skip directories - only copy files
+	if info, err := os.Stat(srcPath); err == nil && info.IsDir() {
+		return nil
+	}
+
 	var relPath string
 	var err error
 
@@ -384,7 +389,7 @@ func (b *Builder) CopyStaticFile(srcPath string) error {
 	// Check if source file exists (handles deletions)
 	if _, err := os.Stat(srcPath); os.IsNotExist(err) {
 		// File was deleted, remove from output
-		if err := os.Remove(destPath); err != nil && !os.IsNotExist(err) {
+		if err := os.RemoveAll(destPath); err != nil && !os.IsNotExist(err) {
 			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 				Operation: "remove_deleted_static_file",
 				Component: "builder",
@@ -392,6 +397,15 @@ func (b *Builder) CopyStaticFile(srcPath string) error {
 			})
 		}
 		return nil
+	}
+
+	// Remove existing file/directory at destination to avoid conflicts
+	if err := os.RemoveAll(destPath); err != nil {
+		return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
+			Operation: "remove_destination",
+			Component: "builder",
+			Path:      destPath,
+		})
 	}
 
 	// Handle SCSS compilation first

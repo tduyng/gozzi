@@ -1,5 +1,3 @@
-// This file provides file watching and automatic rebuild for development.
-// It uses a clean change detection system for flexible and maintainable file watching.
 package server
 
 import (
@@ -9,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,7 +18,6 @@ import (
 	"github.com/tduyng/gozzi/app/utils"
 )
 
-// watchChanges monitors file system changes and triggers rebuilds
 func (s *DevServer) watchChanges() {
 	defer func() {
 		_ = s.watcher.Close()
@@ -33,12 +31,11 @@ func (s *DevServer) watchChanges() {
 		changedFilesMutex sync.Mutex
 	)
 
-	// Watch all necessary directories
 	paths := []string{
 		filepath.Dir(s.configPath),
 		s.contentDir,
-		"templates",
-		"static",
+		s.detector.templatesPath,
+		s.detector.staticPath,
 	}
 
 	for _, path := range paths {
@@ -46,7 +43,6 @@ func (s *DevServer) watchChanges() {
 			if err != nil {
 				return nil
 			}
-			// Only watch directories, fsnotify will detect file changes in them
 			if d.IsDir() && !s.detector.shouldIgnoreDir(p) {
 				return s.watcher.Add(p)
 			}
@@ -73,46 +69,57 @@ func (s *DevServer) watchChanges() {
 				continue
 			}
 
-			// Handle config file atomic replacement (vim, sed -i, etc.)
-			// These editors REMOVE the old file and CREATE a new one
-			absConfigPath, _ := filepath.Abs(s.configPath)
 			absEventPath, _ := filepath.Abs(event.Name)
 
-			if absEventPath == absConfigPath {
+			// Handle directories separately
+			if info, err := os.Stat(event.Name); err == nil && info.IsDir() {
+				// Directory events: add new directories to watcher, removed dirs trigger clean rebuild
 				if event.Op&fsnotify.Create == fsnotify.Create {
-					// Re-add the config file to watch after atomic replacement
-					if err := s.watcher.Add(absConfigPath); err != nil {
-						log.Printf("Error re-watching config file: %v", err)
-					}
-				}
-			}
-
-			// Handle new directory creation
-			if event.Op&fsnotify.Create == fsnotify.Create {
-				if info, err := os.Stat(event.Name); err == nil && info.IsDir() {
 					if !s.detector.shouldIgnoreDir(event.Name) {
 						if err := s.watcher.Add(event.Name); err != nil {
 							log.Printf("Error watching new directory %s: %v", event.Name, err)
 						}
 					}
+				} else if event.Op&fsnotify.Remove == fsnotify.Remove {
+					log.Printf("Directory removed: %s - triggering clean rebuild", event.Name)
+					s.triggerCleanRebuild()
+				}
+				continue
+			}
+
+			if strings.Contains(absEventPath, "/.git/") || strings.HasSuffix(absEventPath, "/.git") {
+				continue
+			}
+			if s.detector.shouldIgnoreDir(event.Name) {
+				continue
+			}
+
+			// Handle config file changes (re-watch after atomic replacement)
+			absConfigPath, _ := filepath.Abs(s.configPath)
+			if absEventPath == absConfigPath && event.Op&fsnotify.Create == fsnotify.Create {
+				if err := s.watcher.Add(absConfigPath); err != nil {
+					log.Printf("Error re-watching config file: %v", err)
 				}
 			}
 
-			// Detect and classify the change
+			// Handle file removals - always trigger clean rebuild
+			if event.Op&fsnotify.Remove == fsnotify.Remove {
+				log.Printf("File removed: %s - triggering clean rebuild", event.Name)
+				s.triggerCleanRebuild()
+				continue
+			}
+
 			change, err := s.detector.DetectChange(event.Name)
 			if err != nil {
 				log.Printf("Error detecting change for %s: %v", event.Name, err)
 				continue
 			}
 
-			// Ignore if not a relevant change (includes unchanged files)
 			if change.Type == ChangeTypeIgnored {
 				continue
 			}
 
-			// Only add to changedFiles if it's actually different
 			changedFilesMutex.Lock()
-			// Deduplicate: check if this file is already in the pending changes
 			alreadyPending := false
 			for _, existing := range changedFiles {
 				if existing.Path == change.Path {
@@ -125,7 +132,6 @@ func (s *DevServer) watchChanges() {
 			}
 			changedFilesMutex.Unlock()
 
-			// Reset debounce timer
 			if debounceTimer != nil {
 				debounceTimer.Stop()
 			}
@@ -151,7 +157,6 @@ func (s *DevServer) watchChanges() {
 	}
 }
 
-// triggerRebuild processes detected changes and rebuilds the site
 func (s *DevServer) triggerRebuild(changes []*FileChange) {
 	start := time.Now()
 
@@ -159,7 +164,6 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 		return
 	}
 
-	// Group changes by type
 	var (
 		hasConfigChange bool
 		contentFiles    []string
@@ -184,7 +188,6 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 		}
 	}
 
-	// Handle config changes (requires full rebuild)
 	if hasConfigChange {
 		log.Println("Config changed - performing full rebuild")
 		if err := s.reloadConfig(); err != nil {
@@ -200,7 +203,6 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 		return
 	}
 
-	// Handle template changes - reload templates first
 	if len(templateFiles) > 0 {
 		log.Printf("Templates changed: %v", templateFiles)
 		if err := s.gen.ReloadTemplates(); err != nil {
@@ -209,34 +211,44 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 		}
 	}
 
-	// Copy static files if any changed
 	if len(staticFiles) > 0 {
 		log.Printf("Static files changed: %d files", len(staticFiles))
 		for _, staticFile := range staticFiles {
+			// Skip if file no longer exists (deleted/renamed)
+			if _, err := os.Stat(staticFile); os.IsNotExist(err) {
+				continue
+			}
 			if err := s.gen.CopyStaticFile(staticFile); err != nil {
 				log.Printf("Error copying static file %s: %v", staticFile, err)
 			}
 		}
 	}
 
-	// Handle content changes - re-parse content if changed
 	if len(contentFiles) > 0 {
 		log.Printf("Content changed: %d files", len(contentFiles))
 		for _, f := range contentFiles {
 			log.Printf("  - Content file: %s", f)
 		}
 
-		// Parse all content (full reparse for simplicity and correctness)
+		// Re-parse content and do regular rebuild (not clean)
 		parseStart := time.Now()
 		if err := s.parser.Parse(s.contentDir); err != nil {
 			log.Printf("Parse error: %v", err)
 			return
 		}
 		log.Printf("Parse took %dms", time.Since(parseStart).Milliseconds())
-	}
 
-	// Always do full rebuild - fast enough for development
-	log.Println("Performing full rebuild")
+		genStart := time.Now()
+		if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
+			log.Printf("Generate error: %v", err)
+			return
+		}
+		log.Printf("Generate took %dms", time.Since(genStart).Milliseconds())
+
+		s.notifyClients()
+		log.Printf("Rebuild completed in %dms", time.Since(start).Milliseconds())
+		return
+	}
 	genStart := time.Now()
 	if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
 		log.Printf("Generate error: %v", err)
@@ -244,12 +256,32 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 	}
 	log.Printf("Generate took %dms", time.Since(genStart).Milliseconds())
 
-	// Notify live reload clients
 	s.notifyClients()
 	log.Printf("Rebuild completed in %dms", time.Since(start).Milliseconds())
 }
 
-// reloadConfig reloads the site configuration and performs a full rebuild
+func (s *DevServer) triggerCleanRebuild() {
+	start := time.Now()
+
+	log.Println("Performing clean rebuild (removing stale files)")
+	parseStart := time.Now()
+	if err := s.parser.Parse(s.contentDir); err != nil {
+		log.Printf("Parse error: %v", err)
+		return
+	}
+	log.Printf("Parse took %dms", time.Since(parseStart).Milliseconds())
+
+	genStart := time.Now()
+	if err := s.gen.GenerateClean(s.parser.ContentMap["."]); err != nil {
+		log.Printf("Generate error: %v", err)
+		return
+	}
+	log.Printf("Generate took %dms", time.Since(genStart).Milliseconds())
+
+	s.notifyClients()
+	log.Printf("Clean rebuild completed in %dms", time.Since(start).Milliseconds())
+}
+
 func (s *DevServer) reloadConfig() error {
 	content, err := os.ReadFile(s.configPath)
 	if err != nil {

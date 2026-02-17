@@ -56,4 +56,4 @@ package.json
 package-lock.json
 bun.lockb
 .vitepress/
-LATEST_CHANGELOG.md
+RELEASE_NOTES.md

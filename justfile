@@ -72,7 +72,7 @@ tag VERSION:
     @echo "{{ VERSION }}" > {{ version_file }}
     @echo "→ Generating changelog..."
     @git cliff --unreleased --tag "v{{ VERSION }}" --prepend {{ changelog }}
-    @git cliff --unreleased --tag "v{{ VERSION }}" --strip all > LATEST_CHANGELOG.md
+    @git cliff --unreleased --tag "v{{ VERSION }}" --strip all > RELEASE_NOTES.md
     @git add {{ changelog }} {{ version_file }}
     @git commit -m "chore: release v{{ VERSION }}"
     @git tag -a v{{ VERSION }} -m "Release v{{ VERSION }}"

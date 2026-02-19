@@ -26,23 +26,6 @@ gozzi version
 
 **That's it!** Go to [Getting Started](/getting-started) to build your first site.
 
----
-
-## Alternative Methods
-
-### Homebrew (macOS/Linux)
-
-```sh
-brew install tduyng/tap/gozzi
-```
-
-Or tap for latest updates:
-
-```sh
-brew tap tduyng/tap
-brew install gozzi
-```
-
 ### Prebuilt Binaries
 
 Download from [GitHub Releases](https://github.com/tduyng/gozzi/releases):

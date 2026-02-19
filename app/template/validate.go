@@ -23,21 +23,21 @@ type Error struct {
 func (e *Error) Error() string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Template error in %s", e.Template))
+	fmt.Fprintf(&sb, "Template error in %s", e.Template)
 	if e.Line > 0 {
-		sb.WriteString(fmt.Sprintf(" at line %d", e.Line))
+		fmt.Fprintf(&sb, " at line %d", e.Line)
 		if e.Column > 0 {
-			sb.WriteString(fmt.Sprintf(", column %d", e.Column))
+			fmt.Fprintf(&sb, ", column %d", e.Column)
 		}
 	}
-	sb.WriteString(fmt.Sprintf(": %s\n", e.Message))
+	fmt.Fprintf(&sb, ": %s\n", e.Message)
 
 	if e.Snippet != "" {
-		sb.WriteString(fmt.Sprintf("\n%s\n", e.Snippet))
+		fmt.Fprintf(&sb, "\n%s\n", e.Snippet)
 	}
 
 	if e.Hint != "" {
-		sb.WriteString(fmt.Sprintf("\nHint: %s\n", e.Hint))
+		fmt.Fprintf(&sb, "\nHint: %s\n", e.Hint)
 	}
 
 	return sb.String()
@@ -144,7 +144,7 @@ func (v *Validator) buildSnippet(lines []string, errorLine int) string {
 		if lineNum == errorLine {
 			prefix = "→ "
 		}
-		sb.WriteString(fmt.Sprintf("%s%4d | %s\n", prefix, lineNum, lines[i]))
+		fmt.Fprintf(&sb, "%s%4d | %s\n", prefix, lineNum, lines[i])
 	}
 
 	return sb.String()
@@ -192,16 +192,16 @@ func (vr *ValidationResult) Report() string {
 	var sb strings.Builder
 
 	if len(vr.Errors) > 0 {
-		sb.WriteString(fmt.Sprintf("✗ Found %d template error(s):\n\n", len(vr.Errors)))
+		fmt.Fprintf(&sb, "✗ Found %d template error(s):\n\n", len(vr.Errors))
 		for i, err := range vr.Errors {
-			sb.WriteString(fmt.Sprintf("Error %d:\n%s\n", i+1, err.Error()))
+			fmt.Fprintf(&sb, "Error %d:\n%s\n", i+1, err.Error())
 		}
 	}
 
 	if len(vr.Warnings) > 0 {
-		sb.WriteString(fmt.Sprintf("⚠ Found %d template warning(s):\n\n", len(vr.Warnings)))
+		fmt.Fprintf(&sb, "⚠ Found %d template warning(s):\n\n", len(vr.Warnings))
 		for i, warn := range vr.Warnings {
-			sb.WriteString(fmt.Sprintf("Warning %d:\n%s\n", i+1, warn.Error()))
+			fmt.Fprintf(&sb, "Warning %d:\n%s\n", i+1, warn.Error())
 		}
 	}
 

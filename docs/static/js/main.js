@@ -1,58 +1,119 @@
 ;(function () {
     'use strict'
 
-    // Active link highlighting
-    function highlightActiveLinks() {
-        const currentPath = window.location.pathname
+    // Platform detection
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
 
-        // Normalize paths (remove trailing slash for comparison)
-        const normalizedPath =
-            currentPath.endsWith('/') && currentPath.length > 1
+    // Mobile drawer
+    function initDrawer() {
+        const menuToggle = document.getElementById('menu-toggle')
+        const closeDrawer = document.getElementById('close-drawer')
+        const drawer = document.getElementById('sidebar-drawer')
+        const overlay = document.getElementById('sidebar-overlay')
+
+        if (!menuToggle || !drawer) return
+
+        function openDrawer() {
+            drawer.classList.add('open')
+            overlay?.classList.add('open')
+            document.body.classList.add('drawer-open')
+            menuToggle.setAttribute('aria-expanded', 'true')
+            drawer.setAttribute('aria-hidden', 'false')
+            closeDrawer?.focus()
+        }
+
+        function closeDrawerFn() {
+            drawer.classList.remove('open')
+            overlay?.classList.remove('open')
+            document.body.classList.remove('drawer-open')
+            menuToggle.setAttribute('aria-expanded', 'false')
+            drawer.setAttribute('aria-hidden', 'true')
+            menuToggle.focus()
+        }
+
+        menuToggle.addEventListener('click', openDrawer)
+        closeDrawer?.addEventListener('click', closeDrawerFn)
+        overlay?.addEventListener('click', closeDrawerFn)
+
+        // Close on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && drawer.classList.contains('open')) {
+                closeDrawerFn()
+            }
+        })
+
+        // Sync sidebar links with drawer
+        const sidebarLinks = document.querySelectorAll('.sidebar-link')
+        const drawerLinks = document.querySelectorAll('.sidebar-drawer .sidebar-link')
+        
+        function syncActiveLink() {
+            const currentPath = window.location.pathname
+            const normalizedPath = currentPath.endsWith('/') && currentPath.length > 1
                 ? currentPath.slice(0, -1)
                 : currentPath
 
-        // Sidebar links
-        let activeLink = null
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href')
+                const normalizedHref = href?.endsWith('/') && href.length > 1 ? href.slice(0, -1) : href
+                if (normalizedHref === normalizedPath) {
+                    link.classList.add('active')
+                } else {
+                    link.classList.remove('active')
+                }
+            })
+
+            drawerLinks.forEach(link => {
+                const href = link.getAttribute('href')
+                const normalizedHref = href?.endsWith('/') && href.length > 1 ? href.slice(0, -1) : href
+                if (normalizedHref === normalizedPath) {
+                    link.classList.add('active')
+                } else {
+                    link.classList.remove('active')
+                }
+            })
+        }
+
+        syncActiveLink()
+    }
+
+    // Active link highlighting
+    function highlightActiveLinks() {
+        const currentPath = window.location.pathname
+        const normalizedPath = currentPath.endsWith('/') && currentPath.length > 1
+            ? currentPath.slice(0, -1)
+            : currentPath
+
         document.querySelectorAll('.sidebar-link').forEach((link) => {
             const href = link.getAttribute('href')
-            const normalizedHref = href.endsWith('/') && href.length > 1 ? href.slice(0, -1) : href
+            const normalizedHref = href?.endsWith('/') && href.length > 1 ? href.slice(0, -1) : href
 
             if (normalizedHref === normalizedPath) {
                 link.classList.add('active')
-                activeLink = link
             } else {
                 link.classList.remove('active')
             }
         })
-
-        // Scroll active link into view in sidebar
-        if (activeLink) {
-            scrollToActiveLink(activeLink)
-        }
     }
 
     // Scroll active sidebar link into view
-    function scrollToActiveLink(activeLink) {
+    function scrollToActiveLink() {
+        const activeLink = document.querySelector('.sidebar-link.active')
         const sidebar = document.querySelector('.sidebar')
         if (!sidebar || !activeLink) return
 
-        // Use requestAnimationFrame to ensure layout is complete
         requestAnimationFrame(() => {
             const sidebarRect = sidebar.getBoundingClientRect()
             const linkRect = activeLink.getBoundingClientRect()
 
-            // Check if link is not fully visible
             const isAboveView = linkRect.top < sidebarRect.top
             const isBelowView = linkRect.bottom > sidebarRect.bottom
 
             if (isAboveView || isBelowView) {
-                // Calculate scroll position to center the link
                 const sidebarScrollTop = sidebar.scrollTop
                 const linkOffsetTop = activeLink.offsetTop
                 const sidebarHeight = sidebar.clientHeight
                 const linkHeight = activeLink.clientHeight
 
-                // Center the active link in the sidebar
                 const targetScroll = linkOffsetTop - sidebarHeight / 2 + linkHeight / 2
 
                 sidebar.scrollTo({
@@ -66,14 +127,23 @@
     // Search functionality
     function initSearch() {
         const searchBtn = document.getElementById('search-btn')
+        const searchKbd = searchBtn?.querySelector('.search-kbd')
+        
+        // Update keyboard shortcut based on platform
+        if (searchKbd) {
+            searchKbd.textContent = isMac ? '⌘K' : 'Ctrl+K'
+        }
+
         if (searchBtn) {
             searchBtn.addEventListener('click', () => {
-                alert('Search functionality coming soon! 🔍')
+                // Placeholder for search - could integrate Algolia, Fuse.js, etc.
+                console.log('Search triggered')
             })
 
-            // Keyboard shortcut (Cmd+K or Ctrl+K)
+            // Keyboard shortcut
             document.addEventListener('keydown', (e) => {
-                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                const key = isMac ? e.metaKey : e.ctrlKey
+                if (key && e.key === 'k') {
                     e.preventDefault()
                     searchBtn.click()
                 }
@@ -95,8 +165,6 @@
                         behavior: 'smooth',
                         block: 'start',
                     })
-
-                    // Update URL without triggering scroll
                     history.pushState(null, null, href)
                 }
             })
@@ -108,7 +176,6 @@
         document.querySelectorAll('pre code').forEach((block) => {
             const pre = block.parentElement
 
-            // Check if button already exists
             if (pre.querySelector('.code-copy-btn')) {
                 return
             }
@@ -138,9 +205,11 @@
         })
     }
 
-    // Initialize on DOM ready
+    // Initialize
     function init() {
+        initDrawer()
         highlightActiveLinks()
+        scrollToActiveLink()
         initSearch()
         initSmoothScroll()
         initCodeCopy()

@@ -6,7 +6,13 @@ template = "page.html"
 
 ## Quick Install
 
-**Requires Go 1.25+** ([install Go](https://go.dev/doc/install))
+**Homebrew (recommended for macOS/Linux):**
+
+```sh
+brew install tduyng/tap/gozzi
+```
+
+**Or with Go 1.25+:**
 
 ```sh
 go install github.com/tduyng/gozzi@latest

@@ -23,9 +23,13 @@ go version
 
 ## Step 1: Install Gozzi
 
-**Recommended method:**
+**Recommended methods:**
 
 ```bash
+# Homebrew (macOS/Linux)
+brew install tduyng/tap/gozzi
+
+# Or with Go
 go install github.com/tduyng/gozzi@latest
 ```
 

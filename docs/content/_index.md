@@ -19,7 +19,10 @@ Gozzi might be right for you if you:
 ## Quick Start
 
 ```bash
-# Install
+# Install (Homebrew)
+brew install tduyng/tap/gozzi
+
+# Or with Go
 go install github.com/tduyng/gozzi@latest
 
 # Create site

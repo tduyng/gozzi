@@ -1,47 +1,62 @@
 {{ template "partials/_head.html" . }}
-    
-    <div class="layout">
-        {{ template "partials/_header.html" . }}
-        
-        <div class="layout-inner">
-            {{ template "partials/_sidebar.html" . }}
-            
-            <main class="content">
-                <article class="prose">
-                    <h1>{{ .Page.Config.title }}</h1>
-                    {{ .Page.Content }}
-                </article>
-                
-                {{ template "partials/_footer.html" . }}
-            </main>
-        </div>
-    </div>
 
-    <script src="{{ .Site.Config.extra.base_path }}/js/main.js"></script>
+<a href="#main-content" class="skip-link">Skip to content</a>
     
-    <!-- KaTeX auto-render -->
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderKaTeX()"></script>
-    <script>
-        function renderKaTeX() {
-            renderMathInElement(document.body, {
-                delimiters: [
-                    {left: '$$', right: '$$', display: true},
-                    {left: '\\(', right: '\\)', display: false},
-                    {left: '\\[', right: '\\]', display: true}
-                ],
-                throwOnError: false
-            });
-        }
-    </script>
+<div class="layout">
+    {{ template "partials/_header.html" . }}
     
-    <!-- Mermaid diagrams -->
-    <script type="module">
-        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({ 
-            startOnLoad: true,
-            theme: 'default'
+    <div class="layout-inner">
+        <aside class="sidebar">
+            {{ range $.Site.Config.extra.sidebar }}
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">{{ .title }}</h3>
+                <ul class="sidebar-items">
+                    {{ range .items }}
+                    <li>
+                        <a href="{{ $.Site.Config.extra.base_path }}{{ .link }}" class="sidebar-link">{{ .text }}</a>
+                    </li>
+                    {{ end }}
+                </ul>
+            </div>
+            {{ end }}
+        </aside>
+        
+        <main class="content" id="main-content" role="main">
+            <article class="prose">
+                <h1>{{ .Page.Config.title }}</h1>
+                {{ .Page.Content }}
+            </article>
+            
+            {{ template "partials/_footer.html" . }}
+        </main>
+    </div>
+</div>
+
+<script src="{{ .Site.Config.extra.base_path }}/js/main.js"></script>
+
+<!-- KaTeX auto-render -->
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderKaTeX()"></script>
+<script>
+    function renderKaTeX() {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
+            ],
+            throwOnError: false
         });
-    </script>
+    }
+</script>
+
+<!-- Mermaid diagrams -->
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+        startOnLoad: true,
+        theme: 'default'
+    });
+</script>
 </body>
 </html>

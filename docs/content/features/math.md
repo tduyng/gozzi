@@ -20,16 +20,16 @@ Displayed: E = mc²
 
 **What You Need:**
 
-- ✅ **KaTeX CSS** - For styling math expressions
-- ✅ **KaTeX JavaScript** - For client-side rendering (~50KB gzipped)
-- ✅ **Auto-render extension** - To find and render math in HTML
+- KaTeX CSS - For styling math expressions
+- KaTeX JavaScript - For client-side rendering (~50KB gzipped)
+- Auto-render extension - To find and render math in HTML
 
-**Why Client-Side Rendering:**
+Why Client-Side Rendering:
 
-- ✅ **Zero Go dependencies** - No CGO or external libraries needed
-- ✅ **Cross-platform builds** - Works on all architectures (amd64, arm64, etc.)
-- ✅ **User control** - Choose KaTeX version and hosting method
-- ✅ **Lighter builds** - No embedded rendering engine in Gozzi binary
+- Zero Go dependencies - No CGO or external libraries needed
+- Cross-platform builds - Works on all architectures (amd64, arm64, etc.)
+- User control - Choose KaTeX version and hosting method
+- Lighter builds - No embedded rendering engine in Gozzi binary
 
 ## Basic Usage
 
@@ -81,15 +81,22 @@ Add to your template before closing `</body>`:
 
 ```html
 <!-- templates/partials/_scripts.html -->
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous" 
+<script
+    defer
+    src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+    crossorigin="anonymous"
+></script>
+<script
+    defer
+    src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    crossorigin="anonymous"
     onload="renderMathInElement(document.body, {
         delimiters: [
             {left: '\\[', right: '\\]', display: true},
             {left: '\\(', right: '\\)', display: false}
         ]
-    });">
-</script>
+    });"
+></script>
 ```
 
 **Benefits:**
@@ -129,14 +136,16 @@ Then reference them in your templates:
 
 <!-- Before </body> -->
 <script defer src="/js/katex.min.js"></script>
-<script defer src="/js/auto-render.min.js" 
+<script
+    defer
+    src="/js/auto-render.min.js"
     onload="renderMathInElement(document.body, {
         delimiters: [
             {left: '\\[', right: '\\]', display: true},
             {left: '\\(', right: '\\)', display: false}
         ]
-    });">
-</script>
+    });"
+></script>
 ```
 
 **Benefits:**
@@ -156,22 +165,31 @@ To use KaTeX math in your Gozzi site:
 
     ```html
     <!-- templates/partials/_head.html -->
-    <link rel="stylesheet" 
-        href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" 
-        crossorigin="anonymous" />
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+        crossorigin="anonymous"
+    />
     ```
 
     ```html
     <!-- templates/partials/_scripts.html -->
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous" 
+    <script
+        defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+        crossorigin="anonymous"
+    ></script>
+    <script
+        defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        crossorigin="anonymous"
         onload="renderMathInElement(document.body, {
             delimiters: [
                 {left: '\\[', right: '\\]', display: true},
                 {left: '\\(', right: '\\)', display: false}
             ]
-        });">
-    </script>
+        });"
+    ></script>
     ```
 
 2. **Write math in your markdown**
@@ -181,6 +199,7 @@ To use KaTeX math in your Gozzi site:
     ```
 
 3. **Build your site**
+
     ```bash
     gozzi build
     ```
@@ -188,6 +207,7 @@ To use KaTeX math in your Gozzi site:
 4. **View in browser** - Math will be rendered by KaTeX!
 
 **⚠️ Troubleshooting:** If you see raw LaTeX like `\(E = mc^2\)` instead of rendered math:
+
 1. Check KaTeX CSS is loaded (browser DevTools)
 2. Check KaTeX JavaScript is loaded (browser Console)
 3. Ensure auto-render script runs after page load (use `defer` attribute)
@@ -239,5 +259,3 @@ Summation:
 $$
 \sum_{i=1}^{n} i = \frac{n(n+1)}{2}
 $$
-
-

@@ -1,6 +1,6 @@
 module github.com/tduyng/gozzi
 
-go 1.25.2
+go 1.26
 
 tool (
 	github.com/BurntSushi/toml

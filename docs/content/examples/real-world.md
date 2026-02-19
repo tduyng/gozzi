@@ -230,44 +230,4 @@ jobs:
                   publish_dir: ./public
 ```
 
-## What I Learned
-
-### Good Decisions
-
-1. **Simple folder structure** - Easy to find content
-2. **Config per environment** - Different settings for dev/prod
-3. **Partial templates** - Reuse header/footer everywhere
-4. **KaTeX & Mermaid** - Built-in markdown support, browser rendering
-5. **Tag-based organization** - Natural content discovery
-
-### What Works Well
-
-- **Fast builds** - 100ms even with 100+ posts
-- **Live reload** - Saves so much time during writing
-- **Clear config** - Easy to understand and modify
-- **Go templates** - Simple enough, powerful enough
-
-### If I Started Today
-
-I'd do mostly the same, but:
-
-- Maybe organize posts by year folders
-- Add more examples in docs earlier
-- Set up search from day one
-
-## Key Takeaways
-
-Gozzi works well for personal sites where you want:
-
-- **Control** - You understand everything
-- **Simplicity** - Clear configuration, no surprises
-- **Speed** - Fast builds, good developer experience
-- **Learning** - Great way to learn Go templates
-
-The source code is all public, so you can:
-
-- Copy the template structure
-- See how features work together
-- Use it as a starting point for your site
-
 **Browse the code**: [github.com/tduyng/tduyng.github.io](https://github.com/tduyng/tduyng.github.io)

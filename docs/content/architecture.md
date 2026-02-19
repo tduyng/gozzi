@@ -19,6 +19,7 @@ How Gozzi works internally.
 ```
 
 **Key steps:**
+
 - Parse TOML front matter
 - Render markdown to HTML
 - Apply Go templates
@@ -36,6 +37,7 @@ How Gozzi works internally.
 ```
 
 **Live reload:**
+
 - Server-Sent Events (SSE)
 - Watches: content/, templates/, static/, config.toml
 - Automatic browser refresh
@@ -61,11 +63,13 @@ HTML output
 Gozzi uses Go's `html/template` engine:
 
 **Template selection:**
+
 1. Check front matter `template` field
 2. Check content type (post, page, section)
 3. Fall back to defaults
 
 **Template inheritance:**
+
 ```
 base.html (layout)
     ↓
@@ -75,21 +79,23 @@ content (rendered here)
 ```
 
 **Partials:**
+
 ```html
 <!-- templates/base.html -->
-{{ template "partials/_header.html" . }}
-{{ block "content" . }}{{ end }}
-{{ template "partials/_footer.html" . }}
+{{ template "partials/_header.html" . }} {{ block "content" . }}{{ end }} {{ template
+"partials/_footer.html" . }}
 ```
 
 ## Performance
 
 **Fast builds:**
+
 - Concurrent processing
 - Minimal dependencies
 - Efficient markdown parsing
 
 **Typical build times:**
+
 - 10 pages: ~10-20ms
 - 100 pages: ~50-100ms
 - 1000 pages: ~500ms-1s
@@ -121,6 +127,6 @@ project/
 - **Language:** Go 1.25+
 - **Markdown:** goldmark parser
 - **Templates:** Go html/template
-- **Math:** KaTeX (server-side)
-- **Diagrams:** Mermaid (server-side)
+- **Math:** KaTeX (server+client-side)
+- **Diagrams:** Mermaid (server+client-side)
 - **Syntax:** Chroma highlighter

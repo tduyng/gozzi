@@ -10,12 +10,12 @@ Build a complete blog with Gozzi in under 10 minutes.
 
 A fully-functional blog with:
 
-- ✅ Homepage with featured posts
-- ✅ Blog listing page
-- ✅ Individual blog posts
-- ✅ Tag system
-- ✅ RSS feed
-- ✅ SEO optimization
+- Homepage with featured posts
+- Blog listing page
+- Individual blog posts
+- Tag system
+- RSS feed
+- SEO optimization
 
 ## Project Setup
 
@@ -683,50 +683,20 @@ Deploy to any static hosting:
 # .github/workflows/deploy.yml
 name: Deploy
 on:
-  push:
-    branches: [main]
+    push:
+        branches: [main]
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-      - run: go install github.com/tduyng/gozzi@latest
-      - run: gozzi build
-      - uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: '1.25'
+            - run: go install github.com/tduyng/gozzi@latest
+            - run: gozzi build
+            - uses: peaceiris/actions-gh-pages@v3
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./public
 ```
-
-## What You Built
-
-Congratulations! You now have a complete blog with:
-
-✅ Homepage with featured and recent posts  
-✅ Blog listing page  
-✅ Individual post pages with navigation  
-✅ Tag system for categorization  
-✅ RSS feed for subscribers  
-✅ Responsive design  
-✅ SEO optimization
-
-## Next Steps
-
-Enhance your blog:
-
-- [Add pagination](/features/) for large post collections
-- [Customize templates](/templates/) with advanced features
-- [Use math expressions](/features/#mathematical-expressions-katex) with KaTeX
-- [Create diagrams](/features/#mermaid-diagrams) with Mermaid
-- [Enable comments](/templates/#adding-comments) with Giscus
-- [Set up analytics](/templates/#analytics) with Plausible
-
-## Complete Code
-
-The complete example is available at:
-[github.com/tduyng/gozzi-examples](https://github.com/tduyng/gozzi/tree/main/examples)
-
-Happy blogging! 🚀

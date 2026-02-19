@@ -214,3 +214,86 @@ func TestShouldIgnoreDir(t *testing.T) {
 		})
 	}
 }
+
+func TestClassifyChange_DataFiles(t *testing.T) {
+	tmpDir := t.TempDir()
+	contentDir := filepath.Join(tmpDir, "content")
+	outputDir := filepath.Join(tmpDir, "public")
+	configPath := filepath.Join(tmpDir, "config.toml")
+	dataDir := filepath.Join(tmpDir, "data")
+
+	// Create directories
+	if err := os.MkdirAll(contentDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	detector := NewChangeDetector(contentDir, outputDir, configPath)
+
+	tests := []struct {
+		name         string
+		filePath     string
+		expectedType ChangeType
+		description  string
+	}{
+		{
+			name:         "toml file in data",
+			filePath:     filepath.Join(dataDir, "skills.toml"),
+			expectedType: ChangeTypeData,
+			description:  "TOML files in data directory should be classified as data",
+		},
+		{
+			name:         "json file in data",
+			filePath:     filepath.Join(dataDir, "projects.json"),
+			expectedType: ChangeTypeData,
+			description:  "JSON files in data directory should be classified as data",
+		},
+		{
+			name:         "yaml file in data",
+			filePath:     filepath.Join(dataDir, "config.yaml"),
+			expectedType: ChangeTypeData,
+			description:  "YAML files in data directory should be classified as data",
+		},
+		{
+			name:         "yml file in data",
+			filePath:     filepath.Join(dataDir, "settings.yml"),
+			expectedType: ChangeTypeData,
+			description:  "YML files in data directory should be classified as data",
+		},
+		{
+			name:         "toml file in nested data directory",
+			filePath:     filepath.Join(dataDir, "i18n", "en.toml"),
+			expectedType: ChangeTypeData,
+			description:  "TOML files in nested data directory should be classified as data",
+		},
+		{
+			name:         "toml file in deeply nested data directory",
+			filePath:     filepath.Join(dataDir, "i18n", "translations", "fr.toml"),
+			expectedType: ChangeTypeData,
+			description:  "TOML files in deeply nested data directory should be classified as data",
+		},
+		{
+			name:         "unsupported file in data",
+			filePath:     filepath.Join(dataDir, "readme.txt"),
+			expectedType: ChangeTypeIgnored,
+			description:  "Unsupported file types in data directory should be ignored",
+		},
+		{
+			name:         "markdown file in data",
+			filePath:     filepath.Join(dataDir, "readme.md"),
+			expectedType: ChangeTypeIgnored,
+			description:  "Markdown files in data directory should be ignored (not content)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := detector.ClassifyChange(tt.filePath)
+			if result != tt.expectedType {
+				t.Errorf("%s: got %v, want %v", tt.description, result, tt.expectedType)
+			}
+		})
+	}
+}

@@ -36,6 +36,7 @@ func (s *DevServer) watchChanges() {
 		s.contentDir,
 		s.detector.templatesPath,
 		s.detector.staticPath,
+		s.detector.dataPath,
 	}
 
 	for _, path := range paths {
@@ -166,6 +167,7 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 
 	var (
 		hasConfigChange bool
+		hasDataChange   bool
 		contentFiles    []string
 		templateFiles   []string
 		staticFiles     []string
@@ -176,6 +178,9 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 		case ChangeTypeConfig:
 			hasConfigChange = true
 			log.Printf("Processing config change: %s", change.RelPath)
+		case ChangeTypeData:
+			hasDataChange = true
+			log.Printf("Processing data change: %s", change.RelPath)
 		case ChangeTypeContent:
 			contentFiles = append(contentFiles, change.Path)
 			log.Printf("Processing content change: %s", change.RelPath)
@@ -192,6 +197,21 @@ func (s *DevServer) triggerRebuild(changes []*FileChange) {
 		log.Println("Config changed - performing full rebuild")
 		if err := s.reloadConfig(); err != nil {
 			log.Printf("Config reload error: %v", err)
+			return
+		}
+		if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
+			log.Printf("Generate error: %v", err)
+			return
+		}
+		s.notifyClients()
+		log.Printf("Full rebuild completed in %dms", time.Since(start).Milliseconds())
+		return
+	}
+
+	if hasDataChange {
+		log.Println("Data changed - performing full rebuild")
+		if err := s.reloadData(); err != nil {
+			log.Printf("Data reload error: %v", err)
 			return
 		}
 		if err := s.gen.Generate(s.parser.ContentMap["."]); err != nil {
@@ -329,6 +349,38 @@ func (s *DevServer) reloadConfig() error {
 	s.parser = newParser
 	s.gen = newGen
 	s.lastConfigHash = newHash
+
+	return nil
+}
+
+func (s *DevServer) reloadData() error {
+	projectDir := filepath.Dir(s.configPath)
+
+	if err := s.site.LoadDataFiles(projectDir); err != nil {
+		return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{
+			Operation: "reload_data_files",
+			Component: "dev_server",
+		})
+	}
+
+	if s.site.I18n != nil {
+		if err := s.site.I18n.LoadTranslations(); err != nil {
+			return utils.WrapWithContext(utils.ErrContent, err, utils.ErrorContext{
+				Operation: "reload_i18n_translations",
+				Component: "dev_server",
+			})
+		}
+	}
+
+	newGen, err := builder.NewBuilder(s.site, s.parser)
+	if err != nil {
+		return utils.WrapWithContext(utils.ErrTemplate, err, utils.ErrorContext{
+			Operation: "recreate_builder_after_data_reload",
+			Component: "dev_server",
+		})
+	}
+
+	s.gen = newGen
 
 	return nil
 }

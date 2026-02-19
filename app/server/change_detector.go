@@ -18,6 +18,7 @@ const (
 	ChangeTypeContent
 	ChangeTypeTemplate
 	ChangeTypeStatic
+	ChangeTypeData
 )
 
 func (ct ChangeType) String() string {
@@ -30,6 +31,8 @@ func (ct ChangeType) String() string {
 		return "template"
 	case ChangeTypeStatic:
 		return "static"
+	case ChangeTypeData:
+		return "data"
 	case ChangeTypeIgnored:
 		return "ignored"
 	default:
@@ -53,6 +56,7 @@ type ChangeDetector struct {
 	configPath    string
 	templatesPath string
 	staticPath    string
+	dataPath      string
 	fileHashes    map[string]string
 }
 
@@ -68,6 +72,7 @@ func NewChangeDetector(contentDir, outputDir, configPath string) *ChangeDetector
 
 	templatesPath := filepath.Join(projectRoot, "templates")
 	staticPath := filepath.Join(projectRoot, "static")
+	dataPath := filepath.Join(projectRoot, "data")
 
 	return &ChangeDetector{
 		contentDir:    absContentDir,
@@ -75,6 +80,7 @@ func NewChangeDetector(contentDir, outputDir, configPath string) *ChangeDetector
 		configPath:    absConfig,
 		templatesPath: templatesPath,
 		staticPath:    staticPath,
+		dataPath:      dataPath,
 		fileHashes:    make(map[string]string),
 	}
 }
@@ -103,6 +109,15 @@ func (cd *ChangeDetector) ClassifyChange(path string) ChangeType {
 
 	if absPath == absConfig {
 		return ChangeTypeConfig
+	}
+
+	// Check data directory first (before content to avoid misclassification)
+	absData, _ := filepath.Abs(cd.dataPath)
+	if strings.HasPrefix(absPath, absData) {
+		if ext == ".toml" || ext == ".json" || ext == ".yaml" || ext == ".yml" {
+			return ChangeTypeData
+		}
+		return ChangeTypeIgnored
 	}
 
 	if strings.HasPrefix(absPath, absContent) {
@@ -229,6 +244,8 @@ func (cd *ChangeDetector) DetectChange(path string) (*FileChange, error) {
 		relPath = path
 	case ChangeTypeConfig:
 		relPath = filepath.Base(path)
+	case ChangeTypeData:
+		relPath, _ = filepath.Rel(cd.dataPath, path)
 	}
 
 	return &FileChange{
@@ -244,6 +261,7 @@ func (cd *ChangeDetector) InitializeHashes() error {
 		cd.templatesPath,
 		cd.staticPath,
 		cd.configPath,
+		cd.dataPath,
 	}
 
 	for _, path := range paths {

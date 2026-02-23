@@ -1,0 +1,15 @@
+{{ $id := .Get "id" | default "tabs" }}
+<div class="tabs" id="{{ $id }}">
+    <div class="tabs-nav">
+        {{ range $index, $tab := .Params.tabs }}
+        <button class="tabs-tab{{ if eq $index 0 }} active{{ end }}" data-tab="{{ $id }}-{{ $index }}">
+            {{ $tab }}
+        </button>
+        {{ end }}
+    </div>
+    {{ range $index, $panel := .Params.panels }}
+    <div class="tabs-panel{{ if eq $index 0 }} active{{ end }}" id="{{ $id }}-{{ $index }}">
+        {{ $panel | $.Page.RenderString }}
+    </div>
+    {{ end }}
+</div>

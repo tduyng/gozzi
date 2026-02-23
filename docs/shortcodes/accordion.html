@@ -1,0 +1,16 @@
+{{ $id := .Get "id" | default "accordion" }}
+<div class="accordion" id="{{ $id }}">
+    {{ range $index, $item := .Params.items }}
+    <div class="accordion-item{{ if eq $index 0 }} open{{ end }}">
+        <button class="accordion-header" aria-expanded="{{ if eq $index 0 }}true{{ else }}false{{ end }}">
+            {{ $item.title }}
+            <svg class="accordion-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="accordion-content">
+            <div class="accordion-body">
+                {{ $item.content | $.Page.RenderString }}
+            </div>
+        </div>
+    </div>
+    {{ end }}
+</div>

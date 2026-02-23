@@ -7,8 +7,8 @@
     
     <div class="layout-inner">
         <aside class="sidebar">
-            {{ range $.Site.Config.extra.sidebar }}
-            <div class="sidebar-section">
+            {{ range $index, $section := $.Site.Config.extra.sidebar }}
+            <div class="sidebar-section collapsible" data-section="{{ $index }}">
                 <h3 class="sidebar-title">{{ .title }}</h3>
                 <ul class="sidebar-items">
                     {{ range .items }}
@@ -22,10 +22,38 @@
         </aside>
         
         <main class="content" id="main-content" role="main">
-            <article class="prose">
-                <h1>{{ .Page.Config.title }}</h1>
-                {{ .Page.Content }}
-            </article>
+            <div class="content-wrapper">
+                <div class="content-main">
+                    <nav class="breadcrumbs" aria-label="Breadcrumb"></nav>
+                    
+                    <article class="prose">
+                        <h1>{{ .Page.Config.title }}</h1>
+                        {{ .Page.Content }}
+                    </article>
+                    
+                    <nav class="prev-next" aria-label="Previous and next">
+                        <a href="#" class="prev-next-link prev">
+                            <svg class="prev-next-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            <div>
+                                <div class="prev-next-label">Previous</div>
+                                <div class="prev-next-title"></div>
+                            </div>
+                        </a>
+                        <a href="#" class="prev-next-link next">
+                            <div>
+                                <div class="prev-next-label">Next</div>
+                                <div class="prev-next-title"></div>
+                            </div>
+                            <svg class="prev-next-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </a>
+                    </nav>
+                </div>
+                
+                <aside class="toc">
+                    <h4 class="toc-title">On this page</h4>
+                    <ul class="toc-list"></ul>
+                </aside>
+            </div>
             
             {{ template "partials/_footer.html" . }}
         </main>

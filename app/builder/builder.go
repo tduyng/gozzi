@@ -195,6 +195,15 @@ func (b *Builder) fullGenerate(contentRoot *content.Node, cleanOutput bool) erro
 		})
 	}
 
+	if b.site.GenerateSearch {
+		if err := b.generateSearchIndex(); err != nil {
+			return utils.WrapWithContext(err, utils.ErrContent, utils.ErrorContext{
+				Operation: "generate_search_index",
+				Component: "builder",
+			})
+		}
+	}
+
 	return b.copyStaticAssets()
 }
 

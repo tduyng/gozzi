@@ -20,6 +20,7 @@ type Site struct {
 	Description           string           `toml:"Description"`
 	Extra                 map[string]any   `toml:"extra"`
 	GenerateFeed          bool             `toml:"generate_feed"`
+	GenerateSearch        bool             `toml:"generate_search"`
 	Theme                 string           `toml:"theme"`
 	Img                   string           `toml:"img"`
 	Lang                  string           `toml:"language"`
@@ -226,6 +227,7 @@ func (site *Site) ToConfig() map[string]any {
 		siteConfig["output_dir"] = site.OutputDir
 		siteConfig["lang"] = site.Lang
 		siteConfig["generate_feed"] = site.GenerateFeed
+		siteConfig["generate_search"] = site.GenerateSearch
 		siteConfig["strict_templates"] = site.StrictTemplates
 		siteConfig["build_time"] = site.BuildTime
 		siteConfig["extra"] = MergeExtra(make(map[string]any), site.Extra)

@@ -14,10 +14,10 @@ import (
 	"github.com/tduyng/gozzi/app/parser"
 )
 
-// setupReadOnlyTestSite returns the path to testdata directly. Use this for tests that do not modify the site source files.
+// setupReadOnlyTestSite returns a temporary copy of testdata to prevent parallel tests from racing on the output directory.
 func setupReadOnlyTestSite(t *testing.T) string {
 	t.Helper()
-	return "testdata"
+	return setupTestSite(t)
 }
 
 // setupTestSite copies testdata to a temp directory and returns the path. Use this for tests that modify source files.

@@ -35,6 +35,8 @@ jobs:
 
       - name: Set up git-cliff
         uses: kenji-miyake/setup-git-cliff@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install just
         uses: extractions/setup-just@v2

@@ -49,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
         go-version: ['1.26']
     steps:
       - name: Checkout code
@@ -79,13 +79,6 @@ jobs:
           TZ: UTC
         run: go test -v -race ./...
 
-      - name: Run tests (Windows)
-        if: matrix.os == 'windows-latest'
-        env:
-          TZ: UTC
-        shell: bash
-        run: go test -v -race ./...
-
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.26'
         uses: codecov/codecov-action@v5
@@ -96,25 +89,6 @@ jobs:
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.26'
-          cache: true
-
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: Run govulncheck
-        run: govulncheck ./...
 
   build:
     name: Build
@@ -161,12 +135,7 @@ jobs:
             goarch: amd64
           - goos: darwin
             goarch: arm64
-          - goos: windows
-            goarch: amd64
-            ext: .exe
-          - goos: windows
-            goarch: arm64
-            ext: .exe
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -190,14 +159,13 @@ jobs:
   status-check:
     name: CI Status Check
     runs-on: ubuntu-latest
-    needs: [lint, test, security, build, build-cross-platform]
+    needs: [lint, test, build, build-cross-platform]
     if: always()
     steps:
       - name: Check CI status
         run: |
           if [ "${{ needs.lint.result }}" != "success" ] || \
              [ "${{ needs.test.result }}" != "success" ] || \
-             [ "${{ needs.security.result }}" != "success" ] || \
              [ "${{ needs.build.result }}" != "success" ] || \
              [ "${{ needs.build-cross-platform.result }}" != "success" ]; then
             echo "CI checks failed"

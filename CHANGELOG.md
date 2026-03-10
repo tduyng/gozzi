@@ -1,5 +1,33 @@
 # What's changed
 
+## [0.1.0](https://github.com/tduyng/gozzi/compare/v0.0.39..v0.1.0) - 2026-03-10
+
+### 🚀 Features
+
+- Generate search index for flexsearch - ([ccb1beb](https://github.com/tduyng/gozzi/commit/ccb1beb2e4a922caf5260aa6ee815c8a4823f5c2))
+- Detect change for data folder - ([25da2c3](https://github.com/tduyng/gozzi/commit/25da2c307e90b454fe0efc849b22587683ac4b99))
+
+### 🚜 Refactor
+
+- *(docs)* Redesign UI with mobile-first responsive navigation - ([9779969](https://github.com/tduyng/gozzi/commit/977996926782365210c09ef44ac2173aa6d3b192))
+- Optimise to make tests faster - ([279e7e3](https://github.com/tduyng/gozzi/commit/279e7e342c7f9f3ce4b94bfff457fae6c0e70173))
+- Fix linter CI issues - ([7204a22](https://github.com/tduyng/gozzi/commit/7204a22c5a8224b7804cf889d943e8c996f9690a))
+
+### 📚 Documentation
+
+- Update docs style - ([8f50406](https://github.com/tduyng/gozzi/commit/8f5040615d9fdd8b3c00eba24edb4129fd3709b8))
+
+### 🧪 Testing
+
+- Fix data races in parallel integration tests - ([73c2b88](https://github.com/tduyng/gozzi/commit/73c2b883bd5530919fb1c885636b253e8575da83))
+
+### ⚙️ Miscellaneous Tasks
+
+- Fix github api rate limit for git-cliff during release - ([fe7b5f9](https://github.com/tduyng/gozzi/commit/fe7b5f964d370cfbda28cde5f03f3d9459d01f05))
+- Run windows tests manually - ([3aee59a](https://github.com/tduyng/gozzi/commit/3aee59a4e623be52be9607c69df3b020463fba79))
+- Use go 1.26 - ([f190b6e](https://github.com/tduyng/gozzi/commit/f190b6e7413ca0e592a24d8ff9a3169b067ec2c2))
+- Rename release notes - ([c2f11dc](https://github.com/tduyng/gozzi/commit/c2f11dcee2172eefb9b999065527d1ba1e780903))
+
 ## [0.0.39](https://github.com/tduyng/gozzi/compare/v0.0.38..v0.0.39) - 2026-02-15
 
 ### 🚀 Features

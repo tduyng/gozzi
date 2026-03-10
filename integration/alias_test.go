@@ -10,7 +10,9 @@ import (
 
 // TestAliases_PageRedirects tests that aliases generate proper redirect files for pages
 func TestAliases_PageRedirects(t *testing.T) {
+	t.Parallel()
 	t.Run("SingleAlias_Created", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -55,6 +57,7 @@ This post has moved.
 	})
 
 	t.Run("MultipleAliases_AllCreated", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -95,7 +98,8 @@ This post has been renamed multiple times.
 	})
 
 	t.Run("NoAliases_NoRedirects", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Verify that blog posts without aliases don't create extra redirect files
@@ -109,7 +113,9 @@ This post has been renamed multiple times.
 
 // TestAliases_SectionRedirects tests that aliases work for section pages
 func TestAliases_SectionRedirects(t *testing.T) {
+	t.Parallel()
 	t.Run("SectionAlias_Created", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -156,7 +162,9 @@ This is the articles section.
 
 // TestAliases_SnapshotRedirects snapshot test for redirect HTML format
 func TestAliases_SnapshotRedirects(t *testing.T) {
+	t.Parallel()
 	t.Run("RedirectHTML_Format", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -180,7 +188,9 @@ Testing redirect HTML format.
 
 // TestAliases_IncrementalBuild tests that aliases work correctly in incremental builds
 func TestAliases_IncrementalBuild(t *testing.T) {
+	t.Parallel()
 	t.Run("AddAlias_IncrementalBuild", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -234,7 +244,9 @@ Updated content with alias.
 
 // TestAliases_SelfReferencingPrevention tests that aliases matching canonical permalinks are skipped
 func TestAliases_SelfReferencingPrevention(t *testing.T) {
+	t.Parallel()
 	t.Run("DatePrefixFolder_SelfReferencing", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -290,6 +302,7 @@ Testing self-referencing alias prevention.
 	})
 
 	t.Run("ExactMatch_WithTrailingSlash", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 

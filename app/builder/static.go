@@ -17,12 +17,21 @@ import (
 )
 
 func (b *Builder) copyStaticAssets() error {
-	return filepath.WalkDir("static", func(srcPath string, d fs.DirEntry, err error) error {
+	staticDir := "static"
+	if b.site.ProjectDir != "" {
+		staticDir = filepath.Join(b.site.ProjectDir, "static")
+	}
+
+	if _, err := os.Stat(staticDir); os.IsNotExist(err) {
+		return nil
+	}
+
+	return filepath.WalkDir(staticDir, func(srcPath string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return nil
 		}
 
-		relPath, err := filepath.Rel("static", srcPath)
+		relPath, err := filepath.Rel(staticDir, srcPath)
 		if err != nil {
 			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 				Operation: "get_relative_path",
@@ -360,9 +369,18 @@ func (b *Builder) CopyStaticFile(srcPath string) error {
 	var relPath string
 	var err error
 
+	staticDir := "static"
+	if b.site.ProjectDir != "" {
+		staticDir = filepath.Join(b.site.ProjectDir, "static")
+	}
+	contentDir := "content"
+	if b.site.ProjectDir != "" {
+		contentDir = filepath.Join(b.site.ProjectDir, "content")
+	}
+
 	// Handle files from static/ directory
-	if strings.HasPrefix(srcPath, "static") {
-		relPath, err = filepath.Rel("static", srcPath)
+	if strings.HasPrefix(srcPath, staticDir) {
+		relPath, err = filepath.Rel(staticDir, srcPath)
 		if err != nil {
 			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 				Operation: "get_relative_path",
@@ -370,8 +388,8 @@ func (b *Builder) CopyStaticFile(srcPath string) error {
 				Path:      srcPath,
 			})
 		}
-	} else if strings.HasPrefix(srcPath, "content") {
-		relPath, err = filepath.Rel("content", srcPath)
+	} else if strings.HasPrefix(srcPath, contentDir) {
+		relPath, err = filepath.Rel(contentDir, srcPath)
 		if err != nil {
 			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 				Operation: "get_relative_path_from_content",

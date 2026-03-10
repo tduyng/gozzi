@@ -11,6 +11,7 @@ import (
 )
 
 func TestSummary_AutoGeneration(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name            string
 		content         string
@@ -174,6 +175,7 @@ summary_length = 2
 }
 
 func TestSummary_EmptyContent(t *testing.T) {
+	t.Parallel()
 	tempDir := t.TempDir()
 
 	configContent := `
@@ -226,6 +228,7 @@ date = 2024-01-15
 }
 
 func TestSummary_DefaultConfiguration(t *testing.T) {
+	t.Parallel()
 	tempDir := t.TempDir()
 
 	// Config without summary_length (should default to 2)

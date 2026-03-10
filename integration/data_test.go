@@ -10,7 +10,9 @@ import (
 
 // TestDataFiles tests that data files are loaded and accessible in templates.
 func TestDataFiles(t *testing.T) {
+	t.Parallel()
 	t.Run("LoadJSONData", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 
 		// Create data directory and JSON file
@@ -61,6 +63,7 @@ Our team page.
 	})
 
 	t.Run("LoadYAMLData", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 
 		// Create data directory and YAML file
@@ -120,6 +123,7 @@ Project information.
 	})
 
 	t.Run("NestedDataDirectories", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 
 		// Create nested data structure
@@ -170,6 +174,7 @@ Testing nested data.
 	})
 
 	t.Run("NoDataDirectory", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 
 		// Don't create data directory - should not error

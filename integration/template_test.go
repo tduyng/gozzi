@@ -9,7 +9,9 @@ import (
 
 // TestTemplate_Changes tests template modification and reload
 func TestTemplate_Changes(t *testing.T) {
+	t.Parallel()
 	t.Run("TemplateChange_RegeneratesPages", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -26,6 +28,7 @@ func TestTemplate_Changes(t *testing.T) {
 	})
 
 	t.Run("TemplateChange_OnlyAffectsCorrectPages", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -55,7 +58,9 @@ func TestTemplate_Changes(t *testing.T) {
 
 // TestTemplate_HotReload tests serve mode template reloading
 func TestTemplate_HotReload(t *testing.T) {
+	t.Parallel()
 	t.Run("HotReload_UpdatesImmediately", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -73,8 +78,10 @@ func TestTemplate_HotReload(t *testing.T) {
 
 // TestTemplate_Partials tests partial template updates
 func TestTemplate_Partials(t *testing.T) {
+	t.Parallel()
 	t.Run("PartialChange_InvalidatesAll", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
 		// If partials exist and are modified, all templates using them should update
@@ -90,8 +97,10 @@ func TestTemplate_Partials(t *testing.T) {
 
 // TestTemplate_Inheritance tests template inheritance
 func TestTemplate_Inheritance(t *testing.T) {
+	t.Parallel()
 	t.Run("DifferentTemplates_DifferentOutput", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Posts use post.html
@@ -109,7 +118,9 @@ func TestTemplate_Inheritance(t *testing.T) {
 
 // TestTemplate_NotFound tests template error handling
 func TestTemplate_NotFound(t *testing.T) {
+	t.Parallel()
 	t.Run("MissingTemplate_HandledGracefully", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -130,7 +141,9 @@ Content`
 
 // TestTemplate_CacheInvalidation tests template cache behavior
 func TestTemplate_CacheInvalidation(t *testing.T) {
+	t.Parallel()
 	t.Run("TemplateChange_InvalidatesCacheCompletely", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 

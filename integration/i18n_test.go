@@ -15,21 +15,22 @@ import (
 )
 
 func TestI18nMultilingualSite(t *testing.T) {
+	t.Parallel()
 	projectDir := filepath.Join("testdata", "i18n-site")
 
-	// Change to project directory for template loading
-	originalWd, _ := os.Getwd()
-	defer os.Chdir(originalWd)
-	err := os.Chdir(projectDir)
+	// Load site config
+	site, err := config.LoadSite(filepath.Join(projectDir, "config.toml"))
 	require.NoError(t, err)
 
-	// Load site config
-	site, err := config.LoadSite("config.toml")
-	require.NoError(t, err)
+	site.ProjectDir = projectDir
 
 	// Load data files (including translations)
-	err = site.LoadDataFiles(".")
+	err = site.LoadDataFiles(projectDir)
 	require.NoError(t, err)
+
+	// Set output dir to a temp directory
+	tempDir := t.TempDir()
+	site.OutputDir = tempDir
 
 	// Load i18n translations
 	require.NotNil(t, site.I18n, "I18n should be initialized")
@@ -61,7 +62,7 @@ func TestI18nMultilingualSite(t *testing.T) {
 	gen, err := builder.NewBuilder(site, contentParser)
 	require.NoError(t, err)
 
-	err = contentParser.Parse("content")
+	err = contentParser.Parse(filepath.Join(projectDir, "content"))
 	require.NoError(t, err)
 
 	// Verify English section

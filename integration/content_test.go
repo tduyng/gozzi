@@ -8,8 +8,10 @@ import (
 
 // TestContent_PageTypes tests different page type generation
 func TestContent_PageTypes(t *testing.T) {
+	t.Parallel()
 	t.Run("Homepage_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "PageTypes_Homepage", sitePath, []string{
@@ -18,7 +20,8 @@ func TestContent_PageTypes(t *testing.T) {
 	})
 
 	t.Run("SinglePages_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "PageTypes_SinglePages", sitePath, []string{
@@ -30,7 +33,8 @@ func TestContent_PageTypes(t *testing.T) {
 	})
 
 	t.Run("BlogPosts_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "PageTypes_BlogPosts", sitePath, []string{
@@ -41,7 +45,8 @@ func TestContent_PageTypes(t *testing.T) {
 	})
 
 	t.Run("Notes_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "PageTypes_Notes", sitePath, []string{
@@ -50,7 +55,8 @@ func TestContent_PageTypes(t *testing.T) {
 	})
 
 	t.Run("SectionPages_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "PageTypes_Sections", sitePath, []string{
@@ -62,7 +68,9 @@ func TestContent_PageTypes(t *testing.T) {
 
 // TestContent_MarkdownRendering tests markdown to HTML conversion
 func TestContent_MarkdownRendering(t *testing.T) {
+	t.Parallel()
 	t.Run("Headings_Rendered", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -85,6 +93,7 @@ template = "post.html"
 	})
 
 	t.Run("Links_Rendered", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -105,6 +114,7 @@ template = "post.html"
 	})
 
 	t.Run("CodeBlocks_Rendered", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -125,6 +135,7 @@ template = "post.html"
 	})
 
 	t.Run("Lists_Rendered", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -147,6 +158,7 @@ template = "post.html"
 	})
 
 	t.Run("Emphasis_Rendered", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -169,8 +181,10 @@ template = "post.html"
 
 // TestContent_Frontmatter tests frontmatter extraction and usage
 func TestContent_Frontmatter(t *testing.T) {
+	t.Parallel()
 	t.Run("Title_ExtractedCorrectly", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "Frontmatter_Title", sitePath, []string{
@@ -180,7 +194,8 @@ func TestContent_Frontmatter(t *testing.T) {
 	})
 
 	t.Run("Date_FormattedCorrectly", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "Frontmatter_Date", sitePath, []string{
@@ -189,6 +204,7 @@ func TestContent_Frontmatter(t *testing.T) {
 	})
 
 	t.Run("ExtraFields_Available", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -212,6 +228,7 @@ Content
 	})
 
 	t.Run("MissingFields_UseDefaults", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -234,8 +251,10 @@ Minimal content
 
 // TestContent_AuxiliaryPages tests sitemap, feed, and other auxiliary content
 func TestContent_AuxiliaryPages(t *testing.T) {
+	t.Parallel()
 	t.Run("Sitemap_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "Auxiliary_Sitemap", sitePath, []string{
@@ -244,7 +263,8 @@ func TestContent_AuxiliaryPages(t *testing.T) {
 	})
 
 	t.Run("AtomFeed_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "Auxiliary_AtomFeed", sitePath, []string{
@@ -253,7 +273,8 @@ func TestContent_AuxiliaryPages(t *testing.T) {
 	})
 
 	t.Run("404Page_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "Auxiliary_404", sitePath, []string{
@@ -264,7 +285,9 @@ func TestContent_AuxiliaryPages(t *testing.T) {
 
 // TestContent_Sorting tests that content is sorted correctly
 func TestContent_Sorting(t *testing.T) {
+	t.Parallel()
 	t.Run("BlogPosts_SortedByDate", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -288,7 +311,8 @@ Content ` + string(rune('A'+i))
 	})
 
 	t.Run("SectionListings_OrderedCorrectly", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "Sorting_SectionListings", sitePath, []string{
@@ -300,8 +324,10 @@ Content ` + string(rune('A'+i))
 
 // TestContent_DraftHandling tests draft post behavior
 func TestContent_DraftHandling(t *testing.T) {
+	t.Parallel()
 	t.Run("DraftPosts_ExcludedByDefault", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Draft post should not be generated

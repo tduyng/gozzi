@@ -14,7 +14,13 @@ import (
 	"github.com/tduyng/gozzi/app/parser"
 )
 
-// setupTestSite copies testdata to a temp directory and returns the path
+// setupReadOnlyTestSite returns the path to testdata directly. Use this for tests that do not modify the site source files.
+func setupReadOnlyTestSite(t *testing.T) string {
+	t.Helper()
+	return "testdata"
+}
+
+// setupTestSite copies testdata to a temp directory and returns the path. Use this for tests that modify source files.
 func setupTestSite(t *testing.T) string {
 	t.Helper()
 
@@ -40,22 +46,8 @@ func setupTestSite(t *testing.T) string {
 func buildSite(t *testing.T, sitePath string) (*builder.Builder, *parser.ContentParser) {
 	t.Helper()
 
-	// Save current directory and restore after test
-	origDir, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("failed to get current dir: %v", err)
-	}
-	t.Cleanup(func() {
-		os.Chdir(origDir)
-	})
-
-	// Change to test site directory (builder expects templates/ and static/ in cwd)
-	if err := os.Chdir(sitePath); err != nil {
-		t.Fatalf("failed to chdir to test site: %v", err)
-	}
-
-	configPath := "config.toml"
-	contentDir := "content"
+	configPath := filepath.Join(sitePath, "config.toml")
+	contentDir := filepath.Join(sitePath, "content")
 
 	site, err := config.LoadSite(configPath)
 	if err != nil {
@@ -67,9 +59,14 @@ func buildSite(t *testing.T, sitePath string) (*builder.Builder, *parser.Content
 		t.Fatalf("failed to load data files: %v", err)
 	}
 
+	// Set ProjectDir so that builder knows where to look for templates and static
+	site.ProjectDir = sitePath
+
 	// Set default output directory if not specified
 	if site.OutputDir == "" {
-		site.OutputDir = "public"
+		site.OutputDir = filepath.Join(sitePath, "public")
+	} else if !filepath.IsAbs(site.OutputDir) {
+		site.OutputDir = filepath.Join(sitePath, site.OutputDir)
 	}
 
 	// Use fixed build time for deterministic tests (2024-01-01 00:00:00 UTC)

@@ -11,8 +11,10 @@ import (
 
 // TestTaxonomy_Series tests series taxonomy functionality
 func TestTaxonomy_Series(t *testing.T) {
+	t.Parallel()
 	t.Run("SeriesPages_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Series index should exist
@@ -37,7 +39,8 @@ func TestTaxonomy_Series(t *testing.T) {
 	})
 
 	t.Run("SeriesPosts_OrderedCorrectly", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Read series page content
@@ -69,7 +72,8 @@ func TestTaxonomy_Series(t *testing.T) {
 	})
 
 	t.Run("SeriesNavigation_FirstPost", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Part 1 should have series info
@@ -91,7 +95,8 @@ func TestTaxonomy_Series(t *testing.T) {
 	})
 
 	t.Run("SeriesNavigation_MiddlePost", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Part 2 should have series info
@@ -108,7 +113,8 @@ func TestTaxonomy_Series(t *testing.T) {
 	})
 
 	t.Run("SeriesNavigation_LastPost", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Part 3 should have series info
@@ -130,7 +136,8 @@ func TestTaxonomy_Series(t *testing.T) {
 	})
 
 	t.Run("MultipleSeries_IndependentNavigation", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Another series should have its own navigation
@@ -152,7 +159,8 @@ func TestTaxonomy_Series(t *testing.T) {
 	})
 
 	t.Run("PostWithoutSeries_NoNavigation", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Regular posts without series should not have series navigation
@@ -171,6 +179,7 @@ func TestTaxonomy_Series(t *testing.T) {
 	})
 
 	t.Run("AddPostToSeries_UpdatesPages", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -212,6 +221,7 @@ This is part 4 added dynamically.`
 	})
 
 	t.Run("ChangeSeriesOrder_RebuildsCorrectly", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -237,6 +247,7 @@ This is part 4 added dynamically.`
 	})
 
 	t.Run("DraftPostInSeries_ExcludedFromNavigation", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -272,7 +283,8 @@ This is a draft and should not affect series navigation.`
 	})
 
 	t.Run("SeriesPermalinks_CorrectFormat", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Series index should link to individual series correctly
@@ -287,8 +299,10 @@ This is a draft and should not affect series navigation.`
 
 // TestTaxonomy_Tags tests tag taxonomy functionality
 func TestTaxonomy_Tags(t *testing.T) {
+	t.Parallel()
 	t.Run("TagPages_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Tag pages should exist
@@ -306,6 +320,7 @@ func TestTaxonomy_Tags(t *testing.T) {
 	})
 
 	t.Run("AddTag_CreatesTagPage", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -328,6 +343,7 @@ func TestTaxonomy_Tags(t *testing.T) {
 	})
 
 	t.Run("RemoveTag_UpdatesPages", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -359,6 +375,7 @@ Content`
 	})
 
 	t.Run("MultipleTagsOnPost_AllPagesGenerated", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -390,6 +407,7 @@ Content`
 	})
 
 	t.Run("TagCounts_AccurateOnIndex", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -418,6 +436,7 @@ Content`, i, dates[i-1])
 	})
 
 	t.Run("TagsWithSpecialCharacters_Sanitized", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -440,7 +459,9 @@ Content`
 
 // TestTaxonomy_CrossTaxonomy tests interactions between taxonomies
 func TestTaxonomy_CrossTaxonomy(t *testing.T) {
+	t.Parallel()
 	t.Run("PostWithSeriesAndTags_BothWork", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -474,7 +495,8 @@ Content`
 	})
 
 	t.Run("EmptyTaxonomy_NoPageGenerated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		// Only taxonomies with posts should have pages
@@ -486,6 +508,7 @@ Content`
 	})
 
 	t.Run("TaxonomyOrdering_PostsByDate", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -527,7 +550,9 @@ Content`
 
 // TestTaxonomy_DraftExclusion tests that drafts don't appear in taxonomies
 func TestTaxonomy_DraftExclusion(t *testing.T) {
+	t.Parallel()
 	t.Run("DraftWithTags_NoTagPage", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -555,6 +580,7 @@ Content`
 	})
 
 	t.Run("DraftWithSeries_NoSeriesPage", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 

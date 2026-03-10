@@ -42,6 +42,7 @@ type Site struct {
 	HomepageCacheSections []string         `toml:"homepage_cache_sections"` // Sections to include in homepage cache key
 	BuildTime             time.Time
 	BuildDrafts           bool
+	ProjectDir            string         `toml:"-"`
 	Data                  map[string]any `toml:"-"` // Loaded from data/ directory, not from TOML
 	I18n                  *i18n.I18n     `toml:"-"` // Loaded from config languages section and data/ directory
 }
@@ -90,6 +91,8 @@ func LoadSite(path string) (*Site, error) {
 			}
 		}
 	}
+
+	cfg.ProjectDir = filepath.Dir(path)
 
 	// Load i18n configuration from config file
 	if err := cfg.loadI18nConfig(path); err != nil {

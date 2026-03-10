@@ -8,8 +8,10 @@ import (
 
 // TestPerformance_FreshBuild tests fresh build performance
 func TestPerformance_FreshBuild(t *testing.T) {
+	t.Parallel()
 	t.Run("SmallSite_FastBuild", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 
 		start := time.Now()
 		buildSite(t, sitePath)
@@ -27,7 +29,9 @@ func TestPerformance_FreshBuild(t *testing.T) {
 
 // TestPerformance_IncrementalBuild tests incremental build speed
 func TestPerformance_IncrementalBuild(t *testing.T) {
+	t.Parallel()
 	t.Run("IncrementalFasterThanFull", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -138,7 +142,9 @@ template = "post.html"
 
 // TestPerformance_MemoryUsage tests memory efficiency
 func TestPerformance_MemoryUsage(t *testing.T) {
+	t.Parallel()
 	t.Run("ReasonableMemoryUsage", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -163,11 +169,13 @@ Content`
 
 // TestPerformance_LargeSite tests handling of large sites
 func TestPerformance_LargeSite(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("Skipping large site test in short mode")
 	}
 
 	t.Run("100Posts_BuildsEfficiently", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 

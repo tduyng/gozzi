@@ -9,8 +9,10 @@ import (
 
 // TestStatic_Copying tests static file copying
 func TestStatic_Copying(t *testing.T) {
+	t.Parallel()
 	t.Run("AllStatic_CopiedToOutput", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		staticFiles := []string{"robots.txt", "style.css"}
@@ -20,7 +22,8 @@ func TestStatic_Copying(t *testing.T) {
 	})
 
 	t.Run("StaticContent_Verbatim", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		verifyFileContent(t, sitePath, "style.css", "font-family")
@@ -30,7 +33,9 @@ func TestStatic_Copying(t *testing.T) {
 
 // TestStatic_NestedStructure tests nested static directories
 func TestStatic_NestedStructure(t *testing.T) {
+	t.Parallel()
 	t.Run("NestedDirs_PreserveStructure", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 
 		// Create nested structure
@@ -45,6 +50,7 @@ func TestStatic_NestedStructure(t *testing.T) {
 	})
 
 	t.Run("DeepNesting_Works", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 
 		deepDir := filepath.Join(sitePath, "static/a/b/c/d")
@@ -59,7 +65,9 @@ func TestStatic_NestedStructure(t *testing.T) {
 
 // TestStatic_Changes tests static file modification
 func TestStatic_Changes(t *testing.T) {
+	t.Parallel()
 	t.Run("StaticChange_UpdatesFile", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -74,6 +82,7 @@ func TestStatic_Changes(t *testing.T) {
 	})
 
 	t.Run("StaticChange_TriggersRebuild", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -98,7 +107,9 @@ func TestStatic_Changes(t *testing.T) {
 
 // TestStatic_NewFiles tests adding new static files
 func TestStatic_NewFiles(t *testing.T) {
+	t.Parallel()
 	t.Run("NewStatic_Added", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -114,6 +125,7 @@ func TestStatic_NewFiles(t *testing.T) {
 	})
 
 	t.Run("NewStatic_TriggersRebuild", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -139,15 +151,18 @@ func TestStatic_NewFiles(t *testing.T) {
 
 // TestStatic_AuxiliaryGeneration tests generated auxiliary files
 func TestStatic_AuxiliaryGeneration(t *testing.T) {
+	t.Parallel()
 	t.Run("RobotsTxt_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		verifyFileExists(t, sitePath, "robots.txt")
 	})
 
 	t.Run("Sitemap_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		verifyFileExists(t, sitePath, "sitemap.xml")
@@ -155,7 +170,8 @@ func TestStatic_AuxiliaryGeneration(t *testing.T) {
 	})
 
 	t.Run("AtomFeed_Generated", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		verifyFileExists(t, sitePath, "atom.xml")
@@ -165,7 +181,9 @@ func TestStatic_AuxiliaryGeneration(t *testing.T) {
 
 // TestStatic_CustomStaticDir tests custom static directories
 func TestStatic_CustomStaticDir(t *testing.T) {
+	t.Parallel()
 	t.Run("MultipleStaticDirs_AllCopied", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 
 		// Create files in different subdirs

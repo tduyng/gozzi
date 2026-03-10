@@ -7,8 +7,10 @@ import (
 
 // TestShortcode_YouTube tests YouTube shortcode
 func TestShortcode_YouTube(t *testing.T) {
+	t.Parallel()
 	t.Run("YouTube_RendersCorrectly", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "Shortcode_YouTube", sitePath, []string{
@@ -19,8 +21,10 @@ func TestShortcode_YouTube(t *testing.T) {
 
 // TestShortcode_Image tests image shortcode
 func TestShortcode_Image(t *testing.T) {
+	t.Parallel()
 	t.Run("Image_RendersWithAttributes", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "Shortcode_Image", sitePath, []string{
@@ -31,8 +35,10 @@ func TestShortcode_Image(t *testing.T) {
 
 // TestShortcode_Alert tests alert/callout shortcode
 func TestShortcode_Alert(t *testing.T) {
+	t.Parallel()
 	t.Run("Alert_RendersWithMarkdown", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "Shortcode_Alert", sitePath, []string{
@@ -41,7 +47,8 @@ func TestShortcode_Alert(t *testing.T) {
 	})
 
 	t.Run("Alert_HasTypeAttribute", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "Shortcode_AlertType", sitePath, []string{
@@ -52,8 +59,10 @@ func TestShortcode_Alert(t *testing.T) {
 
 // TestShortcode_MixedWithMarkdown tests shortcodes mixed with markdown
 func TestShortcode_MixedWithMarkdown(t *testing.T) {
+	t.Parallel()
 	t.Run("ShortcodesAndMarkdown_BothRender", func(t *testing.T) {
-		sitePath := setupTestSite(t)
+		t.Parallel()
+		sitePath := setupReadOnlyTestSite(t)
 		buildSite(t, sitePath)
 
 		SnapshotFiles(t, "Shortcode_Mixed", sitePath, []string{
@@ -64,7 +73,9 @@ func TestShortcode_MixedWithMarkdown(t *testing.T) {
 
 // TestShortcode_ErrorHandling tests shortcode error scenarios
 func TestShortcode_ErrorHandling(t *testing.T) {
+	t.Parallel()
 	t.Run("MissingShortcode_PassesThrough", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 

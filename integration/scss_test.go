@@ -9,6 +9,7 @@ import (
 )
 
 func TestSCSS_Compilation(t *testing.T) {
+	t.Parallel()
 	// Skip if sass not installed
 	cmd := exec.Command("sass", "--version")
 	if err := cmd.Run(); err != nil {
@@ -199,6 +200,7 @@ body {
 }
 
 func TestSCSS_DisabledByDefault(t *testing.T) {
+	t.Parallel()
 	// Skip if sass not installed
 	cmd := exec.Command("sass", "--version")
 	if err := cmd.Run(); err != nil {

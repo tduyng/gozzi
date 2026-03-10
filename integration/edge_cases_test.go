@@ -10,7 +10,9 @@ import (
 
 // TestEdgeCase_EmptyContent tests handling of empty or minimal content
 func TestEdgeCase_EmptyContent(t *testing.T) {
+	t.Parallel()
 	t.Run("EmptyPost_StillGenerates", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -28,6 +30,7 @@ template = "post.html"
 	})
 
 	t.Run("WhitespaceOnly_HandledCorrectly", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -49,7 +52,9 @@ template = "post.html"
 
 // TestEdgeCase_LongContent tests handling of very long content
 func TestEdgeCase_LongContent(t *testing.T) {
+	t.Parallel()
 	t.Run("VeryLongContent_Handles", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -72,7 +77,9 @@ template = "post.html"
 
 // TestEdgeCase_SpecialCharacters tests filename sanitization
 func TestEdgeCase_SpecialCharacters(t *testing.T) {
+	t.Parallel()
 	t.Run("SpecialCharsInFilename_Sanitized", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -92,6 +99,7 @@ Content.`
 	})
 
 	t.Run("UnicodeFilename_HandledCorrectly", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -114,7 +122,9 @@ Content.`
 
 // TestEdgeCase_UnicodeContent tests unicode in content
 func TestEdgeCase_UnicodeContent(t *testing.T) {
+	t.Parallel()
 	t.Run("Chinese_RendersCorrectly", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -135,6 +145,7 @@ template = "post.html"
 	})
 
 	t.Run("Japanese_RendersCorrectly", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -154,6 +165,7 @@ template = "post.html"
 	})
 
 	t.Run("Arabic_RendersCorrectly", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -173,6 +185,7 @@ template = "post.html"
 	})
 
 	t.Run("Emoji_RendersCorrectly", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -195,7 +208,9 @@ Hello 👋 World 🌍!`
 
 // TestEdgeCase_NestedSections tests deep nesting
 func TestEdgeCase_NestedSections(t *testing.T) {
+	t.Parallel()
 	t.Run("DeepNesting_Works", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -218,7 +233,9 @@ Deep content.`
 
 // TestEdgeCase_MissingFrontmatter tests posts with incomplete frontmatter
 func TestEdgeCase_MissingFrontmatter(t *testing.T) {
+	t.Parallel()
 	t.Run("NoDate_UsesDefault", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -236,6 +253,7 @@ Content.`
 	})
 
 	t.Run("InvalidDate_HandledGracefully", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -256,7 +274,9 @@ Content.`
 
 // TestEdgeCase_MalformedContent tests robustness
 func TestEdgeCase_MalformedContent(t *testing.T) {
+	t.Parallel()
 	t.Run("MissingClosingFrontmatter_Handled", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -276,7 +296,9 @@ Content without closing +++`
 
 // TestEdgeCase_BinaryFiles tests handling of non-text files
 func TestEdgeCase_BinaryFiles(t *testing.T) {
+	t.Parallel()
 	t.Run("BinaryInContent_Ignored", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 
@@ -291,7 +313,9 @@ func TestEdgeCase_BinaryFiles(t *testing.T) {
 
 // TestEdgeCase_LargeNumberOfFiles tests scalability
 func TestEdgeCase_LargeNumberOfFiles(t *testing.T) {
+	t.Parallel()
 	t.Run("ManyPosts_HandlesCorrectly", func(t *testing.T) {
+		t.Parallel()
 		sitePath := setupTestSite(t)
 		gen, contentParser := buildSite(t, sitePath)
 

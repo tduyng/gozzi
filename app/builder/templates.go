@@ -21,8 +21,13 @@ func (b *Builder) loadTemplates() (*template.Template, error) {
 
 	tmpl := template.New("").Funcs(funcMap)
 
+	templatesDir := "templates"
+	if b.site.ProjectDir != "" {
+		templatesDir = filepath.Join(b.site.ProjectDir, "templates")
+	}
+
 	// Load main templates
-	err := filepath.WalkDir("templates", func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(templatesDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 				Operation: "template_walk",
@@ -35,7 +40,7 @@ func (b *Builder) loadTemplates() (*template.Template, error) {
 			return nil
 		}
 
-		relPath, err := filepath.Rel("templates", path)
+		relPath, err := filepath.Rel(templatesDir, path)
 		if err != nil {
 			return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 				Operation: "get_relative_path",
@@ -74,8 +79,13 @@ func (b *Builder) loadTemplates() (*template.Template, error) {
 	}
 
 	// Load shortcodes (optional directory)
-	if _, err := os.Stat("shortcodes"); err == nil {
-		err = filepath.WalkDir("shortcodes", func(path string, d fs.DirEntry, err error) error {
+	shortcodesDir := "shortcodes"
+	if b.site.ProjectDir != "" {
+		shortcodesDir = filepath.Join(b.site.ProjectDir, "shortcodes")
+	}
+
+	if _, err := os.Stat(shortcodesDir); err == nil {
+		err = filepath.WalkDir(shortcodesDir, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 					Operation: "shortcode_walk",
@@ -88,7 +98,7 @@ func (b *Builder) loadTemplates() (*template.Template, error) {
 				return nil
 			}
 
-			relPath, err := filepath.Rel("shortcodes", path)
+			relPath, err := filepath.Rel(shortcodesDir, path)
 			if err != nil {
 				return utils.WrapWithContext(err, utils.ErrFileSystem, utils.ErrorContext{
 					Operation: "get_relative_path",

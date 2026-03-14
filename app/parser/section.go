@@ -163,18 +163,34 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 	return node
 }
 
+var (
+	srcRelRegex  = regexp.MustCompile(`(src|href)=["']([^/][^"':]*)["']`)
+	protoRelRegex = regexp.MustCompile(`^(http|https|mailto|tel):`)
+)
+
 func rewriteRelativePaths(html string, sectionDir string) string {
 	sectionDir = strings.TrimPrefix(sectionDir, "./")
 	if sectionDir == "." {
 		return html
 	}
 
-	rewriter := strings.NewReplacer(
-		`src="img/`, `src="/`+sectionDir+`/img/`,
-		`src='img/`, `src='/`+sectionDir+`/img/`,
-		`href="img/`, `href="/`+sectionDir+`/img/`,
-		`href='img/`, `href='/`+sectionDir+`/img/`,
-	)
+	// Ensure leading slash for sectionDir
+	basePath := "/" + sectionDir + "/"
 
-	return rewriter.Replace(html)
+	return srcRelRegex.ReplaceAllStringFunc(html, func(match string) string {
+		submatch := srcRelRegex.FindStringSubmatch(match)
+		if len(submatch) < 3 {
+			return match
+		}
+
+		attr := submatch[1]
+		val := submatch[2]
+
+		// Skip if it has a protocol or is a fragment/absolute path
+		if protoRelRegex.MatchString(val) || strings.HasPrefix(val, "/") || strings.HasPrefix(val, "#") {
+			return match
+		}
+
+		return fmt.Sprintf(`%s="%s%s"`, attr, basePath, val)
+	})
 }

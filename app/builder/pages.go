@@ -21,7 +21,8 @@ func (b *Builder) generateSection(node *content.Node) error {
 
 	data := map[string]any{
 		"Site": map[string]any{
-			"Config": b.site.ToConfig(),
+			"Config":     b.site.ToConfig(),
+			"Taxonomies": b.buildTaxonomiesMap(),
 		},
 		"Config":  node.Config,
 		"Page":    nodeMap,
@@ -70,7 +71,8 @@ func (b *Builder) generatePage(node *content.Node) error {
 
 	data := map[string]any{
 		"Site": map[string]any{
-			"Config": b.site.ToConfig(),
+			"Config":     b.site.ToConfig(),
+			"Taxonomies": b.buildTaxonomiesMap(),
 		},
 		"Config": node.Config,
 		"Page":   nodeMap, "Section": parentMap,
@@ -92,7 +94,8 @@ func (b *Builder) generate404Page() error {
 	outputPath := filepath.Join(b.site.OutputDir, "404.html")
 	data := map[string]any{
 		"Site": map[string]any{
-			"Config": b.site.ToConfig(),
+			"Config":     b.site.ToConfig(),
+			"Taxonomies": b.buildTaxonomiesMap(),
 		},
 		"Page": map[string]any{
 			"Title": "Page Not Found",

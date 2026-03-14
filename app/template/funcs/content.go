@@ -3,6 +3,7 @@ package funcs
 
 import (
 	"fmt"
+	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -108,25 +109,74 @@ func extractTime(dateVal any) time.Time {
 	return time.Time{} // Zero time
 }
 
-// Where filters a slice of maps by a field value.
-func Where(sections []any, field string, value any) ([]any, error) {
+// Where filters a slice of items by a field value.
+// Supports both map[string]any and *content.Node.
+func Where(items any, field string, value any) (any, error) {
 	if field == "" {
 		return nil, fmt.Errorf("where: field name cannot be empty")
 	}
 
-	var result []any
-	for _, s := range sections {
-		sectionMap, ok := s.(map[string]any)
-		if !ok {
-			continue
+	rv := reflect.ValueOf(items)
+	if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
+		return nil, fmt.Errorf("where: first argument must be a slice or array, got %T", items)
+	}
+
+	result := reflect.MakeSlice(rv.Type(), 0, rv.Len())
+
+	for i := 0; i < rv.Len(); i++ {
+		item := rv.Index(i).Interface()
+		var fieldValue any
+		var found bool
+
+		// Handle *content.Node
+		if node, ok := item.(*content.Node); ok {
+			// Check Config map first (front matter)
+			if val, exists := node.Config[field]; exists {
+				fieldValue = val
+				found = true
+			} else {
+				// Fallback to Node struct fields using reflection
+				nodeRv := reflect.ValueOf(node).Elem()
+				fieldVal := nodeRv.FieldByName(strings.Title(field))
+				if fieldVal.IsValid() {
+					fieldValue = fieldVal.Interface()
+					found = true
+				}
+			}
+		} else if m, ok := item.(map[string]any); ok {
+			// Handle map[string]any
+			if val, exists := m[field]; exists {
+				fieldValue = val
+				found = true
+			}
+		} else {
+			// Try general reflection for other struct types or maps
+			itemRv := reflect.ValueOf(item)
+			if itemRv.Kind() == reflect.Ptr {
+				itemRv = itemRv.Elem()
+			}
+
+			if itemRv.Kind() == reflect.Struct {
+				fieldVal := itemRv.FieldByName(strings.Title(field))
+				if fieldVal.IsValid() {
+					fieldValue = fieldVal.Interface()
+					found = true
+				}
+			} else if itemRv.Kind() == reflect.Map {
+				val := itemRv.MapIndex(reflect.ValueOf(field))
+				if val.IsValid() {
+					fieldValue = val.Interface()
+					found = true
+				}
+			}
 		}
 
-		fieldValue, exists := sectionMap[field]
-		if exists && Eq(fieldValue, value) {
-			result = append(result, s)
+		if found && Eq(fieldValue, value) {
+			result = reflect.Append(result, rv.Index(i))
 		}
 	}
-	return result, nil
+
+	return result.Interface(), nil
 }
 
 // Group represents a grouped collection of content nodes.

@@ -239,10 +239,18 @@ func (b *Builder) buildTaxonomiesMap() map[string]any {
 			return strings.Compare(a["Name"].(string), b["Name"].(string))
 		})
 
+		// Create a copy for sorting by count (trending)
+		termsByCount := make([]map[string]any, len(terms))
+		copy(termsByCount, terms)
+		slices.SortFunc(termsByCount, func(a, b map[string]any) int {
+			return b["Count"].(int) - a["Count"].(int)
+		})
+
 		taxonomies[name] = map[string]any{
-			"Name":  name,
-			"Terms": terms,
-			"Count": len(terms),
+			"Name":         name,
+			"Terms":        terms,
+			"TermsByCount": termsByCount,
+			"Count":        len(terms),
 		}
 	}
 

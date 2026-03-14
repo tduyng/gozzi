@@ -308,9 +308,46 @@ func Len(v any) (int, error) {
 	}
 }
 
-// Slice creates a slice from the given arguments
-func Slice(items ...any) []any {
+// MakeSlice creates a slice from the given arguments
+func MakeSlice(items ...any) []any {
 	return items
+}
+
+// Slice returns a sub-slice of a slice, array, or string.
+// Usage: {{ slice .Items 0 5 }}
+func Slice(v any, start int, end ...int) (any, error) {
+	if v == nil {
+		return nil, fmt.Errorf("slice: cannot slice nil")
+	}
+
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Slice, reflect.Array, reflect.String:
+		l := rv.Len()
+		s := start
+		e := l
+
+		if len(end) > 0 {
+			e = end[0]
+		}
+
+		if s < 0 {
+			s = 0
+		}
+		if s >= l {
+			return rv.Slice(0, 0).Interface(), nil
+		}
+		if e > l {
+			e = l
+		}
+		if s > e {
+			return rv.Slice(0, 0).Interface(), nil
+		}
+
+		return rv.Slice(s, e).Interface(), nil
+	default:
+		return nil, fmt.Errorf("slice: argument must be slice, array, or string, got %T", v)
+	}
 }
 
 // Cond is a ternary conditional operator: returns trueVal if condition is true, otherwise falseVal

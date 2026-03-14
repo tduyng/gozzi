@@ -949,3 +949,35 @@ func TestMinifyXML(t *testing.T) {
 		})
 	}
 }
+
+func TestSectionWithAssets(t *testing.T) {
+	contentFiles := map[string]string{
+		"docs/_index.md": `+++
+title = "Documentation"
+template = "default.html"
++++
+# Documentation`,
+	}
+
+	b, tempDir := createTestBuilderWithContent(t, contentFiles)
+
+	imgDir := filepath.Join(tempDir, "content", "docs", "img")
+	require.NoError(t, os.MkdirAll(imgDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(imgDir, "diagram.svg"), []byte("<svg></svg>"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(imgDir, "photo.webp"), []byte("webp data"), 0644))
+
+	contentDir := filepath.Join(tempDir, "content")
+	err := b.parser.Parse(contentDir)
+	require.NoError(t, err)
+
+	contentRoot, exists := b.parser.ContentMap["docs"]
+	require.True(t, exists)
+
+	err = b.Generate(contentRoot)
+	assert.NoError(t, err)
+
+	outputDir := b.site.OutputDir
+	assert.FileExists(t, filepath.Join(outputDir, "docs", "index.html"))
+	assert.FileExists(t, filepath.Join(outputDir, "docs", "img", "diagram.svg"))
+	assert.FileExists(t, filepath.Join(outputDir, "docs", "img", "photo.webp"))
+}

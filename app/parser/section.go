@@ -68,6 +68,11 @@ func (p *ContentParser) parseSection(path, dir string) error {
 			Path:      path,
 		})
 	}
+
+	htmlContent := htmlBuf.String()
+	if dir != "." && dir != "" {
+		htmlContent = rewriteRelativePaths(htmlContent, dir)
+	}
 	sectionConfig := frontMatter.ToConfig()
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, nil)
 
@@ -90,7 +95,7 @@ func (p *ContentParser) parseSection(path, dir string) error {
 	newNode := &content.Node{
 		Type:      content.NodeTypeSection,
 		Config:    mergedConfig,
-		Content:   template.HTML(htmlBuf.String()),
+		Content:   template.HTML(htmlContent),
 		Permalink: buildPermalink(slug),
 		URL:       buildURL(p.Site.BaseURL, slug),
 		WordCount: wordCount,
@@ -156,4 +161,20 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 
 	p.ContentMap[dir] = node
 	return node
+}
+
+func rewriteRelativePaths(html string, sectionDir string) string {
+	sectionDir = strings.TrimPrefix(sectionDir, "./")
+	if sectionDir == "." {
+		return html
+	}
+
+	rewriter := strings.NewReplacer(
+		`src="img/`, `src="/`+sectionDir+`/img/`,
+		`src='img/`, `src='/`+sectionDir+`/img/`,
+		`href="img/`, `href="/`+sectionDir+`/img/`,
+		`href='img/`, `href='/`+sectionDir+`/img/`,
+	)
+
+	return rewriter.Replace(html)
 }

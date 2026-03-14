@@ -28,6 +28,12 @@ func (b *Builder) generateSection(node *content.Node) error {
 		"Section": nodeMap,
 	}
 
+	if node.Config["assets"] != "" {
+		if err := b.copyPageAssets(node); err != nil {
+			return err
+		}
+	}
+
 	if err := b.renderTemplate(node, outputPath, data); err != nil {
 		return err
 	}
@@ -184,6 +190,10 @@ func (b *Builder) copyPageAssets(node *content.Node) error {
 	assets, ok := assetsValue.(string)
 	if !ok {
 		return nil
+	}
+
+	if b.site.ProjectDir != "" {
+		assets = filepath.Join(b.site.ProjectDir, assets)
 	}
 
 	dest := filepath.Join(

@@ -70,6 +70,11 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		})
 	}
 
+	htmlContent := htmlBuf.String()
+	if dir != "." && dir != "" {
+		htmlContent = rewriteRelativePaths(htmlContent, dir)
+	}
+
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -107,7 +112,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	if p.Site.SummaryLength > 0 {
 		summaryGen.SentenceCount = p.Site.SummaryLength
 	}
-	summaryText := summaryGen.Generate(pageConfig.Description, template.HTML(htmlBuf.String()))
+	summaryText := summaryGen.Generate(pageConfig.Description, template.HTML(htmlContent))
 
 	aliases := pageConfig.Aliases
 
@@ -119,7 +124,7 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		Type:      content.NodeTypePage,
 		Parent:    parent,
 		Config:    mergedConfig,
-		Content:   template.HTML(htmlBuf.String()),
+		Content:   template.HTML(htmlContent),
 		Summary:   template.HTML(summaryText),
 		WordCount: wordCount,
 		ReadTime:  readTime,

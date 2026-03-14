@@ -114,8 +114,8 @@ func CreateDefaultRegistry() *FuncRegistry {
 	r.MustRegister("first", FuncDef{Fn: funcs.First, Description: "Get first element"})
 	r.MustRegister("last", FuncDef{Fn: funcs.Last, Description: "Get last element"})
 	r.MustRegister("len", FuncDef{Fn: funcs.Len, Description: "Get length of slice, array, map, or string"})
-	r.MustRegister("slice", FuncDef{Fn: funcs.Slice, Description: "Return sub-slice of collection"})
-	r.MustRegister("make_slice", FuncDef{Fn: funcs.MakeSlice, Description: "Create a slice from arguments"})
+	r.MustRegister("slice", FuncDef{Fn: funcs.MakeSlice, Description: "Create a slice from arguments"})
+	r.MustRegister("sub_slice", FuncDef{Fn: funcs.Slice, Description: "Return sub-slice of collection"})
 	r.MustRegister("contains", FuncDef{Fn: funcs.Contains, Description: "Check if collection contains value"})
 	r.MustRegister("in", FuncDef{
 		Fn:          funcs.In,

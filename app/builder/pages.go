@@ -201,7 +201,7 @@ func (b *Builder) copyPageAssets(node *content.Node) error {
 
 	dest := filepath.Join(
 		b.site.OutputDir,
-		node.Slug,
+		strings.Trim(node.Permalink, "/"),
 		filepath.Base(assets),
 	)
 

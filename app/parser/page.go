@@ -70,30 +70,16 @@ func (p *ContentParser) parsePage(path, dir string) error {
 		})
 	}
 
-	htmlContent := htmlBuf.String()
-	if dir != "." && dir != "" {
-		htmlContent = rewriteRelativePaths(htmlContent, dir)
-	}
-
 	p.mu.Lock()
 	defer p.mu.Unlock()
-
-	var sectionConfig map[string]any
-	if secNode, exists := p.ContentMap[dir]; exists {
-		sectionConfig = secNode.Config
-	}
-
-	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, pageConfig.ToConfig())
-	lang := p.detectLanguage(path, dir, pageConfig)
-	mergedConfig["lang"] = lang
 
 	var parent *content.Node
 	var pagePath string
 	if filepath.Base(path) == "index.md" {
-		parent = p.GetOrCreateSection(filepath.Dir(dir))
+		parent = p.getOrCreateSection(filepath.Dir(dir))
 		pagePath = dir
 	} else {
-		parent = p.GetOrCreateSection(dir)
+		parent = p.getOrCreateSection(dir)
 		if filepath.IsAbs(path) {
 			pagePath = filepath.Join("content", dir, filepath.Base(path))
 		} else {
@@ -104,7 +90,19 @@ func (p *ContentParser) parsePage(path, dir string) error {
 	slug := content.GenerateSlug(pagePath, parent)
 	permalink := buildPermalink(slug)
 
+	htmlContent := htmlBuf.String()
+	htmlContent = rewriteRelativePaths(htmlContent, slug)
+
 	wordCount, readTime := calculateReadStats(string(contentPart))
+
+	var sectionConfig map[string]any
+	if secNode, exists := p.ContentMap[dir]; exists {
+		sectionConfig = secNode.Config
+	}
+
+	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, pageConfig.ToConfig())
+	lang := p.detectLanguage(path, dir, pageConfig)
+	mergedConfig["lang"] = lang
 	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
 	mergedConfig["img_url"] = p.resolveImgURL(pageConfig, slug)
 

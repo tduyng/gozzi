@@ -2,10 +2,12 @@ package parser
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/tduyng/gozzi/app/config"
@@ -69,22 +71,21 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		})
 	}
 
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	existingNode := p.getOrCreateSection(dir)
+	slug := existingNode.Slug
+	permalink := buildPermalink(slug)
+
 	htmlContent := htmlBuf.String()
-	if dir != "." && dir != "" {
-		htmlContent = rewriteRelativePaths(htmlContent, dir)
-	}
+	htmlContent = rewriteRelativePaths(htmlContent, slug)
+
 	sectionConfig := frontMatter.ToConfig()
 	mergedConfig := config.MergeConfigs(p.Site.ToConfig(), sectionConfig, nil)
 
 	lang := p.detectLanguage(path, dir, frontMatter)
 	mergedConfig["lang"] = lang
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	existingNode := p.GetOrCreateSection(dir)
-
-	slug := existingNode.Slug
 	mergedConfig["assets"] = filepath.Join(filepath.Dir(path), "img")
 	mergedConfig["img_url"] = p.resolveImgURL(frontMatter, slug)
 
@@ -96,7 +97,7 @@ func (p *ContentParser) parseSection(path, dir string) error {
 		Type:      content.NodeTypeSection,
 		Config:    mergedConfig,
 		Content:   template.HTML(htmlContent),
-		Permalink: buildPermalink(slug),
+		Permalink: permalink,
 		URL:       buildURL(p.Site.BaseURL, slug),
 		WordCount: wordCount,
 		ReadTime:  readTime,
@@ -129,6 +130,12 @@ func (p *ContentParser) parseSection(path, dir string) error {
 }
 
 func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.getOrCreateSection(dir)
+}
+
+func (p *ContentParser) getOrCreateSection(dir string) *content.Node {
 	if node, exists := p.ContentMap[dir]; exists {
 		return node
 	}
@@ -140,7 +147,7 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 		sectionSlug = ""
 	} else {
 		parentDir := path.Dir(dir)
-		parent = p.GetOrCreateSection(parentDir)
+		parent = p.getOrCreateSection(parentDir)
 		baseName := path.Base(dir)
 		sectionSlug = content.GenerateSlug(baseName, nil)
 
@@ -164,18 +171,18 @@ func (p *ContentParser) GetOrCreateSection(dir string) *content.Node {
 }
 
 var (
-	srcRelRegex  = regexp.MustCompile(`(src|href)=["']([^/][^"':]*)["']`)
+	srcRelRegex   = regexp.MustCompile(`(src|href)=["']([^/][^"':]*)["']`)
 	protoRelRegex = regexp.MustCompile(`^(http|https|mailto|tel):`)
 )
 
 func rewriteRelativePaths(html string, sectionDir string) string {
 	sectionDir = strings.TrimPrefix(sectionDir, "./")
-	if sectionDir == "." {
+	if sectionDir == "." || sectionDir == "" {
 		return html
 	}
 
-	// Ensure leading slash for sectionDir
-	basePath := "/" + sectionDir + "/"
+	// Ensure leading slash and trailing slash for base
+	basePath := "/" + strings.Trim(sectionDir, "/") + "/"
 
 	return srcRelRegex.ReplaceAllStringFunc(html, func(match string) string {
 		submatch := srcRelRegex.FindStringSubmatch(match)
@@ -191,6 +198,6 @@ func rewriteRelativePaths(html string, sectionDir string) string {
 			return match
 		}
 
-		return fmt.Sprintf(`%s="%s%s"`, attr, basePath, val)
+		return fmt.Sprintf(`%s="%s"`, attr, path.Join(basePath, val))
 	})
 }

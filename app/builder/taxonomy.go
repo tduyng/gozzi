@@ -221,40 +221,43 @@ func (b *Builder) buildStandardPageList(entry *parser.TaxonomyEntry) []map[strin
 
 // buildTaxonomiesMap builds a map of all taxonomies for template access.
 func (b *Builder) buildTaxonomiesMap() map[string]any {
-	taxonomies := make(map[string]any)
+	b.taxonomiesOnce.Do(func() {
+		taxonomies := make(map[string]any)
 
-	for name, taxonomy := range b.parser.Taxonomies {
-		terms := make([]map[string]any, 0, len(taxonomy.Entries))
-		for slug, entry := range taxonomy.Entries {
-			terms = append(terms, map[string]any{
-				"Name":      entry.Term,
-				"Slug":      slug,
-				"Count":     entry.Count,
-				"Permalink": b.buildTaxonomyPermalink(name, slug),
+		for name, taxonomy := range b.parser.Taxonomies {
+			terms := make([]map[string]any, 0, len(taxonomy.Entries))
+			for slug, entry := range taxonomy.Entries {
+				terms = append(terms, map[string]any{
+					"Name":      entry.Term,
+					"Slug":      slug,
+					"Count":     entry.Count,
+					"Permalink": b.buildTaxonomyPermalink(name, slug),
+				})
+			}
+
+			// Sort alphabetically
+			slices.SortFunc(terms, func(a, b map[string]any) int {
+				return strings.Compare(a["Name"].(string), b["Name"].(string))
 			})
+
+			// Create a copy for sorting by count (trending)
+			termsByCount := make([]map[string]any, len(terms))
+			copy(termsByCount, terms)
+			slices.SortFunc(termsByCount, func(a, b map[string]any) int {
+				return b["Count"].(int) - a["Count"].(int)
+			})
+
+			taxonomies[name] = map[string]any{
+				"Name":         name,
+				"Terms":        terms,
+				"TermsByCount": termsByCount,
+				"Count":        len(terms),
+			}
 		}
+		b.cachedTaxonomies = taxonomies
+	})
 
-		// Sort alphabetically
-		slices.SortFunc(terms, func(a, b map[string]any) int {
-			return strings.Compare(a["Name"].(string), b["Name"].(string))
-		})
-
-		// Create a copy for sorting by count (trending)
-		termsByCount := make([]map[string]any, len(terms))
-		copy(termsByCount, terms)
-		slices.SortFunc(termsByCount, func(a, b map[string]any) int {
-			return b["Count"].(int) - a["Count"].(int)
-		})
-
-		taxonomies[name] = map[string]any{
-			"Name":         name,
-			"Terms":        terms,
-			"TermsByCount": termsByCount,
-			"Count":        len(terms),
-		}
-	}
-
-	return taxonomies
+	return b.cachedTaxonomies
 }
 
 // buildTaxonomyPermalink builds a permalink for a taxonomy term.

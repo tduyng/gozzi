@@ -10,6 +10,17 @@ import (
 	"github.com/tduyng/gozzi/app/content"
 )
 
+func getLen(v any) int {
+	if v == nil {
+		return 0
+	}
+	rv := reflect.ValueOf(v)
+	if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
+		return rv.Len()
+	}
+	return 0
+}
+
 func TestLimit(t *testing.T) {
 	nodes := []*content.Node{
 		{Slug: "post1"},
@@ -42,8 +53,8 @@ func TestLimit(t *testing.T) {
 				t.Errorf("Limit() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !tt.wantErr && len(got) != tt.want {
-				t.Errorf("Limit() returned %d items, want %d", len(got), tt.want)
+			if !tt.wantErr && getLen(got) != tt.want {
+				t.Errorf("Limit() returned %d items, want %d", getLen(got), tt.want)
 			}
 		})
 	}
@@ -56,7 +67,11 @@ func TestReverse(t *testing.T) {
 		{Slug: "post3"},
 	}
 
-	reversed := Reverse(nodes)
+	res := Reverse(nodes)
+	reversed, ok := res.([]*content.Node)
+	if !ok {
+		t.Fatalf("Reverse() returned %T, want []*content.Node", res)
+	}
 
 	// Check length
 	if len(reversed) != len(nodes) {
@@ -79,7 +94,11 @@ func TestReverse(t *testing.T) {
 
 func TestReverseEmpty(t *testing.T) {
 	nodes := []*content.Node{}
-	reversed := Reverse(nodes)
+	res := Reverse(nodes)
+	reversed, ok := res.([]*content.Node)
+	if !ok {
+		t.Fatalf("Reverse() returned %T, want []*content.Node", res)
+	}
 
 	if len(reversed) != 0 {
 		t.Errorf("Reverse() of empty slice = %d items, want 0", len(reversed))
@@ -115,8 +134,8 @@ func TestWhere(t *testing.T) {
 				t.Errorf("Where() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !tt.wantErr && len(got) != tt.want {
-				t.Errorf("Where() returned %d items, want %d", len(got), tt.want)
+			if !tt.wantErr && getLen(got) != tt.want {
+				t.Errorf("Where() returned %d items, want %d", getLen(got), tt.want)
 			}
 		})
 	}
@@ -133,8 +152,8 @@ func TestWhereInvalidItems(t *testing.T) {
 	if err != nil {
 		t.Errorf("Where() unexpected error: %v", err)
 	}
-	if len(got) != 1 {
-		t.Errorf("Where() = %d items, want 1 (should skip invalid items)", len(got))
+	if getLen(got) != 1 {
+		t.Errorf("Where() = %d items, want 1 (should skip invalid items)", getLen(got))
 	}
 }
 
@@ -322,15 +341,19 @@ func TestEqHelper(t *testing.T) {
 	}
 
 	// Should match both because Eq compares string representations
-	if len(got) != 2 {
-		t.Errorf("Where() with Eq comparison returned %d items, want 2", len(got))
+	if getLen(got) != 2 {
+		t.Errorf("Where() with Eq comparison returned %d items, want 2", getLen(got))
 	}
 }
 
 func TestReverseNilSafety(t *testing.T) {
 	// Ensure Reverse handles edge cases gracefully
 	var nilSlice []*content.Node
-	reversed := Reverse(nilSlice)
+	res := Reverse(nilSlice)
+	reversed, ok := res.([]*content.Node)
+	if !ok {
+		t.Fatalf("Reverse() returned %T, want []*content.Node", res)
+	}
 
 	if reversed == nil {
 		t.Error("Reverse() returned nil, expected empty slice")

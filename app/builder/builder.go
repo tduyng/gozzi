@@ -17,11 +17,13 @@ import (
 )
 
 type Builder struct {
-	site   *config.Site
-	templ  *template.Template
-	parser *parser.ContentParser
-	engine *tplengine.Engine
-	mu     sync.Mutex
+	site             *config.Site
+	templ            *template.Template
+	parser           *parser.ContentParser
+	engine           *tplengine.Engine
+	mu               sync.Mutex
+	cachedTaxonomies map[string]any
+	taxonomiesOnce   sync.Once
 }
 
 // GenerateOptions configures how the site generation should run.
@@ -102,6 +104,10 @@ func (b *Builder) GenerateClean(contentRoot *content.Node) error {
 // fullGenerate performs a complete site rebuild.
 // If cleanOutput is true, it removes stale files from previous builds.
 func (b *Builder) fullGenerate(contentRoot *content.Node, cleanOutput bool) error {
+	// Reset taxonomies cache for each build
+	b.taxonomiesOnce = sync.Once{}
+	b.cachedTaxonomies = nil
+
 	// Clean output directory only when needed (e.g., after file deletions)
 	if cleanOutput {
 		if err := b.cleanOutputDir(); err != nil {

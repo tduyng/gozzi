@@ -568,7 +568,7 @@ func TestSlice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := Slice(tt.items...)
+			got := MakeSlice(tt.items...)
 			if len(got) != len(tt.want) {
 				t.Errorf("Slice() length = %v, want %v", len(got), len(tt.want))
 				return
@@ -577,6 +577,41 @@ func TestSlice(t *testing.T) {
 				if got[i] != tt.want[i] {
 					t.Errorf("Slice()[%d] = %v, want %v", i, got[i], tt.want[i])
 				}
+			}
+		})
+	}
+}
+
+func TestSubSlice(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   any
+		start   int
+		end     []int
+		want    any
+		wantErr bool
+	}{
+		{"slice: full", []int{1, 2, 3, 4, 5}, 0, []int{5}, []int{1, 2, 3, 4, 5}, false},
+		{"slice: partial", []int{1, 2, 3, 4, 5}, 1, []int{3}, []int{2, 3}, false},
+		{"slice: start only", []int{1, 2, 3, 4, 5}, 2, nil, []int{3, 4, 5}, false},
+		{"slice: empty result", []int{1, 2, 3}, 2, []int{2}, []int{}, false},
+		{"slice: out of bounds end", []int{1, 2, 3}, 0, []int{10}, []int{1, 2, 3}, false},
+		{"slice: out of bounds start", []int{1, 2, 3}, 10, nil, []int{}, false},
+		{"slice: negative start", []int{1, 2, 3}, -1, nil, []int{1, 2, 3}, false},
+		{"slice: string", "hello", 1, []int{4}, "ell", false},
+		{"slice: nil", nil, 0, nil, nil, true},
+		{"slice: non-slice", 42, 0, nil, nil, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Slice(tt.input, tt.start, tt.end...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SubSlice() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SubSlice() = %v, want %v", got, tt.want)
 			}
 		})
 	}

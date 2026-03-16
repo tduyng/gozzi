@@ -1,5 +1,18 @@
 # What's changed
 
+## [0.1.1](https://github.com/tduyng/gozzi/compare/v0.1.0..v0.1.1) - 2026-03-16
+
+### 🐛 Bug Fixes
+
+- Show correct relative images - ([e2cde78](https://github.com/tduyng/gozzi/commit/e2cde7823834e0bf252ca3058db2ab4b72342031))
+- Make where condition more completed - ([a743b61](https://github.com/tduyng/gozzi/commit/a743b615fef3d36cdfe92ae59d35c04e2ead7045))
+- Make slide method more flexible - ([889a807](https://github.com/tduyng/gozzi/commit/889a8077279babacbff20d52f51969e440addbea))
+- Handle images for section - ([aac5e36](https://github.com/tduyng/gozzi/commit/aac5e368727e935b58d0316f5c7f1229a78f65a7))
+
+### 📚 Documentation
+
+- Add websites examples - ([77d8e28](https://github.com/tduyng/gozzi/commit/77d8e282443244881fb73cdb15fbfd2ca7ff2cb3))
+
 ## [0.1.0](https://github.com/tduyng/gozzi/compare/v0.0.39..v0.1.0) - 2026-03-10
 
 ### 🚀 Features

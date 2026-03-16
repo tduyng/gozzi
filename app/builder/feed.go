@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/tduyng/gozzi/app/config"
@@ -147,6 +148,9 @@ func (b *Builder) generateAtomFeed() error {
 		}
 		description, _ := entry.Config["description"].(string)
 
+		// Strip XML 1.0 illegal control characters and escape CDATA terminators.
+		safeContent := sanitizeFeedContent(string(entry.Content))
+
 		feed.Entries = append(feed.Entries, AtomEntry{
 			Title:     title,
 			ID:        entry.Permalink,
@@ -158,7 +162,7 @@ func (b *Builder) generateAtomFeed() error {
 				Data string `xml:",cdata"`
 			}{
 				Type: "html",
-				Data: string(entry.Content),
+				Data: safeContent,
 			},
 			Links: []AtomLink{
 				{Href: entry.Permalink},
@@ -282,4 +286,21 @@ func (b *Builder) getLastMod(n *content.Node) string {
 	}
 
 	return lastMod.UTC().Format("2006-01-02")
+}
+
+// sanitizeFeedContent removes XML 1.0 illegal control characters and escapes
+// CDATA section terminators so the feed is always well-formed.
+func sanitizeFeedContent(s string) string {
+	// Remove raw bytes that XML 1.0 forbids (control chars except \t \n \r).
+	// We operate on bytes so we catch raw control chars embedded inside
+	// HTML-escaped strings (e.g. syntax highlighter output like &#34;\x16&#34;).
+	b := make([]byte, 0, len(s))
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == 0x09 || c == 0x0A || c == 0x0D || c >= 0x20 {
+			b = append(b, c)
+		}
+	}
+	// Split any CDATA terminator that would close the section prematurely.
+	return strings.ReplaceAll(string(b), "]]>", "]]]]><![CDATA[>")
 }

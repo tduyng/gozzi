@@ -1,5 +1,11 @@
 # What's changed
 
+## [0.1.2](https://github.com/tduyng/gozzi/compare/v0.1.1..v0.1.2) - 2026-03-16
+
+### 🐛 Bug Fixes
+
+- Generate correct xml syntax for rss - ([7184c51](https://github.com/tduyng/gozzi/commit/7184c518975ae23d24567e5cfc258a2464f6f691))
+
 ## [0.1.1](https://github.com/tduyng/gozzi/compare/v0.1.0..v0.1.1) - 2026-03-16
 
 ### 🐛 Bug Fixes
